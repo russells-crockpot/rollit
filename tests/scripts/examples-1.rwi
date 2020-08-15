@@ -1,0 +1,20 @@
+d10
+1d10
+5d10
+5d10:expand
+5d10:highest(2)
+5d10:highest(3):lowest(1)
+<alias top highest>
+5d10:top(2)
+<sub t2 top(2)>
+5d10:{t2}
+5
+{t2}
+1d6 + 2
+(5 * 2)
+(5 * 2d8)
+(5 * 2d8:top(1))
+2d(1+3)
+2d(1+3):top(1)
+2d(1+3):top(1d1)
+(1*5)d(1+3):top(1d(2*2))

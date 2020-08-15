@@ -1,0 +1,45 @@
+ALIAS_DEF_KEYWORDS: "<" "a" "lias"?
+SUBSTITUTION_DEF_KEYWORDS: "<" "s" ( "ub" "stitution"?)?
+MODIFIER_DEF_KEYWORDS: "<" ("m" | "mod" | "modifier")
+COMMENT: "#" /[^\n]/*
+
+?start: statement
+//?start: add_expr
+//start: atom (_add_op atom)*
+
+substitution: "{" NAME "}"
+modifier_args: "(" [expression ("," expression)*] ")" -> args
+modifier_call: NAME [modifier_args] -> call
+//modifier: ":" NAME [modifier_args]
+modifier: ":" (modifier_call | substitution)
+modifiers: modifier*
+roll: expression? ("d" | "D" ) expression modifiers*
+
+?definition: alias_definition | substitution_definition | modifier_definition
+
+alias_definition: ALIAS_DEF_KEYWORDS NAME NAME ">"
+substitution_definition: SUBSTITUTION_DEF_KEYWORDS NAME /[^>]+/ ">"
+modifier_definition: MODIFIER_DEF_KEYWORDS modifier_call expression ">"
+
+?atom: NUMBER
+     | SIGNED_NUMBER
+     | roll
+     | substitution
+
+!_mult_op: "*" | "/"
+!_add_op: "+" | "-"
+
+?add_expr: atom (_add_op mult_expr)*
+?mult_expr: add_expr (_mult_op expression)*
+?expression: mult_expr | "(" expression ")"
+
+statement: definition | expression
+
+%import common.INT -> NUMBER
+%import common.SIGNED_INT -> SIGNED_NUMBER
+%import common.CNAME -> NAME
+%import common.WS
+
+
+%ignore COMMENT
+%ignore WS
