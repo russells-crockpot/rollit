@@ -1,6 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
+*.py[codz]
 *$py.class
 
 # C extensions
@@ -26,6 +26,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.dist-info
+*.whl
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -127,3 +129,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Other
+tmp/
+t.py
+ignore/
+_build/
+sandbox.py
+venv/
+t
+t[0-9]
