@@ -2,120 +2,199 @@
 """
 import enum
 import operator
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from contextlib import suppress
 
-from .dialect import Dialect
-from .model import DiceRoll, ModifierCall
-from .parser import Token, Transformer
+from .elements import RollResults
+from ._parser import Token
 
-__all__ = ['RollWithItTransformer']
-
-_OP_MAP = {
-    'STAR': operator.mul,
-    'PLUS': operator.add,
-    'MINUS': operator.sub,
-    'SLASH': operator.floordiv,  #CONSIDER addind way to get remainder, etcetera
-}
+__all__ = [
+    'ModifierCall',
+    'DiceRoll',
+]
 
 
-class _DialectDefPartRole(enum.Enum):
-    PARENT = 0
-    DEFINED = 1
+class Resolvable(metaclass=ABCMeta):
+    """
+    """
+    __slots__ = ()
+
+    @staticmethod
+    def value_for(item, context):
+        """
+        """
+        if isinstance(item, Token):
+            with suppress(ValueError):
+                return int(item.value)
+            return item.value
+        if isinstance(item, Resolvable):
+            return item.resolve(context)
+        return item
+
+    @abstractmethod
+    def resolve(self, context):
+        """
+        """
 
 
-_DialectDefPart = namedtuple('_DialectDefPart', ('value', 'role'))
+class DefinitionType(enum.Enum):
+    """
+    """
+    ALIAS = 'alias'
+    """ """
+    SUBSTITUTION = 'substitution'
+    """ """
+    MODIFIER = 'modifier'
+    """ """
 
 
-# pylint: disable=missing-function-docstring
-class RollWithItTransformer(Transformer):
+class Definition(namedtuple('_DefinitionBase', ('name', 'value', 'type')), Resolvable):
     """
     """
 
-    def __init__(self, dialect, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._dialect = dialect
+    def resolve(self, context):
+        value = self.value_for(self.value, context)
+        # pylint: disable=protected-access
+        add_func = getattr(context, f'add_{self.type._value_}')
+        add_func(self.name, value)
 
-    def roll(self, items):
-        return DiceRoll(items[0], items[1], items[2:])
 
-    def math(self, items):
-        if len(items) == 1:
-            if isinstance(items[0], DiceRoll):
-                return items[0]
-            return int(items[0]) if items[0] else 0
-        left, op, right = items
-        if isinstance(left, Token):
-            left = left.value
-        elif isinstance(left, DiceRoll):
-            left = left.roll()
-        if isinstance(right, Token):
-            right = right.value
-        elif isinstance(right, DiceRoll):
-            right = right.roll()
-        left = int(left)
-        right = int(right)
-        return _OP_MAP[op.type](left, right)
+class MacroCall(namedtuple('_MacroCallBase', ('name', 'args')), Resolvable):
+    """
+    """
 
-    def substitution(self, items):
-        return self._dialect.get_substitution(items[0].value)
+    def resolve(self, context):
+        return context.get_macro(self.name)
 
-    def alias_def(self, items):
-        self._dialect.add_alias(items[0].value, items[1].value)
 
-    def modifier_call(self, items):
-        name, *args = items
-        if args:
-            args = args[0].children
-        return ModifierCall(name.value, self._dialect.get_modifier(name.value), args)
+class ModifierCall(namedtuple('_ModifierCallBase', ('name', 'args')), Resolvable):
+    """
+    """
 
-    def sub_def(self, items):
-        name, value = items
-        if isinstance(name, Token):
-            name = name.value
-        if isinstance(value, Token):
-            value = int(value.value)
-        self._dialect.add_substitution(name, value)
+    def resolve(self, context):
+        return context.get_modifier(self.name)
 
-    def _get_relative_dialect(self, name):
+
+class Substitution(namedtuple('_SubstitutionBase', ('name',)), Resolvable):
+    """
+    """
+
+    def resolve(self, context):
+        return context.get_substitution(self.name)
+
+
+class DialectSwitch(namedtuple('_DialectSwitchBase', ('name', 'parent')), Resolvable):
+    """
+    """
+
+    @staticmethod
+    def _get_dialect(name, dialect):
         if name == '^':
-            if not self._dialect.parent:
+            if not dialect.parent:
                 raise Exception()
-            return self._dialect.parent
+            return dialect.parent
         if name == '~':
-            return self._dialect.root
+            return dialect.root
         return None
 
-    def dialect_name(self, items):
-        return _DialectDefPart(items[0].value, _DialectDefPartRole.DEFINED)
+    def resolve(self, context):
+        pass
 
-    def dialect_parent(self, items):
-        parent = self._get_relative_dialect(items[0].value)
-        if not parent:
-            parent = Dialect.get_dialect(parent)
-        return _DialectDefPart(parent, _DialectDefPartRole.PARENT)
 
-    def dialect_def(self, items):
-        dialect_name = None
-        parent = None
-        for item in items:
-            if item.role == _DialectDefPartRole.PARENT:
-                parent = item.value
-            elif item.role == _DialectDefPartRole.DEFINED:
-                dialect_name = item.value
+class Repeat(namedtuple('_RepeatBase', ('statement', 'times')), Resolvable):
+    """
+    """
+
+    def resolve(self, context):
+        return tuple(
+            self.value_for(self.statement, context)
+            for _ in range(self.value_for(self.times, context)))
+
+
+class Math(namedtuple('_MathBase', ('left', 'op', 'right')), Resolvable):
+    """
+    """
+
+    _OP_MAP = {
+        'STAR': operator.mul,
+        'PLUS': operator.add,
+        'MINUS': operator.sub,
+        'SLASH': operator.floordiv,  #CONSIDER addind way to get remainder, etcetera
+    }
+
+    def resolve(self, context):
+        return self._OP_MAP[self.op](self.value_for(self.left, context),
+                                     self.value_for(self.right, context))
+
+
+class DiceRoll(namedtuple('_DiceRollBase', ('number_of_dice', 'sides', 'modifiers')), Resolvable):
+    """An immutable representation of a dice roll definition.
+
+    .. attribute:: number_of_dice
+
+        The number of dice in this roll.
+
+    .. attribute:: sides
+
+        How many sides the dice in this roll have.
+
+    .. attribute:: modifiers
+
+        Any modifier calls for this dice roll.
+    """
+
+    def __new__(cls, number_of_dice, sides, modifiers=()):
+        if isinstance(number_of_dice, Token):
+            number_of_dice = int(number_of_dice.value)
+        if isinstance(sides, Token):
+            sides = int(sides.value)
+        if not isinstance(modifiers, tuple):
+            modifiers = tuple(modifiers)
+        return super().__new__(cls, number_of_dice, sides, modifiers)
+
+    def resolve(self, context):
+        return self.roll(context)
+
+    # pylint: disable=missing-raises-doc
+    def roll(self, context):
+        """Rolls the dice represented by this object.
+
+        :param Dialect context: The context to use.
+
+        :returns: The roll results.
+        :rtype: RollResults
+        """
+        number_of_dice = self.value_for(self.number_of_dice, context)
+        if isinstance(number_of_dice, RollResults):
+            number_of_dice = number_of_dice.value
+        sides = self.value_for(self.sides, context)
+        if isinstance(sides, RollResults):
+            sides = sides.value
+        results = RollResults(number_of_dice, sides)
+        for name, args in self.modifiers:
+            modifier = context.get_modifier(name)
+            new_args = []
+            for arg in args:
+                arg = self.value_for(arg, context)
+                if isinstance(arg, RollResults):
+                    arg = arg.value
+            modified = modifier(*new_args, roll=results)
+            if isinstance(modified, (set, tuple, list)):
+                results.rolls = modified
+            elif isinstance(modified, (int, float)):
+                results.value = modified
+            elif isinstance(modified, RollResults):
+                results = modified
             else:
-                raise Exception()
-        dialect = self._get_relative_dialect(dialect_name)
-        if dialect and parent:
-            raise Exception()
-        self._dialect = Dialect.get_or_create_dialect(dialect, parent or self._dialect)
+                raise TypeError(f'Invalid modifier return type: {type(modified).__qualname__}')
+        return results
 
-    def dialect_statement(self, items):
-        return
-
-    def macro_args(self, items):
-        return [item.value.strip() for item in items]
-
-    def macro(self, items):
-        name, args = items
-        macro = self._dialect.get_macro(name.value)
-        macro(*args)
+    def __str__(self):
+        mod_parts = []
+        for name, args in self.modifiers:
+            if not mod_parts:
+                mod_parts.append('')
+            mod_parts.append(f'{name}({", ".join(str(a) for a in args)})')
+        return (f'<{type(self).__qualname__} {self.number_of_dice}d{self.sides}'
+                f'{":".join(mod_parts)}>')

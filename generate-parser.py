@@ -8,7 +8,7 @@ import pathlib
 
 from lark.tools.standalone import main as build_parser
 
-default_out_file = pathlib.Path(__file__).parent / 'src' / 'rollit' / 'parser.py'
+default_out_file = pathlib.Path(__file__).parent / 'src' / 'rollit' / '_parser.py'
 default_grammar_file = pathlib.Path(__file__).parent / 'grammar.lark'
 
 

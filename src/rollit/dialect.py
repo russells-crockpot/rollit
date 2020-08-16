@@ -3,7 +3,7 @@
 from collections import ChainMap
 from contextlib import suppress
 
-from .model import Modifier
+from .elements import Modifier
 from .exceptions import InvalidNameError
 
 __all__ = ['Dialect']
@@ -13,20 +13,27 @@ class Dialect:
     """
     """
     _ALL_DIALECTS = {}
+    holder = None
     substitutions = None
     modifiers = None
     macros = None
     _is_root = None
 
     def __new__(cls, name=None, parent=None, **kwargs):
-        if name and name in cls._ALL_DIALECTS:
-            return cls._ALL_DIALECTS[name]
+        if name and name in kwargs.get('holder', {}):
+            return kwargs['holder'][name]
         return object.__new__(cls)
 
-    def __init__(self, name=None, parent=None, *, is_root=False):
-        if name and name in self._ALL_DIALECTS:
+    def __init__(self, name=None, parent=None, *, is_root=False, holder=None):
+        if name and holder and name in holder:
             return
         self.name = name
+        if holder is None:
+            if parent:
+                holder = parent.holder
+            else:
+                holder = {}
+        self.holder = holder
         if not parent:
             self.substitutions = ChainMap()
             self.modifiers = ChainMap()
@@ -38,33 +45,31 @@ class Dialect:
         self.parent = parent
         self._is_root = is_root or not self.parent
 
-    def child(self, name=None, *, is_root=False):
+    def child(self, name=None, *, is_root=False, holder=None):
         """
         """
-        return type(self)(name=name, parent=self, is_root=is_root)
+        return type(self)(name=name, parent=self, is_root=is_root, holder=holder)
 
-    @classmethod
-    def get_dialect(cls, name):
+    def get_dialect(self, name):
         """
         """
-        if name not in cls._ALL_DIALECTS:
+        if name not in self.holder:
             raise InvalidNameError()
-        return cls._ALL_DIALECTS[name]
+        return self.holder[name]
 
-    @classmethod
-    def get_or_create_dialect(cls, name, parent):
+    def get_or_create_dialect(self, name, parent):
         """
         """
         if isinstance(parent, str):
-            parent = cls.get_dialect(parent)
+            parent = self.get_dialect(parent)
         if name:
             with suppress(InvalidNameError):
-                current_dialect = cls.get_dialect(name)
+                current_dialect = self.get_dialect(name)
                 if current_dialect.parent != parent:
                     #TODO
                     raise ValueError()
                 return current_dialect
-        return cls(name, parent)
+        return type(self)(name, parent)
 
     def add_alias(self, alias, name):
         """
