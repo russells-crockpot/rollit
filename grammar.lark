@@ -47,7 +47,7 @@ macro: "!" KEBAB_NAME macro_args?
 !_add_op: "+" | "-"
 
 _arith_expr: atom (_add_op expression)*
-?mult_expr: _arith_expr (_mult_op _paren_expr)* -> math
+?mult_expr: _arith_expr (_mult_op expression)* -> math
 _paren_expr: mult_expr | "(" expression ")"
 ?expression: _paren_expr
            | expression "@" NUMBER -> repeat
