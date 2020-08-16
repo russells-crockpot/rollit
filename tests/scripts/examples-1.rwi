@@ -18,3 +18,5 @@ d10
 2d(1+3):top(1)
 2d(1+3):top(1d1)
 (1*5)d(1+3):top(1d(2*2))
+<mod second: $.rolls[1]>
+<modifier nth(n): $.rolls[n]>

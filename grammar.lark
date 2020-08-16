@@ -1,25 +1,42 @@
-ALIAS_DEF_KEYWORDS: "<" "a" "lias"?
-SUBSTITUTION_DEF_KEYWORDS: "<" "s" ( "ub" "stitution"?)?
-MODIFIER_DEF_KEYWORDS: "<" ("m" | "mod" | "modifier")
-COMMENT: "#" /[^\n]/*
+_ALIAS_DEF_KEYWORDS: "<" "a" "lias"?
+_SUBSTITUTION_DEF_KEYWORDS: "<" "s" ( "ub" "stitution"?)?
+_MODIFIER_DEF_KEYWORDS: "<" "m" ( "od"  "ifier"?)?
+_DIALECT_KEYWORD: "<dialect"
+KEBAB_NAME: LETTER (LETTER | NUMBER | "_" | "-" )*
+DIALECT_REF: KEBAB_NAME | "~" | "^"
+COMMENT: /#[^\n]*/
+_NEWLINE: ( /\r?\n[\t ]*/ | COMMENT )+
 
-?start: statement
-//?start: add_expr
-//start: atom (_add_op atom)*
+start: (statement | _NEWLINE)*
 
 substitution: "{" NAME "}"
 modifier_args: "(" [expression ("," expression)*] ")" -> args
-modifier_call: NAME [modifier_args] -> call
-//modifier: ":" NAME [modifier_args]
-modifier: ":" (modifier_call | substitution)
-modifiers: modifier*
-roll: expression? ("d" | "D" ) expression modifiers*
+modifier_call: NAME [modifier_args]
+?modifier: ":" (modifier_call | substitution)
+roll: expression? ("d" | "D" ) expression modifier*
 
-?definition: alias_definition | substitution_definition | modifier_definition
+?definition: _alias_definition -> alias_def
+           | _substitution_definition -> sub_def
+           | _modifier_definition -> mod_def
 
-alias_definition: ALIAS_DEF_KEYWORDS NAME NAME ">"
-substitution_definition: SUBSTITUTION_DEF_KEYWORDS NAME /[^>]+/ ">"
-modifier_definition: MODIFIER_DEF_KEYWORDS modifier_call expression ">"
+_alias_definition: _ALIAS_DEF_KEYWORDS NAME NAME ">"
+_substitution_definition: _SUBSTITUTION_DEF_KEYWORDS NAME (expression | modifier_call) ">"
+dialect_parent: "(" DIALECT_REF ")"
+dialect_name: KEBAB_NAME | DIALECT_REF
+dialect_def: dialect_name
+           | dialect_parent
+           | dialect_name dialect_parent
+dialect_statement: _DIALECT_KEYWORD dialect_def ">"
+
+roll_ref: "rolls" "[" (roll_ref_expression | "*" | "#" ) "]"
+roll_results_ref: "$" ("." ("total" | "sides" | roll_ref))? -> roll_results
+?roll_ref_expression: expression | roll_results_ref | NAME
+modifier_param: "(" [NAME ("," NAME)*] ")" -> params
+_modifier_definition: _MODIFIER_DEF_KEYWORDS NAME modifier_param? ":" roll_ref_expression ">"
+
+_macro_arg: /[^,\n]+/
+macro_args: _macro_arg ("," _macro_arg)*
+macro: "!" KEBAB_NAME macro_args?
 
 ?atom: NUMBER
      | SIGNED_NUMBER
@@ -29,14 +46,17 @@ modifier_definition: MODIFIER_DEF_KEYWORDS modifier_call expression ">"
 !_mult_op: "*" | "/"
 !_add_op: "+" | "-"
 
-?add_expr: atom (_add_op mult_expr)*
-?mult_expr: add_expr (_mult_op expression)*
-?expression: mult_expr | "(" expression ")"
+_arith_expr: atom (_add_op expression)*
+?mult_expr: _arith_expr (_mult_op _paren_expr)* -> math
+_paren_expr: mult_expr | "(" expression ")"
+?expression: _paren_expr
+           | expression "@" NUMBER -> times
 
-statement: definition | expression
+?statement: definition | expression | dialect_statement | macro
 
 %import common.INT -> NUMBER
 %import common.SIGNED_INT -> SIGNED_NUMBER
+%import common.LETTER
 %import common.CNAME -> NAME
 %import common.WS
 
