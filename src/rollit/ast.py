@@ -10,7 +10,7 @@ from lark.visitors import Transformer
 from .dialect import Dialect
 from .model import RollResults
 
-__all__ = ['RwiTransformer']
+__all__ = ['RollWithItTransformer']
 
 _OP_MAP = {
     'STAR': operator.mul,
@@ -30,7 +30,7 @@ _ModifierCall = namedtuple('_ModifierCall', ('func', 'args'))
 
 
 # pylint: disable=missing-function-docstring
-class RwiTransformer(Transformer):
+class RollWithItTransformer(Transformer):
     """
     """
 

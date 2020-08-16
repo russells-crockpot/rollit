@@ -6,7 +6,7 @@ Dialects
 Dialects are a way for you to add or override different modifiers for different situations. Going
 back to the example in :ref:`Notation | Substitutions`, having an ``advantage`` substitution makes
 perfect sense in D&D 5th Edition, but less sense in Pathfinder, which doesn't have a concept of
-advantage or disadvantage. Therefore, it makes sense to be able to seperate them.
+advantage or disadvantage. Therefore, it makes sense to be able to separate them.
 
 Additionally, a dialect can inherit from another dialect.
 

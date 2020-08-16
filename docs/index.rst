@@ -10,6 +10,7 @@ Roll With It documentation!
 
    general/overview.rst
    general/notation.rst
+   general/dialects.rst
    api-reference/rollit/modules.rst
 
 

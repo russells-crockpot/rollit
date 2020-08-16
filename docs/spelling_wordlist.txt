@@ -56,3 +56,5 @@ prepended
 nano
 csv
 unicode
+th
+ast
