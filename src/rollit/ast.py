@@ -8,7 +8,7 @@ from lark import Token
 from lark.visitors import Transformer
 
 from .dialect import Dialect
-from .model import RollResults
+from .model import DiceRoll, ModifierCall
 
 __all__ = ['RollWithItTransformer']
 
@@ -26,7 +26,6 @@ class _DialectDefPartRole(enum.Enum):
 
 
 _DialectDefPart = namedtuple('_DialectDefPart', ('value', 'role'))
-_ModifierCall = namedtuple('_ModifierCall', ('func', 'args'))
 
 
 # pylint: disable=missing-function-docstring
@@ -39,35 +38,22 @@ class RollWithItTransformer(Transformer):
         self._dialect = dialect
 
     def roll(self, items):
-        num_dice = items[0]
-        if isinstance(num_dice, Token):
-            num_dice = num_dice.value
-        sides = items[1]
-        if isinstance(sides, Token):
-            sides = sides.value
-        results = RollResults(int(num_dice), int(sides))
-        for modifier, args in items[2:]:
-            modified = modifier(*args, roll=results)
-            if isinstance(modified, (set, tuple, list)):
-                results.rolls = modified
-            elif isinstance(modified, (int, float)):
-                results.value = modified
-            elif isinstance(modified, RollResults):
-                results = modified
-            else:
-                raise TypeError(f'Invalid modifier return type: {type(modified).__qualname__}')
-        return results
+        return DiceRoll(items[0], items[1], items[2:])
 
     def math(self, items):
         if len(items) == 1:
-            if isinstance(items[0], RollResults):
+            if isinstance(items[0], DiceRoll):
                 return items[0]
             return int(items[0]) if items[0] else 0
         left, op, right = items
         if isinstance(left, Token):
             left = left.value
+        elif isinstance(left, DiceRoll):
+            left = left.roll()
         if isinstance(right, Token):
             right = right.value
+        elif isinstance(right, DiceRoll):
+            right = right.roll()
         left = int(left)
         right = int(right)
         return _OP_MAP[op.type](left, right)
@@ -82,9 +68,8 @@ class RollWithItTransformer(Transformer):
         name, *args = items
         if args:
             args = args[0].children
-        return _ModifierCall(self._dialect.get_modifier(name.value), args)
+        return ModifierCall(name.value, self._dialect.get_modifier(name.value), args)
 
-    #FIXME with dice rolls, it saves the value of the final roll, not the expression itself.
     def sub_def(self, items):
         name, value = items
         if isinstance(name, Token):

@@ -50,7 +50,7 @@ _arith_expr: atom (_add_op expression)*
 ?mult_expr: _arith_expr (_mult_op _paren_expr)* -> math
 _paren_expr: mult_expr | "(" expression ")"
 ?expression: _paren_expr
-           | expression "@" NUMBER -> times
+           | expression "@" NUMBER -> repeat
 
 ?statement: definition | expression | dialect_statement | macro
 
