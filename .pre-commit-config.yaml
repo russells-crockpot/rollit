@@ -1,6 +1,13 @@
 default_language_version:
   python: python3.8
 repos:
+- repo: local
+  hooks:
+  - id: generate-parser
+    name: generate-parser
+    entry: ./generate-parser.py
+    language: python
+    files: '^grammar.lark$'
 - repo: git@github.com:Yelp/detect-secrets
   rev: v0.13.1
   hooks:
@@ -17,15 +24,19 @@ repos:
   - id: check-xml
   - id: check-yaml
   - id: debug-statements
+    exclude: '^src/rollit/parser.py$'
   - id: detect-private-key
   - id: double-quote-string-fixer
+    exclude: '^src/rollit/parser.py$'
   - id: pretty-format-json
     args: ['--autofix', '--no-sort-keys', '--indent', '4', '--no-ensure-ascii']
   - id: trailing-whitespace
+    exclude: '^src/rollit/parser.py$'
 - repo: https://github.com/pre-commit/mirrors-yapf.git
   rev: v0.29.0
   hooks:
   - id: yapf
+    exclude: '^src/rollit/parser.py$'
     args: ['-i', '-vv']
 - repo: https://github.com/adrienverge/yamllint.git
   rev: v1.21.0
@@ -47,9 +58,10 @@ repos:
   rev: 1.6.2
   hooks:
   - id: bandit
-    exclude: '^tests/.*'
+    exclude: '^(tests/.*|src/rollit/parser.py)$'
     args: ['-c', '.bandit']
 - repo: https://github.com/PyCQA/pylint.git
   rev: pylint-2.4.4
   hooks:
   - id: pylint
+    files: '^grammar.lark$'

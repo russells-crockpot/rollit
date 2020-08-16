@@ -4,11 +4,9 @@ import enum
 import operator
 from collections import namedtuple
 
-from lark import Token
-from lark.visitors import Transformer
-
 from .dialect import Dialect
 from .model import DiceRoll, ModifierCall
+from .parser import Token, Transformer
 
 __all__ = ['RollWithItTransformer']
 

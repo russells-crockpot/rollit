@@ -3,7 +3,7 @@
 import random  # nosec
 from collections import namedtuple
 
-from lark import Token
+from .parser import Token
 
 __all__ = [
     'ModifierCall',

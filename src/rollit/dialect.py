@@ -18,7 +18,7 @@ class Dialect:
     macros = None
     _is_root = None
 
-    def __new__(cls, name=None, parent=None):
+    def __new__(cls, name=None, parent=None, **kwargs):
         if name and name in cls._ALL_DIALECTS:
             return cls._ALL_DIALECTS[name]
         return object.__new__(cls)
@@ -38,10 +38,10 @@ class Dialect:
         self.parent = parent
         self._is_root = is_root or not self.parent
 
-    def child(self, name=None):
+    def child(self, name=None, *, is_root=False):
         """
         """
-        return type(self)(name=name, parent=self)
+        return type(self)(name=name, parent=self, is_root=is_root)
 
     @classmethod
     def get_dialect(cls, name):
