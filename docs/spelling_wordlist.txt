@@ -51,7 +51,7 @@ initializers
 autodoc
 formatters
 pylint
-rwi
+rollit
 prepended
 nano
 csv

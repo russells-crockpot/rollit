@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = rwi
+SPHINXPROJ    = rollit
 SOURCEDIR     = .
 BUILDDIR      = _build
 APIDOCCMD     = sphinx-apidoc
@@ -12,7 +12,7 @@ APIDOCARGS    = --ext-autodoc --ext-intersphinx --ext-coverage --ext-todo --ext-
 APIDOCPROJ    = $(SPHINXPROJ)
 APIDOCOUT     = api-reference/$(APIDOCPROJ)
 APIDOC_FILES  = $(APIDOCOUT)/$(APIDOCPROJ)*.rst
-PKGDIR        = ../$(APIDOCPROJ)
+PKGDIR        = ../src/$(APIDOCPROJ)
 
 ifneq (,$(wildcard $(APIDOC_FILES)))
     RMCMD = rm -rv $(APIDOC_FILES)

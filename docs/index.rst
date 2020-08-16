@@ -10,7 +10,7 @@ Roll With It documentation!
 
    general/overview.rst
    general/notation.rst
-   api-reference/rwi/modules.rst
+   api-reference/rollit/modules.rst
 
 
 .. _Roll With It documentation | Indices and Tables:

@@ -55,7 +55,7 @@ default_role = 'any'
 primary_domain = 'py'
 # keep_warnings = True
 modindex_common_prefix = [
-    'rwi.',
+    'rollit.',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -179,9 +179,9 @@ autosectionlabel_prefix_document = True
 
 # Stuff for issues
 #TODO May need to change
-issues_uri = 'https://githum.com/tndev/roll-with-it/issues{issue}'
-issues_pr = 'https://githum.com/tndev/roll-with-it/pulls/{pr}'
-issues_user_uri = 'https://githum.com/{user}'
+issues_uri = 'https://github.com/russels-crockpot/roll-with-it/issues{issue}'
+issues_pr = 'https://github.com/russels-crockpot/roll-with-it/pulls/{pr}'
+issues_user_uri = 'https://github.com/{user}'
 
 spelling_lang = 'en_US'
 spelling_show_suggestions = True
