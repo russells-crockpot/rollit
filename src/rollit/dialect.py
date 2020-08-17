@@ -1,7 +1,6 @@
 """
 """
 from collections import ChainMap
-from contextlib import suppress
 
 from .elements import Modifier
 from .exceptions import InvalidNameError
@@ -12,7 +11,6 @@ __all__ = ['Dialect']
 class Dialect:
     """
     """
-    _ALL_DIALECTS = {}
     holder = None
     substitutions = None
     modifiers = None
@@ -49,27 +47,6 @@ class Dialect:
         """
         """
         return type(self)(name=name, parent=self, is_root=is_root, holder=holder)
-
-    def get_dialect(self, name):
-        """
-        """
-        if name not in self.holder:
-            raise InvalidNameError()
-        return self.holder[name]
-
-    def get_or_create_dialect(self, name, parent):
-        """
-        """
-        if isinstance(parent, str):
-            parent = self.get_dialect(parent)
-        if name:
-            with suppress(InvalidNameError):
-                current_dialect = self.get_dialect(name)
-                if current_dialect.parent != parent:
-                    #TODO
-                    raise ValueError()
-                return current_dialect
-        return type(self)(name, parent)
 
     def add_alias(self, alias, name):
         """

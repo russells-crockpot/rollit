@@ -1,13 +1,13 @@
 default_language_version:
   python: python3.8
 repos:
-- repo: local
-  hooks:
-  - id: generate-parser
-    name: generate-parser
-    entry: ./generate-parser.py
-    language: python
-    files: '^grammar.lark$'
+# - repo: local
+#   hooks:
+#   - id: generate-parser
+#     name: generate-parser
+#     entry: ./generate-parser.py
+#     language: python
+#     files: '^grammar.lark$'
 - repo: git@github.com:Yelp/detect-secrets
   rev: v0.13.1
   hooks:

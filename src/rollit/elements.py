@@ -49,9 +49,6 @@ class RollResults:
         self.rolls = [random.randint(1, sides) for _ in range(number_of_dice)]  # nosec
         self._value = None
 
-    def __int__(self):
-        return self.value
-
     @property
     def value(self):
         """The value of the roll. By default, this is simply the :attr:`~.total`, but it can be

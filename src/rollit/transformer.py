@@ -3,10 +3,11 @@
 import enum
 import operator
 from collections import namedtuple
+from contextlib import suppress
 
-from .dialect import Dialect
-from .ast import DiceRoll, ModifierCall
-from ._parser import Token, Transformer
+from .ast import (Resolvable, DefinitionType, Definition, MacroCall, ModifierCall, Substitution,
+                  SwitchDialect, Repeat, Math, DiceRoll, Unary)
+from ._parser import Token, Transformer, Tree
 
 __all__ = ['RollWithItTransformer']
 
@@ -31,90 +32,89 @@ class RollWithItTransformer(Transformer):
     """
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def _values(cls, items):
+        if not isinstance(items, Resolvable) and isinstance(items, (tuple, list, set)):
+            return tuple(cls._value(item) for item in items)
+        return cls._value(items)
+
+    @staticmethod
+    def _value(item):
+        if not item:
+            return item
+        if isinstance(item, Tree):
+            item = item.children
+        if not isinstance(item, Resolvable):
+            with suppress(TypeError):
+                if len(item) == 1:
+                    item = item[0]
+        if isinstance(item, Token):
+            item = item.value
+        try:
+            item = int(item)
+        except (TypeError, ValueError):
+            with suppress(TypeError, ValueError):
+                item = float(item)
+        return item
 
     def roll(self, items):
         return DiceRoll(items[0], items[1], items[2:])
 
+    def unary(self, items):
+        sign, value = self._values(items)
+        if sign == '+':
+            return value
+        return Unary(sign, value)
+
     def math(self, items):
-        if len(items) == 1:
-            if isinstance(items[0], DiceRoll):
-                return items[0]
-            return int(items[0]) if items[0] else 0
-        left, op, right = items
-        if isinstance(left, Token):
-            left = left.value
-        elif isinstance(left, DiceRoll):
-            left = left.roll()
-        if isinstance(right, Token):
-            right = right.value
-        elif isinstance(right, DiceRoll):
-            right = right.roll()
-        left = int(left)
-        right = int(right)
-        return _OP_MAP[op.type](left, right)
+        return Math(*self._values(items))
 
     def substitution(self, items):
-        return self._dialect.get_substitution(items[0].value)
-
-    def alias_def(self, items):
-        self._dialect.add_alias(items[0].value, items[1].value)
+        return Substitution(self._value(items))
 
     def modifier_call(self, items):
-        name, *args = items
-        if args:
-            args = args[0].children
-        return ModifierCall(name.value, self._dialect.get_modifier(name.value), args)
+        name, args = items
+        return ModifierCall(name.value, args)
 
-    def sub_def(self, items):
-        name, value = items
-        if isinstance(name, Token):
-            name = name.value
-        if isinstance(value, Token):
-            value = int(value.value)
-        self._dialect.add_substitution(name, value)
+    def definition(self, items):
+        def_token_type = items[0].type
+        name, def_ = items[1:]
+        if def_token_type.startswith('ALIAS'):
+            type_ = DefinitionType.ALIAS
+        elif def_token_type.startswith('MODIFIER'):
+            type_ = DefinitionType.MODIFIER
+        elif def_token_type.startswith('SUBSTITUTION'):
+            type_ = DefinitionType.SUBSTITUTION
+        return Definition(self._value(name), self._value(def_), type_)
 
-    def _get_relative_dialect(self, name):
-        if name == '^':
-            if not self._dialect.parent:
-                raise Exception()
-            return self._dialect.parent
-        if name == '~':
-            return self._dialect.root
-        return None
-
-    def dialect_name(self, items):
-        return _DialectDefPart(items[0].value, _DialectDefPartRole.DEFINED)
-
-    def dialect_parent(self, items):
-        parent = self._get_relative_dialect(items[0].value)
-        if not parent:
-            parent = Dialect.get_dialect(parent)
-        return _DialectDefPart(parent, _DialectDefPartRole.PARENT)
-
-    def dialect_def(self, items):
-        dialect_name = None
-        parent = None
+    def switch_dialect(self, items):
+        parent = name = None
         for item in items:
-            if item.role == _DialectDefPartRole.PARENT:
-                parent = item.value
-            elif item.role == _DialectDefPartRole.DEFINED:
-                dialect_name = item.value
+            if item.data == 'dialect_parent':
+                parent = self._value(item.children[0])
+            elif item.data == 'dialect_name':
+                name = self._value(item.children[0])
             else:
                 raise Exception()
-        dialect = self._get_relative_dialect(dialect_name)
-        if dialect and parent:
-            raise Exception()
-        self._dialect = Dialect.get_or_create_dialect(dialect, parent or self._dialect)
-
-    def dialect_statement(self, items):
-        return
+        return SwitchDialect(name, parent)
 
     def macro_args(self, items):
         return [item.value.strip() for item in items]
 
     def macro(self, items):
-        name, args = items
-        macro = self._dialect.get_macro(name.value)
-        macro(*args)
+        return MacroCall(self._value(items[0]), items[1])
+
+    def assignment(self, items):
+        cp.cyan(items)
+        exit()
+
+    def reference(self, items):
+        cp.red(items)
+        exit()
+
+    def run(self, items):
+        cp.green(items)
+        exit()
+
+    def args(self, items):
+        return tuple(self._value(a) for a in items)

@@ -15,14 +15,11 @@ default_grammar_file = pathlib.Path(__file__).parent / 'grammar.lark'
 def create_arg_parser():
     argparser = argparse.ArgumentParser(
         __file__, description='Takes the grammar file and saves it to a python module.')
-    argparser.add_argument('-g',
-                           '--grammar',
-                           help='The grammar file to use.',
-                           default=default_grammar_file)
     argparser.add_argument('-o',
                            '--output',
                            help='Where to save the generated file to.',
                            default=default_out_file)
+    argparser.add_argument('grammar', help='The grammar file to use.', default=default_grammar_file)
     return argparser
 
 
@@ -35,7 +32,8 @@ def main():
             print('# pylint: skip-file')
             # Next, tell yapf not to try and format it
             print('# yapf: disable')
-            build_parser(args.grammar, 'start')
+            with open(args.grammar) as grammar_file:
+                build_parser(grammar_file, 'start')
     print(f'Saved grammar to {args.output}')
 
 

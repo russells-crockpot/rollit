@@ -10,8 +10,17 @@ from .elements import RollResults
 from ._parser import Token
 
 __all__ = [
+    'Resolvable',
+    'DefinitionType',
+    'Definition',
+    'MacroCall',
     'ModifierCall',
+    'Substitution',
+    'SwitchDialect',
+    'Repeat',
+    'Math',
     'DiceRoll',
+    'Unary',
 ]
 
 
@@ -65,7 +74,7 @@ class MacroCall(namedtuple('_MacroCallBase', ('name', 'args')), Resolvable):
     """
 
     def resolve(self, context):
-        return context.get_macro(self.name)
+        return context.current_dialect.get_macro(self.name)
 
 
 class ModifierCall(namedtuple('_ModifierCallBase', ('name', 'args')), Resolvable):
@@ -73,7 +82,8 @@ class ModifierCall(namedtuple('_ModifierCallBase', ('name', 'args')), Resolvable
     """
 
     def resolve(self, context):
-        return context.get_modifier(self.name)
+        args = (self.value_for(a, context) for a in self.args)
+        return context.current_dialect.get_modifier(self.name), args
 
 
 class Substitution(namedtuple('_SubstitutionBase', ('name',)), Resolvable):
@@ -81,25 +91,15 @@ class Substitution(namedtuple('_SubstitutionBase', ('name',)), Resolvable):
     """
 
     def resolve(self, context):
-        return context.get_substitution(self.name)
+        return context.current_dialect.get_substitution(self.name)
 
 
-class DialectSwitch(namedtuple('_DialectSwitchBase', ('name', 'parent')), Resolvable):
+class SwitchDialect(namedtuple('_SwitchDialectBase', ('name', 'parent')), Resolvable):
     """
     """
-
-    @staticmethod
-    def _get_dialect(name, dialect):
-        if name == '^':
-            if not dialect.parent:
-                raise Exception()
-            return dialect.parent
-        if name == '~':
-            return dialect.root
-        return None
 
     def resolve(self, context):
-        pass
+        context.current_dialect = context.get_or_create_dialect(self.name, self.parent)
 
 
 class Repeat(namedtuple('_RepeatBase', ('statement', 'times')), Resolvable):
@@ -110,6 +110,19 @@ class Repeat(namedtuple('_RepeatBase', ('statement', 'times')), Resolvable):
         return tuple(
             self.value_for(self.statement, context)
             for _ in range(self.value_for(self.times, context)))
+
+
+class Unary(namedtuple('_UnaryBase', ('sign', 'value')), Resolvable):
+    """
+    """
+    _SIGN_OPS = {'-': lambda x: -x}
+
+    def resolve(self, context):
+        value = self.value_for(self.value, context)
+        return self._SIGN_OPS[self.sign](value)
+
+    def __str__(self):
+        return f'{self.sign}{self.value}'
 
 
 class Math(namedtuple('_MathBase', ('left', 'op', 'right')), Resolvable):
@@ -126,6 +139,9 @@ class Math(namedtuple('_MathBase', ('left', 'op', 'right')), Resolvable):
     def resolve(self, context):
         return self._OP_MAP[self.op](self.value_for(self.left, context),
                                      self.value_for(self.right, context))
+
+    def __str__(self):
+        return f'<{type(self).__qualname__}: {self.left} {self.op} {self.right}>'
 
 
 class DiceRoll(namedtuple('_DiceRollBase', ('number_of_dice', 'sides', 'modifiers')), Resolvable):
@@ -172,8 +188,8 @@ class DiceRoll(namedtuple('_DiceRollBase', ('number_of_dice', 'sides', 'modifier
         if isinstance(sides, RollResults):
             sides = sides.value
         results = RollResults(number_of_dice, sides)
-        for name, args in self.modifiers:
-            modifier = context.get_modifier(name)
+        for modifier_call in self.modifiers:
+            modifier, args = self.value_for(modifier_call, context)
             new_args = []
             for arg in args:
                 arg = self.value_for(arg, context)
