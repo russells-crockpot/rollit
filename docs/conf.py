@@ -23,7 +23,7 @@ parent_dir = os.path.dirname(os.path.dirname(__file__))
 # make sure that the chital source directory is first on the list
 sys.path.insert(0, os.path.join(parent_dir, 'src'))
 
-project = 'Roll With It'
+project = 'RollIt'
 
 copyright = date.today().strftime('%Y, Brendan McGloin')
 author = 'Brendan McGloin'
@@ -126,7 +126,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Roll With It'
+htmlhelp_basename = 'RollIt'
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -152,14 +152,14 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Roll With It.tex', 'Roll With It Documentation', 'Brendan McGloin', 'manual'),
+    (master_doc, 'RollIt.tex', 'RollIt Documentation', 'Brendan McGloin', 'manual'),
 ]
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, 'roll-with-it', 'Roll With It Documentation', [author], 1)]
+man_pages = [(master_doc, 'rollit', 'RollIt Documentation', [author], 1)]
 
 # -- Options for Texinfo output ----------------------------------------------
 
@@ -167,7 +167,7 @@ man_pages = [(master_doc, 'roll-with-it', 'Roll With It Documentation', [author]
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Roll With It', 'Roll With It Documentation', author, 'Roll With It',
+    (master_doc, 'RollIt', 'RollIt Documentation', author, 'RollIt',
      'A dice roller interface and library built in python.', 'Miscellaneous'),
 ]
 
@@ -186,8 +186,8 @@ autosectionlabel_prefix_document = True
 
 # Stuff for issues
 #TODO May need to change
-issues_uri = 'https://github.com/russels-crockpot/roll-with-it/issues{issue}'
-issues_pr = 'https://github.com/russels-crockpot/roll-with-it/pulls/{pr}'
+issues_uri = 'https://github.com/russels-crockpot/rollit/issues{issue}'
+issues_pr = 'https://github.com/russels-crockpot/rollit/pulls/{pr}'
 issues_user_uri = 'https://github.com/{user}'
 
 spelling_lang = 'en_US'

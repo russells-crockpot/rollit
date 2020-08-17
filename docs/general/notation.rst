@@ -4,7 +4,7 @@
 Notation
 ########
 
-Roll With It uses a super set of
+RollIt uses a super set of
 `standard dice notation <https://en.wikipedia.org/wiki/Dice_notation>`_. The primary differences are
 modifiers and substitutions.
 
