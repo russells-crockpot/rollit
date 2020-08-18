@@ -8,12 +8,6 @@ repos:
 #     entry: ./generate-parser.py
 #     language: python
 #     files: '^grammar.lark$'
-- repo: git@github.com:Yelp/detect-secrets
-  rev: v0.13.1
-  hooks:
-  - id: detect-secrets
-  args: ['--baseline', '.secrets.baseline']
-  exclude: .*/tests/.*
 - repo: https://github.com/pre-commit/pre-commit-hooks.git
   rev: v2.5.0
   hooks:
