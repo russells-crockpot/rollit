@@ -15,10 +15,13 @@ Submodules
 .. toctree::
    :maxdepth: 5
 
-   rollit.ast
    rollit.dialect
+   rollit.elements
    rollit.exceptions
+   rollit.execution
    rollit.model
+   rollit.parser
+   rollit.semantics
 
 Module contents
 ---------------
