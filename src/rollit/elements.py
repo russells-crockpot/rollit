@@ -45,9 +45,15 @@ class RollResults:
     """
     __slots__ = ('rolls', '_value')
 
-    def __init__(self, number_of_dice, sides):
-        self.rolls = [random.randint(1, sides) for _ in range(number_of_dice)]  # nosec
+    def __init__(self, rolls):
+        self.rolls = list(rolls)
         self._value = None
+
+    @classmethod
+    def roll(cls, number_of_dice, sides):
+        """
+        """
+        return cls([random.randint(1, sides) for _ in range(number_of_dice)])  # nosec
 
     @property
     def value(self):

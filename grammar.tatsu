@@ -1,0 +1,149 @@
+@@grammar::RollIt
+@@eol_comments:: /\/\/.*?$"/
+@@keyword:: use roll if else elif when while for do until and or not in define
+@@keyword:: dice die result modifier int float number clear macro
+
+start
+    =
+    {statement} $
+    ;
+
+
+@name
+NAME::IGNORE
+    = /[a-zA-Z_][a-zA-Z_0-9]*/ ;
+@name
+KEBAB_NAME::IGNORE
+    = /[a-zA-Z_]([\-a-zA-Z_0-9]*[\-a-zA-Z_0-9])?/ ;
+
+FLOAT::pybuiltin_float
+    = /-?\d*\.\d+/ ;
+
+INT::pybuiltin_int
+    = /-?\d+/ ;
+
+NUMBER::IGNORE
+    =
+    | FLOAT
+    | INT
+    ;
+
+modifier_args::IGNORE
+    = '(' ','%{ @+:expression } ')';
+
+DIALECT_NAME::IGNORE
+    =
+    | KEBAB_NAME
+    | '~'
+    | '^'
+    ;
+
+dialect_def::IGNORE
+    =
+    | name:DIALECT_NAME ['(' parent:[DIALECT_NAME] ')']
+    | name:[DIALECT_NAME] '(' parent:DIALECT_NAME ')'
+    ;
+
+switch_dialect::Use
+    = 'use'  ~ @:dialect_def ;
+
+macro::MacroCall
+    = 'macro' ~ name:KEBAB_NAME args:','%{ @+:/[^,]*/};
+
+modifier_call::ModifierCall
+    = '->' ~ name:pack_expr args:[modifier_args] ;
+
+modify::Modify
+    = modifying: pack_expr modifiers:{modifier_call}+;
+
+dice::Dice
+    = number_of_dice:[factor] /d|D/ sides:factor ;
+
+pack::Pack
+    = times:[dice_expr] '@' ~ packed:expression;
+
+length::Length
+    = '#' ~ value:unary_expr;
+
+freeze::Freeze
+    = '!' ~ value:unary_expr;
+
+roll::Roll
+    = 'roll' ~ value:expression;
+
+
+expression::IGNORE
+    =
+    roll_expr
+    ;
+
+roll_expr::IGNORE
+    =
+    | roll
+    | math
+    ;
+
+math::Math
+    =
+    | left:expression op:('+'|'-') right:term
+    | term
+    ;
+
+term::Math
+    =
+    | left:expression op:('*'|'/'|'//') right:modify_expr
+    | unary_expr
+    ;
+
+unary_expr::IGNORE
+    =
+    | length
+    | freeze
+    | modify_expr
+    ;
+
+modify_expr::IGNORE
+    =
+    | modify
+    | pack_expr
+    ;
+
+pack_expr::IGNORE
+    =
+    | pack
+    | dice_expr
+    ;
+
+dice_expr::IGNORE
+    =
+    | dice
+    | factor
+    ;
+
+factor::IGNORE
+    =
+    | '(' @:expression ')'
+    | freeze
+    | length
+    | atom
+    ;
+
+reference::Reference
+    = NAME;
+
+atom::IGNORE
+    =
+    | NUMBER
+    | reference
+    ;
+
+assignment::Assignment
+    = name:NAME '=' value:expression ;
+
+statement::IGNORE
+    =
+    | assignment
+    | expression
+    | switch_dialect
+    | macro
+    ;

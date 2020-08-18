@@ -12,7 +12,7 @@ class Dialect:
     """
     """
     holder = None
-    substitutions = None
+    variables = None
     modifiers = None
     macros = None
     _is_root = None
@@ -33,11 +33,11 @@ class Dialect:
                 holder = {}
         self.holder = holder
         if not parent:
-            self.substitutions = ChainMap()
+            self.variables = ChainMap()
             self.modifiers = ChainMap()
             self.macros = ChainMap()
         else:
-            self.substitutions = ChainMap({}, *parent.substitutions.maps)
+            self.variables = ChainMap({}, *parent.variables.maps)
             self.modifiers = ChainMap({}, *parent.modifiers.maps)
             self.macros = ChainMap({}, *parent.macros.maps)
         self.parent = parent
@@ -51,31 +51,38 @@ class Dialect:
     def add_alias(self, alias, name):
         """
         """
-        if name in self.substitutions:
-            self.substitutions[alias] = self.substitutions[name]
+        if name in self.variables:
+            self.variables[alias] = self.variables[name]
             self.modifiers.pop(alias, None)
         elif name in self.modifiers:
             self.modifiers[alias] = self.modifiers[name]
-            self.substitutions.pop(alias, None)
+            self.variables.pop(alias, None)
         else:
             raise InvalidNameError()
 
-    def add_substitution(self, name, value):
+    def add_variable(self, name, value):
         """
         """
-        self.substitutions[name] = value
+        self.variables[name] = value
 
-    def get_substitution(self, name):
+    def get_variable(self, name):
         """
         """
-        if name not in self.substitutions:
+        if name not in self.variables:
             raise InvalidNameError()
-        return self.substitutions[name]
+        return self.variables[name]
 
     def add_modifier(self, name, definition):
         """
         """
         self.modifiers[name] = definition
+
+    def get_modifier(self, name):
+        """
+        """
+        if name not in self.modifiers:
+            raise InvalidNameError()
+        return self.modifiers[name]
 
     def get_macro(self, name):
         """
@@ -88,13 +95,6 @@ class Dialect:
         """
         """
         self.macros[macro.name] = macro
-
-    def get_modifier(self, name):
-        """
-        """
-        if name not in self.modifiers:
-            raise InvalidNameError()
-        return self.modifiers[name]
 
     @property
     def root(self):

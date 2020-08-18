@@ -135,7 +135,7 @@ tmp/
 t.py
 ignore/
 _build/
-sandbox.py
+*sandbox.py
 venv/
 t
 t[0-9]

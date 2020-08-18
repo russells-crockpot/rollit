@@ -5,7 +5,7 @@ from contextlib import suppress
 from .dialect import Dialect
 from .dialects.default import dialect as default_dialect
 from .exceptions import InvalidNameError
-from .parser import Parser
+from .model import Resolvable
 
 __all__ = [
     'Session',
@@ -60,12 +60,30 @@ class ExecutionContext:
                 return dialect
         return Dialect(name, parent, holder=self._dialect_holder)
 
+    def value_for(self, item):
+        """
+        """
+        if isinstance(item, Resolvable):
+            return item.resolve(self)
+        return item
+
+    def add_variable(self, name, value):
+        """
+        """
+        self.current_dialect.add_variable(name, value)
+
+    def get_variable(self, name):
+        """
+        """
+        return self.current_dialect.get_variable(name)
+
+    def __getitem__(self, item):
+        return self.value_for(item)
+
 
 class Session:
     """
     """
-
-    _parser = Parser()
 
     def __init__(self, root_dialect=default_dialect):
         self._context = ExecutionContext(root_dialect)
