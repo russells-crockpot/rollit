@@ -30,7 +30,6 @@ repos:
   rev: v0.29.0
   hooks:
   - id: yapf
-    exclude: '^src/rollit/_parser.py$'
     args: ['-i', '-vv']
 - repo: https://github.com/adrienverge/yamllint.git
   rev: v1.21.0
