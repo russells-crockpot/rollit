@@ -1,17 +1,24 @@
 @@grammar::RollIt
 @@eol_comments:: /\/\/.*?$"/
 @@keyword:: use roll if else elif when while for do until and or not in define
-@@keyword:: dice die result modifier int float number clear macro
+@@keyword:: dice die result modifier int float number clear macro load as from
 
 start
     =
-    {statement} $
+     statement $
+     #[statement] {STATEMENT_END statement} [STATEMENT_END] $
     ;
 
+STATEMENT_END::IGNORE
+    =
+    | /[\n\r]+/
+    | {'|'}+
+    ;
 
 @name
 NAME::IGNORE
-    = /[a-zA-Z_][a-zA-Z_0-9]*/ ;
+    = /[a-zA-Z_][a-zA-Z_0-9]*/;
+
 @name
 KEBAB_NAME::IGNORE
     = /[a-zA-Z_]([\-a-zA-Z_0-9]*[\-a-zA-Z_0-9])?/ ;
@@ -28,9 +35,6 @@ NUMBER::IGNORE
     | INT
     ;
 
-modifier_args::IGNORE
-    = '(' ','%{ @+:expression } ')';
-
 DIALECT_NAME::IGNORE
     =
     | KEBAB_NAME
@@ -44,23 +48,42 @@ dialect_def::IGNORE
     | name:[DIALECT_NAME] '(' parent:DIALECT_NAME ')'
     ;
 
-switch_dialect::Use
+use::Use
     = 'use'  ~ @:dialect_def ;
 
+dialects_list::IGNORE
+    =
+    | ','%{ @+:KEBAB_NAME }+
+    | '(' ','%{ @+:KEBAB_NAME }+ ')'
+    ;
+
+loadables_list::IGNORE
+    =
+    | '*'
+    | ','%{ @+:NAME }+
+    | '(' ','%{ @+:NAME }+ ')'
+    ;
+
+load::Load
+    = 'load' dialects:dialects_list;
+
+load_from::LoadFrom
+    =
+    | 'load' loadables:loadables_list 'from' dialect:KEBAB_NAME
+    | load
+    ;
+
 macro::MacroCall
-    = 'macro' ~ name:KEBAB_NAME args:','%{ @+:/[^,]*/};
+    = 'macro' ~ name:KEBAB_NAME args:','%{ /[^,]*/};
+
+modifier_args::IGNORE
+    = '(' ','%{ @+:expression } ')';
 
 modifier_call::ModifierCall
-    = '->' ~ name:pack_expr args:[modifier_args] ;
-
-modify::Modify
-    = modifying: pack_expr modifiers:{modifier_call}+;
+    = '->' ~ modifier:reference args:[modifier_args] ;
 
 dice::Dice
     = number_of_dice:[factor] /d|D/ sides:factor ;
-
-pack::Pack
-    = times:[dice_expr] '@' ~ packed:expression;
 
 length::Length
     = '#' ~ value:unary_expr;
@@ -68,30 +91,51 @@ length::Length
 freeze::Freeze
     = '!' ~ value:unary_expr;
 
-roll::Roll
-    = 'roll' ~ value:expression;
+reference::Reference
+    =
+    | NAME
+    | '?'
+    ;
 
+accessor::Accessor
+    =
+    | '.' value:NAME
+    | '[' value:expression ']'
+    ;
 
 expression::IGNORE
-    =
-    roll_expr
-    ;
-
-roll_expr::IGNORE
-    =
-    | roll
-    | math
-    ;
+    = math;
 
 math::Math
     =
-    | left:expression op:('+'|'-') right:term
-    | term
+    | left:math op:('+'|'-') right:math
+    | left:access op:('*'|'//'|'/') right:access
+    | access
     ;
 
-term::Math
+access::Access
     =
-    | left:expression op:('*'|'/'|'//') right:modify_expr
+    | accessing:pack accessors:{accessor}+
+    | pack
+    ;
+
+pack::Pack
+    =
+    | times:[unary_expr] '@' ~ packed:modify
+    | modify
+    ;
+
+
+modify::Modify
+    =
+    | modifying:pack  modifiers:{modifier_call}+
+    | roll
+    ;
+
+
+roll::Roll
+    =
+    | 'roll' ~ value:expression
     | unary_expr
     ;
 
@@ -99,18 +143,6 @@ unary_expr::IGNORE
     =
     | length
     | freeze
-    | modify_expr
-    ;
-
-modify_expr::IGNORE
-    =
-    | modify
-    | pack_expr
-    ;
-
-pack_expr::IGNORE
-    =
-    | pack
     | dice_expr
     ;
 
@@ -123,13 +155,8 @@ dice_expr::IGNORE
 factor::IGNORE
     =
     | '(' @:expression ')'
-    | freeze
-    | length
     | atom
     ;
-
-reference::Reference
-    = NAME;
 
 atom::IGNORE
     =
@@ -138,12 +165,14 @@ atom::IGNORE
     ;
 
 assignment::Assignment
-    = name:NAME '=' value:expression ;
+    = name:NAME '<-' ~ value:expression ;
 
 statement::IGNORE
     =
-    | assignment
     | expression
-    | switch_dialect
+    | assignment
+    | use
+    | load_from
+    #| load
     | macro
     ;

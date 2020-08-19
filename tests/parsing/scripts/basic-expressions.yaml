@@ -1,0 +1,246 @@
+name: basic_expressions
+categories:
+- expressions
+tests:
+- name: basic_atoms
+  categories:
+  - atoms
+  tests:
+  - script: '1'
+    result: '1'
+  - script: '-2'
+    result: '-2'
+  - script: '3.0'
+    result: '3.0'
+  - script: '-4.5'
+    result: '-4.5'
+
+- name: basic_math
+  categories:
+  - math
+  tests:
+  - script: '1 + 2'
+    result:
+      left: '1'
+      op: '+'
+      right: '2'
+  - script: '2 / 1'
+    result:
+      left: '2'
+      op: '/'
+      right: '1'
+  - script: '4 // 2'
+    result:
+      left: '4'
+      op: '//'
+      right: '2'
+
+- name: basic_order_of_operations
+  categories:
+  - math
+  tests:
+  - script: '1 + 2 * 3'
+    result:
+      left: '1'
+      op: '+'
+      right:
+        left: '2'
+        op: '*'
+        right: '3'
+  - script: '4 * 5 + 6'
+    result:
+      left:
+        left: '4'
+        op: '*'
+        right: '5'
+      op: '+'
+      right: '6'
+
+- name: basic_dice
+  categories:
+  - dice
+  tests:
+  - script: '1d6'
+    result:
+      number_of_dice: '1'
+      sides: '6'
+  - script: '1 + 2d3'
+    result:
+      left: '1'
+      op: '+'
+      right:
+        number_of_dice: '2'
+        sides: '3'
+  - script: '2d3 * 4'
+    result:
+      left:
+        number_of_dice: '2'
+        sides: '3'
+      op: '*'
+      right: '4'
+  - script: '(1+2)d3'
+    result:
+      number_of_dice:
+        left: '1'
+        op: '+'
+        right: '2'
+      sides: '3'
+  - script: '1d(2 *3)'
+    result:
+      number_of_dice: '1'
+      sides:
+        left: '2'
+        op: '*'
+        right: '3'
+  - script: '(1d6)d4'
+    result:
+      number_of_dice:
+        number_of_dice: '1'
+        sides: '6'
+      sides: '4'
+  - script: '2d(3d4)'
+    result:
+      number_of_dice: '2'
+      sides:
+        number_of_dice: '3'
+        sides: '4'
+  - script: '(7d3)d(2d5)'
+    result:
+      number_of_dice:
+        number_of_dice: '7'
+        sides: '3'
+      sides:
+        number_of_dice: '2'
+        sides: '5'
+
+- name: basic_pack
+  categories:
+  - pack
+  tests:
+  - script: '1@1'
+    result:
+      times: '1'
+      packed: '1'
+  - script: '@1'
+    result:
+      times: null
+      packed: '1'
+  - script: '1@2d6'
+    result:
+      packed:
+        number_of_dice: '2'
+        sides: '6'
+      times: '1'
+  - script: '3d4@?'
+    result:
+      times:
+        number_of_dice: '3'
+        sides: '4'
+      packed: '?'
+  - script: '1 + 2@6'
+    result:
+      left: '1'
+      op: '+'
+      right:
+        times: '2'
+        packed: '6'
+  - script: '(1 + 2)@6'
+    result:
+      times:
+        left: '1'
+        op: '+'
+        right: '2'
+      packed: '6'
+  - script: '3@11 * 8'
+    result:
+      left:
+        times: '3'
+        packed: '11'
+      op: '*'
+      right: '8'
+  - script: '3@(11 + 8)'
+    result:
+      times: '3'
+      packed:
+        left: '11'
+        op: '+'
+        right: '8'
+
+- name: basic_modify
+  categories:
+  - modify
+  - modifiers
+  tests:
+  - script: '?->top'
+    result:
+      modifying: '?'
+      modifiers:
+      - name: 'top'
+        args: null
+  - script: 'test->top(2)'
+    result:
+      modifying: 'test'
+      modifiers:
+      - name: 'top'
+        args: ['2']
+  - script: '1d6->bottom'
+    result:
+      modifying:
+        number_of_dice: '1'
+        sides: '6'
+      modifiers:
+      - name: 'bottom'
+        args: null
+  - script: '1d6->bottom(2d3)'
+    result:
+      modifying:
+        number_of_dice: '1'
+        sides: '6'
+      modifiers:
+      - name: 'bottom'
+        args:
+        - number_of_dice: '2'
+          sides: '3'
+  - script: '1d6->bottom(2d3)->top'
+    result:
+      modifying:
+        number_of_dice: '1'
+        sides: '6'
+      modifiers:
+      - name: 'bottom'
+        args:
+        - number_of_dice: '2'
+          sides: '3'
+      - name: 'top'
+        args: null
+  - script: '1d6->bottom(2d3)->top(1)'
+    result:
+      modifying:
+        number_of_dice: '1'
+        sides: '6'
+      modifiers:
+      - name: 'bottom'
+        args:
+        - number_of_dice: '2'
+          sides: '3'
+      - name: 'top'
+        args: ['1']
+  - script: '1d6->bottom(2d3)->top(1, 4d5 - 6, 7)'
+    result:
+      modifying:
+        number_of_dice: '1'
+        sides: '6'
+      modifiers:
+      - name: 'bottom'
+        args:
+        - number_of_dice: '2'
+          sides: '3'
+      - name: 'top'
+        args:
+        - '1'
+        - left:
+            number_of_dice: '4'
+            sides: '5'
+          op: '-'
+          right: '6'
+        - '7'
