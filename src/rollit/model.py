@@ -7,20 +7,6 @@ from contextlib import suppress
 
 from .elements import RollResults
 
-__all__ = [
-    'ModelElement',
-    'ModifierCall',
-    'Assignment',
-    'Reference',
-    'Use',
-    'Math',
-    'Dice',
-    'Modify',
-    'Pack',
-    'Freeze',
-    'Length',
-]
-
 
 class ModelElement(metaclass=ABCMeta):
     """
@@ -191,14 +177,6 @@ class Dice(namedtuple('_DiceBase', ('number_of_dice', 'sides')), ModelElement):
         return f'<Roll: {self.number_of_dice}d{self.sides}>'
 
 
-class Freeze(SingletonElement):
-    """
-    """
-
-    def resolve(self, context):
-        raise NotImplementedError()
-
-
 class Length(SingletonElement):
     """
     """
@@ -265,6 +243,54 @@ class Fill(namedtuple('_FillBase', ('size', 'value')), ModelElement):
 
 
 class RollMath(namedtuple('_RollMathBase', ('left', 'op', 'right')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class Comparison(namedtuple('_ComparisonBase', ('left', 'op', 'right')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class Negation(SingletonElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class If(namedtuple('_IfBase', ('predicate', 'then', 'otherwise')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class UseIf(namedtuple('_UseIfBase', ('if_true', 'predicate', 'if_false')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class DoUntil(namedtuple('_DoUntilBase', ('do', 'until', 'otherwise')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class UntilDo(namedtuple('_UntilDoBase', ('until', 'do', 'otherwise')), ModelElement):
     """
     """
 

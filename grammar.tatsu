@@ -1,7 +1,7 @@
 @@grammar::RollIt
 @@eol_comments:: /\/\/.*?$"/
-@@keyword:: use roll if then when while for do until and or not in define
-@@keyword:: int float number clear load as from
+@@keyword:: use roll if then when while for do until and or not define
+@@keyword:: int float number clear load as from has
 @@keyword:: otherwise skip unless
 
 #start = expression $;
@@ -23,6 +23,17 @@ NAME::IGNORE
 KEBAB_NAME::IGNORE
     = /[a-zA-Z_]([\-a-zA-Z_0-9]*[\-a-zA-Z_0-9])?/ ;
 
+COMP_OP::IGNORE
+    =
+    | '<'
+    | '>'
+    | '=='
+    | '>='
+    | '<='
+    | '!='
+    | 'has'
+    ;
+
 FLOAT::pybuiltin_float
     = /-?\d*\.\d+/ ;
 
@@ -35,21 +46,15 @@ NUMBER::IGNORE
 return::Return
     = '@' @:expression;
 
-predicate::Test
-    = 'TODO';
-
 if::If
-    = 'if' predicate:predicate 'then' body:expression ['otherwise' expression];
-
-use_if::UseWhen
-    = 'use'  ~ if_true:expression 'if' predicate:predicate 'otherwise' if_false:expression;
+    = 'if' predicate:predicate 'then' then:expression ['otherwise' otherwise:statement];
 
 # Loops
 do_until::DoUntil
-    = 'do' do:expression 'until' until:predicate ['otherwise' otherwise:expression];
+    = 'do' do:statement 'until' until:predicate ['otherwise' otherwise:statement];
 
 until_do::UntilDo
-    = 'until' until:predicate 'do' do:expression ['otherwise' otherwise:expression];
+    = 'until' until:predicate 'do' do:statement ['otherwise' otherwise:statement];
 
 flow_control::FlowControl
     = 'skip' | 'continue';
@@ -77,13 +82,14 @@ modifier_args::IGNORE
     = '(' ','%{ @+:expression } [','] ')';
 
 modifier_call::ModifierCall
-    = '->' ~ modifier:reference args:[modifier_args] ;
+    = '->' modifier:reference args:[modifier_args] ;
 
 length::Length
     = '#' ~ @:access;
 
 reference::Reference
     = NAME | '?';
+
 
 fill::Fill
     = size:[expression] '@' value:[expression];
@@ -100,8 +106,29 @@ accessor::IGNORE
     | roll
     ;
 
+negation::Negation
+    = 'not' @:predicate;
+
 expression::IGNORE
-    = roll_math;
+    = use_if;
+
+use_if::UseIf
+    =
+    | 'use' ~ if_true:expression 'if' predicate:predicate 'otherwise' if_false:expression
+    | predicate
+    ;
+
+predicate::IGNORE
+    =
+    | &'not' ~ @:negation
+    | comparison
+    ;
+
+comparison::Comparison
+    =
+    | left:comparison op:(>COMP_OP) right:expression
+    | roll_math
+    ;
 
 # &: combine rolls
 # ^: remove x number of dice
@@ -172,6 +199,7 @@ assignment::Assignment
 
 basic_statement
     =
+    | &'if' ~ if
     | expression
     | assignment
     | load_from
