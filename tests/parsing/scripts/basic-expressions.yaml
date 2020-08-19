@@ -587,11 +587,10 @@ tests:
           value: 'top'
         args: null
         _class: ModifierCall
-#FIXME
-#  - script: '[1]'
-#    result:
-#      _class: Roll
-#      value: 1
+  - script: '[1]'
+    result:
+      _class: Roll
+      value: 1
   - script: '[1 + 2]'
     result:
       _class: Roll
@@ -638,6 +637,68 @@ tests:
             left: 2
             op: '-'
             right: 4
+
+- name: basic_fills
+  categories:
+  - rolls
+  - fills
+  tests:
+  - script: '[@]'
+    result:
+      _class: Roll
+      value:
+        _class: Fill
+        size: null
+        value: null
+  - script: '[1@]'
+    result:
+      _class: Roll
+      value:
+        _class: Fill
+        size: 1
+        value: null
+  - script: '[@2]'
+    result:
+      _class: Roll
+      value:
+        _class: Fill
+        size: null
+        value: 2
+  - script: '[1@2]'
+    result:
+      _class: Roll
+      value:
+        _class: Fill
+        size: 1
+        value: 2
+  - script: '[1d6@2d3]'
+    result:
+      _class: Roll
+      value:
+        _class: Fill
+        size:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        value:
+          _class: Dice
+          number_of_dice: 2
+          sides: 3
+  - script: '[1d6@[2d3]]'
+    result:
+      _class: Roll
+      value:
+        _class: Fill
+        size:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        value:
+          _class: Roll
+          value:
+            _class: Dice
+            number_of_dice: 2
+            sides: 3
 #  - script: '[]'
 #    result:
 #      _class: Roll

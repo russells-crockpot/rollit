@@ -20,18 +20,6 @@ class RollItSemantics:
             model_cls = getattr(module, model_cls)
             with suppress(TypeError):
                 if (ast is None and model_cls.accepts_none) or model_cls.singleton:
-                    # cp.green(f'{model_cls=}')
-                    # cp.yellow(f'{ast=}')
-                    # cp.red(f'{model_cls=}')
-                    rval = model_cls(ast)
-                    # cp.cyan(f'{rval=}')
-                    # cp.magenta(f'{type(rval)=}')
-                    return rval
-                # cp.green(f'{model_cls=}')
-                # cp.yellow(f'{ast=}')
-                # cp.red(f'{model_cls=}')
-                rval = model_cls(**ast)
-                # cp.cyan(f'{rval=}')
-                # cp.magenta(f'{type(rval)=}')
-                return rval
+                    return model_cls(ast)
+                return model_cls(**ast)
         return ast

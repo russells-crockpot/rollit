@@ -1,7 +1,7 @@
 @@grammar::RollIt
 @@eol_comments:: /\/\/.*?$"/
-@@keyword:: use roll if else elif when while for do until and or not in define
-@@keyword:: dice die result modifier int float number clear macro load as from
+@@keyword:: use roll if then when while for do until and or not in define
+@@keyword:: int float number clear load as from
 @@keyword:: otherwise skip unless
 
 #start = expression $;
@@ -35,18 +35,21 @@ NUMBER::IGNORE
 return::Return
     = '@' @:expression;
 
-test::Test
+predicate::Test
     = 'TODO';
 
-use_when::UseWhen
-    = 'use'  ~ if_true:expression 'when' predicate:test 'otherwise' if_false:expression;
+if::If
+    = 'if' predicate:predicate 'then' body:expression ['otherwise' expression];
+
+use_if::UseWhen
+    = 'use'  ~ if_true:expression 'if' predicate:predicate 'otherwise' if_false:expression;
 
 # Loops
 do_until::DoUntil
-    = 'do' do:expression 'until' until:test;
+    = 'do' do:expression 'until' until:predicate ['otherwise' otherwise:expression];
 
 until_do::UntilDo
-    = 'until' until:test 'do' do:expression;
+    = 'until' until:predicate 'do' do:expression ['otherwise' otherwise:expression];
 
 flow_control::FlowControl
     = 'skip' | 'continue';
@@ -79,15 +82,15 @@ modifier_call::ModifierCall
 length::Length
     = '#' ~ @:access;
 
-freeze::Freeze
-    = '!' ~ @:access;
-
 reference::Reference
     = NAME | '?';
 
+fill::Fill
+    = size:[expression] '@' value:[expression];
+
 roll::Roll
     =
-    | '[' !']' ~ value:[(expression | '*'| '-')]']'
+    | '[' !']' ~ value:(fill | expression | '*'| '-')']'
     | '[' &']' ~ value:`'-'` ']'
     ;
 
@@ -98,7 +101,15 @@ accessor::IGNORE
     ;
 
 expression::IGNORE
-    = math;
+    = roll_math;
+
+# &: combine rolls
+# ^: remove x number of dice
+roll_math::RollMath
+    =
+    | right:modify op:('&' | '^') left: expression
+    | math
+    ;
 
 math::Math
     =
@@ -116,7 +127,6 @@ access::Access
 unary_expr::IGNORE
     =
     | &'#' ~ length
-    | &'!' ~ freeze
     | modify
     ;
 
@@ -134,7 +144,7 @@ dice::Dice
 
 block::IGNORE
     =
-    | '{' ~ @+:{statement} '}'
+    | '{' ~ @:{statement} '}'
     | roll_expr
     ;
 

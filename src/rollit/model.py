@@ -44,7 +44,7 @@ class SingletonElement(tuple, ModelElement):
     def __new__(cls, value):
         with suppress(AttributeError, TypeError):
             value = value['value']
-        if isinstance(value, (str, ModelElement)):
+        if isinstance(value, (str, ModelElement)) or not hasattr(value, '__iter__'):
             value = (value,)
         return super().__new__(cls, value)
 
@@ -207,7 +207,6 @@ class Length(SingletonElement):
         raise NotImplementedError()
 
 
-# class Roll(namedtuple('_RollBase', ('value')), ModelElement):
 class Roll(SingletonElement):
     """
     """
@@ -245,7 +244,27 @@ statement.singleton = True
 statement.accepts_none = True
 
 
-class Block(namedtuple('_BlockBase', ('statements',)), ModelElement):
+def blocks(value):
+    """
+    """
+    if 'statements' not in value:
+        return value
+    return value['statements']
+
+
+blocks.singleton = True
+blocks.accepts_none = True
+
+
+class Fill(namedtuple('_FillBase', ('size', 'value')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class RollMath(namedtuple('_RollMathBase', ('left', 'op', 'right')), ModelElement):
     """
     """
 
@@ -254,8 +273,8 @@ class Block(namedtuple('_BlockBase', ('statements',)), ModelElement):
 
 
 # class X(namedtuple('_XBase', ('',)), ModelElement):
-# """
-# """
-
-# def resolve(self, context):
-# raise NotImplementedError()
+#     """
+#     """
+#
+#     def resolve(self, context):
+#         raise NotImplementedError()
