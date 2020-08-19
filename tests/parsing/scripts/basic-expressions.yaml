@@ -6,14 +6,14 @@ tests:
   categories:
   - atoms
   tests:
-  - script: '1'
-    result: '1'
-  - script: '-2'
-    result: '-2'
-  - script: '3.0'
-    result: '3.0'
-  - script: '-4.5'
-    result: '-4.5'
+  - script: 1
+    result: 1
+  - script: -2
+    result: -2
+  - script: 3.0
+    result: 3.0
+  - script: -4.5
+    result: -4.5
 
 - name: basic_math
   categories:
@@ -21,19 +21,22 @@ tests:
   tests:
   - script: '1 + 2'
     result:
-      left: '1'
+      _class: Math
+      left: 1
       op: '+'
-      right: '2'
+      right: 2
   - script: '2 / 1'
     result:
-      left: '2'
+      _class: Math
+      left: 2
       op: '/'
-      right: '1'
+      right: 1
   - script: '4 // 2'
     result:
-      left: '4'
+      _class: Math
+      left: 4
       op: '//'
-      right: '2'
+      right: 2
 
 - name: basic_order_of_operations
   categories:
@@ -41,20 +44,24 @@ tests:
   tests:
   - script: '1 + 2 * 3'
     result:
-      left: '1'
+      _class: Math
+      left: 1
       op: '+'
       right:
-        left: '2'
+        _class: Math
+        left: 2
         op: '*'
-        right: '3'
+        right: 3
   - script: '4 * 5 + 6'
     result:
+      _class: Math
       left:
-        left: '4'
+        _class: Math
+        left: 4
         op: '*'
-        right: '5'
+        right: 5
       op: '+'
-      right: '6'
+      right: 6
 
 - name: basic_dice
   categories:
@@ -62,109 +69,72 @@ tests:
   tests:
   - script: '1d6'
     result:
-      number_of_dice: '1'
-      sides: '6'
+      _class: Dice
+      number_of_dice: 1
+      sides: 6
   - script: '1 + 2d3'
     result:
-      left: '1'
+      _class: Math
+      left: 1
       op: '+'
       right:
-        number_of_dice: '2'
-        sides: '3'
+        _class: Dice
+        number_of_dice: 2
+        sides: 3
   - script: '2d3 * 4'
     result:
+      _class: Math
       left:
-        number_of_dice: '2'
-        sides: '3'
+        _class: Dice
+        number_of_dice: 2
+        sides: 3
       op: '*'
-      right: '4'
+      right: 4
   - script: '(1+2)d3'
     result:
+      _class: Dice
       number_of_dice:
-        left: '1'
+        _class: Math
+        left: 1
         op: '+'
-        right: '2'
-      sides: '3'
+        right: 2
+      sides: 3
   - script: '1d(2 *3)'
     result:
-      number_of_dice: '1'
+      _class: Dice
+      number_of_dice: 1
       sides:
-        left: '2'
+        _class: Math
+        left: 2
         op: '*'
-        right: '3'
+        right: 3
   - script: '(1d6)d4'
     result:
+      _class: Dice
       number_of_dice:
-        number_of_dice: '1'
-        sides: '6'
-      sides: '4'
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      sides: 4
   - script: '2d(3d4)'
     result:
-      number_of_dice: '2'
+      _class: Dice
+      number_of_dice: 2
       sides:
-        number_of_dice: '3'
-        sides: '4'
+        _class: Dice
+        number_of_dice: 3
+        sides: 4
   - script: '(7d3)d(2d5)'
     result:
+      _class: Dice
       number_of_dice:
-        number_of_dice: '7'
-        sides: '3'
+        _class: Dice
+        number_of_dice: 7
+        sides: 3
       sides:
-        number_of_dice: '2'
-        sides: '5'
-
-- name: basic_pack
-  categories:
-  - pack
-  tests:
-  - script: '1@1'
-    result:
-      times: '1'
-      packed: '1'
-  - script: '@1'
-    result:
-      times: null
-      packed: '1'
-  - script: '1@2d6'
-    result:
-      packed:
-        number_of_dice: '2'
-        sides: '6'
-      times: '1'
-  - script: '3d4@?'
-    result:
-      times:
-        number_of_dice: '3'
-        sides: '4'
-      packed: '?'
-  - script: '1 + 2@6'
-    result:
-      left: '1'
-      op: '+'
-      right:
-        times: '2'
-        packed: '6'
-  - script: '(1 + 2)@6'
-    result:
-      times:
-        left: '1'
-        op: '+'
-        right: '2'
-      packed: '6'
-  - script: '3@11 * 8'
-    result:
-      left:
-        times: '3'
-        packed: '11'
-      op: '*'
-      right: '8'
-  - script: '3@(11 + 8)'
-    result:
-      times: '3'
-      packed:
-        left: '11'
-        op: '+'
-        right: '8'
+        _class: Dice
+        number_of_dice: 2
+        sides: 5
 
 - name: basic_modify
   categories:
@@ -173,74 +143,513 @@ tests:
   tests:
   - script: '?->top'
     result:
-      modifying: '?'
+      _class: Modify
+      modifying:
+        _class: Reference
+        value: '?'
       modifiers:
-      - name: 'top'
+      - modifier:
+          _class: Reference
+          value: 'top'
         args: null
+        _class: ModifierCall
   - script: 'test->top(2)'
     result:
-      modifying: 'test'
+      _class: Modify
+      modifying:
+        _class: Reference
+        value: 'test'
       modifiers:
-      - name: 'top'
-        args: ['2']
+      - modifier:
+          _class: Reference
+          value: 'top'
+        args: [2]
   - script: '1d6->bottom'
     result:
+      _class: Modify
       modifying:
-        number_of_dice: '1'
-        sides: '6'
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
       modifiers:
-      - name: 'bottom'
+      - modifier:
+          _class: Reference
+          value: 'bottom'
         args: null
+        _class: ModifierCall
   - script: '1d6->bottom(2d3)'
     result:
+      _class: Modify
       modifying:
-        number_of_dice: '1'
-        sides: '6'
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
       modifiers:
-      - name: 'bottom'
+      - modifier:
+          _class: Reference
+          value: 'bottom'
         args:
-        - number_of_dice: '2'
-          sides: '3'
+        - number_of_dice: 2
+          sides: 3
+        _class: ModifierCall
   - script: '1d6->bottom(2d3)->top'
     result:
+      _class: Modify
       modifying:
-        number_of_dice: '1'
-        sides: '6'
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
       modifiers:
-      - name: 'bottom'
+      - modifier:
+          _class: Reference
+          value: 'bottom'
         args:
-        - number_of_dice: '2'
-          sides: '3'
-      - name: 'top'
+        - number_of_dice: 2
+          _class: Dice
+          sides: 3
+        _class: ModifierCall
+      - modifier:
+          _class: Reference
+          value: 'top'
         args: null
+        _class: ModifierCall
   - script: '1d6->bottom(2d3)->top(1)'
     result:
+      _class: Modify
       modifying:
-        number_of_dice: '1'
-        sides: '6'
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
       modifiers:
-      - name: 'bottom'
+      - modifier:
+          _class: Reference
+          value: 'bottom'
         args:
-        - number_of_dice: '2'
-          sides: '3'
-      - name: 'top'
-        args: ['1']
+        - number_of_dice: 2
+          sides: 3
+          _class: Dice
+        _class: ModifierCall
+      - modifier:
+          _class: Reference
+          value: 'top'
+        args: [1]
+        _class: ModifierCall
   - script: '1d6->bottom(2d3)->top(1, 4d5 - 6, 7)'
     result:
+      _class: Modify
       modifying:
-        number_of_dice: '1'
-        sides: '6'
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
       modifiers:
-      - name: 'bottom'
+      - modifier:
+          _class: Reference
+          value: 'bottom'
         args:
-        - number_of_dice: '2'
-          sides: '3'
-      - name: 'top'
+        - number_of_dice: 2
+          sides: 3
+          _class: Dice
+        _class: ModifierCall
+      - modifier:
+          _class: Reference
+          value: 'top'
         args:
-        - '1'
+        - 1
         - left:
-            number_of_dice: '4'
-            sides: '5'
+            number_of_dice: 4
+            sides: 5
+            _class: Dice
           op: '-'
-          right: '6'
-        - '7'
+          right: 6
+          _class: Math
+        - 7
+        _class: ModifierCall
+
+- name: basic_freeze
+  categories:
+  - freeze
+  tests:
+  - script: '!1'
+    result:
+      value: 1
+  - script: '!1d6'
+    result:
+      _class: Freeze
+      value:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+  - script: '!1d6 + 3'
+    result:
+      left:
+        _class: Freeze
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      op: '+'
+      right: 3
+  - script: '!(1d6 + 3)'
+    result:
+      value:
+        _class: Freeze
+        left:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        op: '+'
+        right: 3
+  - script: '3 + !1d6'
+    result:
+      left: 3
+      op: '+'
+      right:
+        _class: Freeze
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+  - script: '!1d6->top(3)'
+    result:
+      value:
+        modifying:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        modifiers:
+        - value: 'top'
+          args: [3]
+  - script: '!?'
+    result:
+      value: '?'
+  - script: '!#1d6'
+    categories:
+    - length
+    result:
+      _class: Freeze
+      value:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+
+- name: basic_length
+  categories:
+  - length
+  tests:
+  - script: '#1'
+    result:
+      _class: Length
+      value: 1
+  - script: '#1d6'
+    result:
+      _class: Length
+      value:
+        number_of_dice: 1
+        sides: 6
+  - script: '#1d6 + 3'
+    result:
+      _class: Math
+      left:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      op: '+'
+      right: 3
+  - script: '#(1d6 + 3)'
+    result:
+      _class: Length
+      value:
+        _class: Math
+        left:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        op: '+'
+        right: 3
+  - script: '3 + #1d6'
+    result:
+      _class: Math
+      left: 3
+      op: '+'
+      right:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+  - script: '#1d6->top(3)'
+    result:
+      _class: Length
+      value:
+        modifying:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        modifiers:
+        - value: 'top'
+          args: [3]
+  - script: '(#1d6)->top(3)'
+    result:
+      modifying:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      modifiers:
+      - value: 'top'
+        args: [3]
+  - script: '(#1d6)->top(3)'
+    result:
+      modifying:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      modifiers:
+      - value: 'top'
+        args: [3]
+  - script: '#?'
+    result:
+      value: '?'
+  - script: '#!1d6'
+    categories:
+    - freeze
+    result:
+      _class: Length
+      value:
+        _class: Freeze
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+
+- name: basic_blocks
+  categories:
+  - blocks
+  tests:
+  - script: '{}'
+    result: []
+  - script: '{1d6}'
+    result:
+    - _class: Dice
+      number_of_dice: 1
+      sides: 6
+  - script: '{2d3 | 3d4}'
+    result:
+    - _class: Dice
+      number_of_dice: 2
+      sides: 3
+    - _class: Dice
+      number_of_dice: 3
+      sides: 4
+  - script: '{
+      1d6
+      2d3
+    }'
+    result:
+    - _class: Dice
+      number_of_dice: 1
+      sides: 6
+    - _class: Dice
+      number_of_dice: 2
+      sides: 3
+  - script: '{
+      1d6
+      2d3 | 8
+      test | 1d2
+    }'
+    result:
+    - _class: Dice
+      number_of_dice: 1
+      sides: 6
+    - _class: Dice
+      number_of_dice: 2
+      sides: 3
+    - 8
+    - _class: Reference
+      value: test
+    - _class: Dice
+      number_of_dice: 1
+      sides: 2
+  - script: '{1d6 | {2d6 | 3d6}}'
+    result:
+    - _class: Dice
+      number_of_dice: 1
+      sides: 6
+    - - _class: Dice
+        number_of_dice: 2
+        sides: 6
+      - _class: Dice
+        number_of_dice: 3
+        sides: 6
+
+- name: basic_rolls
+  categories:
+  - rolls
+  tests:
+  - script: '[]'
+    result:
+      _class: Roll
+      value: '-'
+  - script: '[-]'
+    result:
+      _class: Roll
+      value: '-'
+  - script: '[*]'
+    result:
+      _class: Roll
+      value: '*'
+  - script: '[?]'
+    result:
+      _class: Roll
+      value:
+        _class: Reference
+        value: '?'
+  - script: '[1d6]'
+    result:
+      _class: Roll
+      value:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+  - script: '[1d6 +2]'
+    result:
+      _class: Roll
+      value:
+        _class: Math
+        left:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        op: '+'
+        right: 2
+  - script: '[1d6] +2'
+    result:
+      _class: Math
+      left:
+        _class: Roll
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      op: '+'
+      right: 2
+  - script: '[test].attr'
+    categories:
+    - access
+    result:
+      _class: Access
+      accessing:
+        _class: Roll
+        value:
+          _class: Reference
+          value: 'test'
+      accessors:
+      - 'attr'
+  - script: '[1d[2d4]]'
+    result:
+      _class: Roll
+      value:
+        _class: Dice
+        number_of_dice: 1
+        sides:
+          _class: Roll
+          value:
+            _class: Dice
+            number_of_dice: 2
+            sides: 4
+  - script: '[1d[2d4]]->top'
+    categories:
+    - modify
+    - modifiers
+    result:
+      _class: Modify
+      modifying:
+        _class: Roll
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides:
+            _class: Roll
+            value:
+              _class: Dice
+              number_of_dice: 2
+              sides: 4
+      modifiers:
+      - modifier:
+          _class: Reference
+          value: 'top'
+        args: null
+        _class: ModifierCall
+#FIXME
+#  - script: '[1]'
+#    result:
+#      _class: Roll
+#      value: 1
+  - script: '[1 + 2]'
+    result:
+      _class: Roll
+      value:
+        _class: Math
+        left: 1
+        op: '+'
+        right: 2
+  - script: '[3 * 2 - 4]'
+    result:
+      _class: Roll
+      value:
+        _class: Math
+        left:
+          _class: Math
+          left: 3
+          op: '*'
+          right: 2
+        op: '-'
+        right: 4
+  - script: '[3 * (2 - 4)]'
+    result:
+      _class: Roll
+      value:
+        _class: Math
+        left: 3
+        op: '*'
+        right:
+          _class: Math
+          left: 2
+          op: '-'
+          right: 4
+  - script: '[3 * [2 - 4]]'
+    result:
+      _class: Roll
+      value:
+        _class: Math
+        left: 3
+        op: '*'
+        right:
+          _class: Roll
+          value:
+            _class: Math
+            left: 2
+            op: '-'
+            right: 4
+#  - script: '[]'
+#    result:
+#      _class: Roll
+#      value:
+
+- name: basic_access
+  categories:
+  - access
+  - reference
+  tests:
+  - script: 'test'
+    result:
+      accessing:
+      accessors:
+      - ''

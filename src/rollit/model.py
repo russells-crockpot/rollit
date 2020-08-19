@@ -3,12 +3,12 @@
 import operator
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from contextlib import suppress
 
 from .elements import RollResults
 
 __all__ = [
-    'Resolvable',
-    'MacroCall',
+    'ModelElement',
     'ModifierCall',
     'Assignment',
     'Reference',
@@ -22,9 +22,11 @@ __all__ = [
 ]
 
 
-class Resolvable(metaclass=ABCMeta):
+class ModelElement(metaclass=ABCMeta):
     """
     """
+    singleton = False
+    accepts_none = False
     __slots__ = ()
 
     @abstractmethod
@@ -33,33 +35,48 @@ class Resolvable(metaclass=ABCMeta):
         """
 
 
-class MacroCall(namedtuple('_MacroCallBase', ('name', 'args')), Resolvable):
+# pylint: disable=abstract-method
+class SingletonElement(tuple, ModelElement):
+    """
+    """
+    singleton = True
+
+    def __new__(cls, value):
+        with suppress(AttributeError, TypeError):
+            value = value['value']
+        if isinstance(value, (str, ModelElement)):
+            value = (value,)
+        return super().__new__(cls, value)
+
+    @property
+    def value(self):
+        """
+        """
+        return self[0]
+
+    @property
+    def _fields(self):
+        return ('value',)
+
+    def _asdict(self):
+        return {'value', self.value}
+
+    def __str__(self):
+        return f'<{type(self).__name__}: {self.value}>'
+
+    def __repr__(self):
+        return f'{type(self).__name__}({repr(self.value)})'
+
+
+class Reference(SingletonElement):
     """
     """
 
     def resolve(self, context):
-        context.current_dialect.get_macro(self.name)(context[a] for a in self.args)
+        return context.dialect.get_variable(self.value)
 
 
-class ModifierCall(namedtuple('_ModifierCallBase', ('name', 'args')), Resolvable):
-    """
-    """
-
-    def resolve(self, context):
-        # args = (context[a] for a in self.args)
-        # return context.current_dialect.get_modifier(self.name)
-        raise NotImplementedError()
-
-
-class Reference(namedtuple('_ReferenceBase', ('name',)), Resolvable):
-    """
-    """
-
-    def resolve(self, context):
-        return context.dialect.get_variable(self.name)
-
-
-class Assignment(namedtuple('_AssignmentBase', ('name', 'value')), Resolvable):
+class Assignment(namedtuple('_AssignmentBase', ('name', 'value')), ModelElement):
     """
     """
 
@@ -67,23 +84,15 @@ class Assignment(namedtuple('_AssignmentBase', ('name', 'value')), Resolvable):
         context.dialect.add_variable(self.name, context[self.value])
 
 
-class Use(namedtuple('_UseBase', ('name', 'parent')), Resolvable):
+class Load(namedtuple('_LoadBase', ('dialects',)), ModelElement):
     """
     """
 
     def resolve(self, context):
-        context.current_dialect = context.get_or_create_dialect(self.name, self.parent)
+        raise NotImplementedError()
 
 
-class Pack(namedtuple('_PackBase', ('times', 'packed')), Resolvable):
-    """
-    """
-
-    def resolve(self, context):
-        return RollResults([context[self.packed] for _ in range(context[self.times])])
-
-
-class Math(namedtuple('_MathBase', ('left', 'op', 'right')), Resolvable):
+class Math(namedtuple('_MathBase', ('left', 'op', 'right')), ModelElement):
     """
     """
 
@@ -107,7 +116,17 @@ class Math(namedtuple('_MathBase', ('left', 'op', 'right')), Resolvable):
         return f'<{type(self).__qualname__}: {self.left} {self.op} {self.right}>'
 
 
-class Modify(namedtuple('_ModifyBase', ('modifying', 'modifiers')), Resolvable):
+class ModifierCall(namedtuple('_ModifierCallBase', ('modifier', 'args')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        # args = (context[a] for a in self.args)
+        # return context.current_dialect.get_modifier(self.name)
+        raise NotImplementedError()
+
+
+class Modify(namedtuple('_ModifyBase', ('modifying', 'modifiers')), ModelElement):
     """
     """
 
@@ -132,7 +151,7 @@ class Modify(namedtuple('_ModifyBase', ('modifying', 'modifiers')), Resolvable):
         return roll_results
 
 
-class Dice(namedtuple('_DiceBase', ('number_of_dice', 'sides')), Resolvable):
+class Dice(namedtuple('_DiceBase', ('number_of_dice', 'sides')), ModelElement):
     """An immutable representation of a dice roll definition.
 
     .. attribute:: number_of_dice
@@ -172,7 +191,7 @@ class Dice(namedtuple('_DiceBase', ('number_of_dice', 'sides')), Resolvable):
         return f'<Roll: {self.number_of_dice}d{self.sides}>'
 
 
-class Freeze(namedtuple('_FreezeBase', ('value')), Resolvable):
+class Freeze(SingletonElement):
     """
     """
 
@@ -180,7 +199,7 @@ class Freeze(namedtuple('_FreezeBase', ('value')), Resolvable):
         raise NotImplementedError()
 
 
-class Length(namedtuple('_LengthBase', ('value')), Resolvable):
+class Length(SingletonElement):
     """
     """
 
@@ -188,9 +207,55 @@ class Length(namedtuple('_LengthBase', ('value')), Resolvable):
         raise NotImplementedError()
 
 
-class Roll(namedtuple('_RollBase', ('value')), Resolvable):
+# class Roll(namedtuple('_RollBase', ('value')), ModelElement):
+class Roll(SingletonElement):
+    """
+    """
+    accepts_none = True
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class Access(namedtuple('_AccessBase', ('accessing', 'accessors')), ModelElement):
     """
     """
 
     def resolve(self, context):
         raise NotImplementedError()
+
+
+class LoadFrom(namedtuple('_LoadFromBase', ('loadables', 'dialect')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+def statement(value):
+    """
+    """
+    if isinstance(value, str):
+        return None
+    return value
+
+
+statement.singleton = True
+statement.accepts_none = True
+
+
+class Block(namedtuple('_BlockBase', ('statements',)), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+# class X(namedtuple('_XBase', ('',)), ModelElement):
+# """
+# """
+
+# def resolve(self, context):
+# raise NotImplementedError()

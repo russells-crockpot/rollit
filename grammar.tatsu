@@ -2,17 +2,17 @@
 @@eol_comments:: /\/\/.*?$"/
 @@keyword:: use roll if else elif when while for do until and or not in define
 @@keyword:: dice die result modifier int float number clear macro load as from
+@@keyword:: otherwise skip unless
 
-start
-    =
-     statement $
-     #[statement] {STATEMENT_END statement} [STATEMENT_END] $
-    ;
+#start = expression $;
 
-STATEMENT_END::IGNORE
+start = {statement} $;
+
+statement::statement
     =
+    | @:basic_statement
     | /[\n\r]+/
-    | {'|'}+
+    | '|'
     ;
 
 @name
@@ -30,26 +30,26 @@ INT::pybuiltin_int
     = /-?\d+/ ;
 
 NUMBER::IGNORE
-    =
-    | FLOAT
-    | INT
-    ;
+    = FLOAT | INT;
 
-DIALECT_NAME::IGNORE
-    =
-    | KEBAB_NAME
-    | '~'
-    | '^'
-    ;
+return::Return
+    = '@' @:expression;
 
-dialect_def::IGNORE
-    =
-    | name:DIALECT_NAME ['(' parent:[DIALECT_NAME] ')']
-    | name:[DIALECT_NAME] '(' parent:DIALECT_NAME ')'
-    ;
+test::Test
+    = 'TODO';
 
-use::Use
-    = 'use'  ~ @:dialect_def ;
+use_when::UseWhen
+    = 'use'  ~ if_true:expression 'when' predicate:test 'otherwise' if_false:expression;
+
+# Loops
+do_until::DoUntil
+    = 'do' do:expression 'until' until:test;
+
+until_do::UntilDo
+    = 'until' until:test 'do' do:expression;
+
+flow_control::FlowControl
+    = 'skip' | 'continue';
 
 dialects_list::IGNORE
     =
@@ -68,39 +68,33 @@ load::Load
     = 'load' dialects:dialects_list;
 
 load_from::LoadFrom
-    =
-    | 'load' loadables:loadables_list 'from' dialect:KEBAB_NAME
-    | load
-    ;
-
-macro::MacroCall
-    = 'macro' ~ name:KEBAB_NAME args:','%{ /[^,]*/};
+    = 'load' loadables:loadables_list 'from' dialect:KEBAB_NAME;
 
 modifier_args::IGNORE
-    = '(' ','%{ @+:expression } ')';
+    = '(' ','%{ @+:expression } [','] ')';
 
 modifier_call::ModifierCall
     = '->' ~ modifier:reference args:[modifier_args] ;
 
-dice::Dice
-    = number_of_dice:[factor] /d|D/ sides:factor ;
-
 length::Length
-    = '#' ~ value:unary_expr;
+    = '#' ~ @:access;
 
 freeze::Freeze
-    = '!' ~ value:unary_expr;
+    = '!' ~ @:access;
 
 reference::Reference
+    = NAME | '?';
+
+roll::Roll
     =
-    | NAME
-    | '?'
+    | '[' !']' ~ value:[(expression | '*'| '-')]']'
+    | '[' &']' ~ value:`'-'` ']'
     ;
 
-accessor::Accessor
+accessor::IGNORE
     =
-    | '.' value:NAME
-    | '[' value:expression ']'
+    | '.' @:NAME
+    | roll
     ;
 
 expression::IGNORE
@@ -108,53 +102,51 @@ expression::IGNORE
 
 math::Math
     =
-    | left:math op:('+'|'-') right:math
-    | left:access op:('*'|'//'|'/') right:access
+    | left:math op:('+'|'-') ~ right:math
+    | left:access op:('*'|'//'|'/') ~ right:access
     | access
     ;
 
 access::Access
     =
-    | accessing:pack accessors:{accessor}+
-    | pack
-    ;
-
-pack::Pack
-    =
-    | times:[unary_expr] '@' ~ packed:modify
-    | modify
-    ;
-
-
-modify::Modify
-    =
-    | modifying:pack  modifiers:{modifier_call}+
-    | roll
-    ;
-
-
-roll::Roll
-    =
-    | 'roll' ~ value:expression
+    | accessing:modify accessors:{accessor}+
     | unary_expr
     ;
 
 unary_expr::IGNORE
     =
-    | length
-    | freeze
-    | dice_expr
+    | &'#' ~ length
+    | &'!' ~ freeze
+    | modify
     ;
 
-dice_expr::IGNORE
+modify::Modify
     =
+    | modifying:access  &'->' ~ modifiers:{modifier_call}+
     | dice
+    ;
+
+dice::Dice
+    =
+    | number_of_dice:[roll_expr] /d|D/ ~ sides:roll_expr
+    | block
+    ;
+
+block::IGNORE
+    =
+    | '{' ~ @+:{statement} '}'
+    | roll_expr
+    ;
+
+roll_expr::IGNORE
+    =
+    | &'[' ~ roll
     | factor
     ;
 
 factor::IGNORE
     =
-    | '(' @:expression ')'
+    | '(' !')' ~ @:expression ')'
     | atom
     ;
 
@@ -164,15 +156,15 @@ atom::IGNORE
     | reference
     ;
 
+#TODO allow assignment to an access
 assignment::Assignment
     = name:NAME '<-' ~ value:expression ;
 
-statement::IGNORE
+basic_statement
     =
     | expression
     | assignment
-    | use
     | load_from
     #| load
-    | macro
     ;
+

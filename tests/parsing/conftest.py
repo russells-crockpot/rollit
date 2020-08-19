@@ -8,6 +8,8 @@ from collections import namedtuple
 import pytest
 import tatsu
 
+from rollit.semantics import RollItSemantics
+
 try:
     from ruamel import yaml
 except ImportError:
@@ -52,6 +54,9 @@ def __load():
         def __repr__(self):
             return str(self)
 
+        def __eq__(self, actual):
+            pass
+
     for path in (pathlib.Path(__file__).parent / 'scripts').iterdir():
         with path.open() as f:
             _ScriptTest(yaml.safe_load(f))
@@ -73,7 +78,7 @@ except Exception:
 def parser(request):
     with open(request.config.getoption('grammar_file')) as f:
         grammar = f.read()
-    return tatsu.compile(grammar)
+    return tatsu.compile(grammar, semantics=RollItSemantics())
 
 
 def pytest_addoption(parser):
