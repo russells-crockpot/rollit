@@ -2,9 +2,9 @@
 @@eol_comments:: /\/\/.*?$"/
 @@keyword:: use roll if then when while for do until and or not define
 @@keyword:: int float number clear load as from has
-@@keyword:: otherwise skip unless
+@@keyword:: otherwise skip unless continue
 
-#start = expression $;
+#start = load $;
 
 start = {statement} $;
 
@@ -43,14 +43,8 @@ INT::pybuiltin_int
 NUMBER::IGNORE
     = FLOAT | INT;
 
-# return::Return
-#     = '@' @:expression;
-
 unless::Unless
     = 'unless' ~ predicate:conditional 'then' then:statement;
-
-if_statement2::If
-    = 'if' ~ predicate:conditional 'then' then:statement;
 
 if_statement::If
     = 'if' ~ predicate:conditional 'then' then:statement
@@ -79,11 +73,8 @@ loadables_list::IGNORE
     | '(' ','%{ @+:NAME }+ ')'
     ;
 
-load::Load
-    = 'load' dialects:dialects_list;
-
-load_from::LoadFrom
-    = 'load' loadables:loadables_list 'from' dialect:KEBAB_NAME;
+load::load
+    = 'load' to_load:({reference}+ | '*') ['from' ~ from_dialect:(KEBAB_NAME|reference)];
 
 modifier_args::IGNORE
     = '(' ','%{ @+:expression } [','] ')';
@@ -96,7 +87,6 @@ length::Length
 
 reference::Reference
     = NAME | '?';
-
 
 fill::Fill
     = size:[expression] '@' value:[expression];
@@ -194,18 +184,30 @@ atom::IGNORE
     | reference
     ;
 
+return::Return
+    = '@' @:expression;
+
 #TODO allow assignment to an access
 assignment::Assignment
-    = name:NAME '<-' ~ value:expression ;
+    = name:NAME '=' ~ value:expression ;
+
+modifier_params::IGNORE
+    = '(' ','%{ @+:NAME } [','] ')';
+
+#TODO allow assignment to an access
+modifier_def::ModifierDef
+    = name:NAME '<-' ~ args:[modifier_params] definition:statement ;
 
 basic_statement
     =
-    | &'if' ~ if_statement
-    | >flow_control
-    | expression
     | '{' ~ @:{statement} '}'
-    | assignment
-    | load_from
-    #| load
+    | &'if' ~ if_statement
+    | &'load' ~ load
+    | >flow_control
+    | &(NAME '<-') ~ modifier_def
+    | &(NAME '=') ~ assignment
+    | &'@' ~ return
+    | expression
     ;
+
 

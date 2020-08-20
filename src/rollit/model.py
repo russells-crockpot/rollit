@@ -70,6 +70,26 @@ class Assignment(namedtuple('_AssignmentBase', ('name', 'value')), ModelElement)
         context.dialect.add_variable(self.name, context[self.value])
 
 
+def load(*, to_load, from_dialect=None):
+    """
+    """
+    if not from_dialect:
+        return Load(dialects=to_load)
+    return LoadFrom(to_load=to_load, from_dialect=from_dialect)
+
+
+load.singleton = False
+load.accepts_none = False
+
+
+class LoadFrom(namedtuple('_LoadFromBase', ('to_load', 'from_dialect')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
 class Load(namedtuple('_LoadBase', ('dialects',)), ModelElement):
     """
     """
@@ -202,14 +222,6 @@ class Access(namedtuple('_AccessBase', ('accessing', 'accessors')), ModelElement
         raise NotImplementedError()
 
 
-class LoadFrom(namedtuple('_LoadFromBase', ('loadables', 'dialect')), ModelElement):
-    """
-    """
-
-    def resolve(self, context):
-        raise NotImplementedError()
-
-
 def statement(value):
     """
     """
@@ -302,6 +314,14 @@ class DoUntil(namedtuple('_DoUntilBase', ('do', 'until', 'otherwise')), ModelEle
 
 
 class UntilDo(namedtuple('_UntilDoBase', ('until', 'do', 'otherwise')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class ModifierDef(namedtuple('_ModifierDefBase', ('name', 'args', 'definition')), ModelElement):
     """
     """
 
