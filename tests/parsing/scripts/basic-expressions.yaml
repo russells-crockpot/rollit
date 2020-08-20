@@ -429,38 +429,38 @@ tests:
           number_of_dice: 1
           sides: 6
 
-- name: basic_rolls
+- name: basic_reduce
   categories:
-  - rolls
+  - reduce
   tests:
-  - script: '[]'
+  - script: '{}'
     result:
-      _class: Roll
+      _class: Reduce
       value: '-'
-  - script: '[-]'
+  - script: '{-}'
     result:
-      _class: Roll
+      _class: Reduce
       value: '-'
-  - script: '[*]'
+  - script: '{*}'
     result:
-      _class: Roll
+      _class: Reduce
       value: '*'
-  - script: '[?]'
+  - script: '{?}'
     result:
-      _class: Roll
+      _class: Reduce
       value:
         _class: Reference
         value: '?'
-  - script: '[1d6]'
+  - script: '{1d6}'
     result:
-      _class: Roll
+      _class: Reduce
       value:
         _class: Dice
         number_of_dice: 1
         sides: 6
-  - script: '[1d6 +2]'
+  - script: '{1d6 +2}'
     result:
-      _class: Roll
+      _class: Reduce
       value:
         _class: Math
         left:
@@ -469,54 +469,54 @@ tests:
           sides: 6
         op: '+'
         right: 2
-  - script: '[1d6] +2'
+  - script: '{1d6] +2'
     result:
       _class: Math
       left:
-        _class: Roll
+        _class: Reduce
         value:
           _class: Dice
           number_of_dice: 1
           sides: 6
       op: '+'
       right: 2
-  - script: '[test].attr'
+  - script: '{test}.attr'
     categories:
     - access
     result:
       _class: Access
       accessing:
-        _class: Roll
+        _class: Reduce
         value:
           _class: Reference
           value: 'test'
       accessors:
       - 'attr'
-  - script: '[1d[2d4]]'
+  - script: '{1d{2d4}}'
     result:
-      _class: Roll
+      _class: Reduce
       value:
         _class: Dice
         number_of_dice: 1
         sides:
-          _class: Roll
+          _class: Reduce
           value:
             _class: Dice
             number_of_dice: 2
             sides: 4
-  - script: '[1d[2d4]]->top'
+  - script: '{1d{2d4}}->top'
     categories:
     - modify
     - modifiers
     result:
       _class: Modify
       modifying:
-        _class: Roll
+        _class: Reduce
         value:
           _class: Dice
           number_of_dice: 1
           sides:
-            _class: Roll
+            _class: Reduce
             value:
               _class: Dice
               number_of_dice: 2
@@ -527,21 +527,21 @@ tests:
           value: 'top'
         args: null
         _class: ModifierCall
-  - script: '[1]'
+  - script: '{1}'
     result:
-      _class: Roll
+      _class: Reduce
       value: 1
-  - script: '[1 + 2]'
+  - script: '{1 + 2}'
     result:
-      _class: Roll
+      _class: Reduce
       value:
         _class: Math
         left: 1
         op: '+'
         right: 2
-  - script: '[3 * 2 - 4]'
+  - script: '{3 * 2 - 4}'
     result:
-      _class: Roll
+      _class: Reduce
       value:
         _class: Math
         left:
@@ -551,9 +551,9 @@ tests:
           right: 2
         op: '-'
         right: 4
-  - script: '[3 * (2 - 4)]'
+  - script: '{3 * (2 - 4)}'
     result:
-      _class: Roll
+      _class: Reduce
       value:
         _class: Math
         left: 3
@@ -563,85 +563,72 @@ tests:
           left: 2
           op: '-'
           right: 4
-  - script: '[3 * [2 - 4]]'
+  - script: '{3 * {2 - 4}}'
     result:
-      _class: Roll
+      _class: Reduce
       value:
         _class: Math
         left: 3
         op: '*'
         right:
-          _class: Roll
+          _class: Reduce
           value:
             _class: Math
             left: 2
             op: '-'
             right: 4
 
-- name: basic_fills
+- name: basic_enlarge
   categories:
-  - rolls
-  - fills
+  - enlarge
   tests:
-  - script: '[@]'
+  - script: '{@}'
     result:
-      _class: Roll
-      value:
-        _class: Fill
-        size: null
-        value: null
-  - script: '[1@]'
+      _class: Enlarge
+      size: null
+      value: null
+  - script: '{1@}'
     result:
-      _class: Roll
-      value:
-        _class: Fill
-        size: 1
-        value: null
-  - script: '[@2]'
+      _class: Enlarge
+      size: 1
+      value: null
+  - script: '{@2}'
     result:
-      _class: Roll
-      value:
-        _class: Fill
-        size: null
-        value: 2
-  - script: '[1@2]'
+      _class: Enlarge
+      size: null
+      value: 2
+  - script: '{1@2}'
     result:
-      _class: Roll
-      value:
-        _class: Fill
-        size: 1
-        value: 2
-  - script: '[1d6@2d3]'
+      _class: Enlarge
+      size: 1
+      value: 2
+  - script: '{1d6@2d3}'
     result:
-      _class: Roll
+      _class: Enlarge
+      size:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
       value:
-        _class: Fill
-        size:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
+        _class: Dice
+        number_of_dice: 2
+        sides: 3
+  - script: '{1d6@{2d3}}'
+    result:
+      _class: Enlarge
+      size:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      value:
+        _class: Reduce
         value:
           _class: Dice
           number_of_dice: 2
           sides: 3
-  - script: '[1d6@[2d3]]'
-    result:
-      _class: Roll
-      value:
-        _class: Fill
-        size:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-        value:
-          _class: Roll
-          value:
-            _class: Dice
-            number_of_dice: 2
-            sides: 3
-#  - script: '[]'
+#  - script: '{}'
 #    result:
-#      _class: Roll
+#      _class: Enlarge
 #      value:
 
 - name: basic_access

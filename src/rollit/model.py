@@ -70,19 +70,19 @@ class Assignment(namedtuple('_AssignmentBase', ('name', 'value')), ModelElement)
         context.dialect.add_variable(self.name, context[self.value])
 
 
-def load(*, to_load, from_dialect=None):
+def load(*, to_load, from_dialect=None, into=None):
     """
     """
     if not from_dialect:
-        return Load(dialects=to_load)
-    return LoadFrom(to_load=to_load, from_dialect=from_dialect)
+        return Load(dialects=to_load, into=into)
+    return LoadFrom(to_load=to_load, from_dialect=from_dialect, into=into)
 
 
 load.singleton = False
 load.accepts_none = False
 
 
-class LoadFrom(namedtuple('_LoadFromBase', ('to_load', 'from_dialect')), ModelElement):
+class LoadFrom(namedtuple('_LoadFromBase', ('to_load', 'from_dialect', 'into')), ModelElement):
     """
     """
 
@@ -90,7 +90,7 @@ class LoadFrom(namedtuple('_LoadFromBase', ('to_load', 'from_dialect')), ModelEl
         raise NotImplementedError()
 
 
-class Load(namedtuple('_LoadBase', ('dialects',)), ModelElement):
+class Load(namedtuple('_LoadBase', ('dialects', 'into')), ModelElement):
     """
     """
 
@@ -125,6 +125,11 @@ class Math(namedtuple('_MathBase', ('left', 'op', 'right')), ModelElement):
 class ModifierCall(namedtuple('_ModifierCallBase', ('modifier', 'args')), ModelElement):
     """
     """
+
+    def __new__(cls, modifier, args):
+        if args:
+            args = args[0]
+        return super().__new__(cls, modifier, args)
 
     def resolve(self, context):
         # args = (context[a] for a in self.args)
@@ -205,15 +210,6 @@ class Length(SingletonElement):
         raise NotImplementedError()
 
 
-class Roll(SingletonElement):
-    """
-    """
-    accepts_none = True
-
-    def resolve(self, context):
-        raise NotImplementedError()
-
-
 class Access(namedtuple('_AccessBase', ('accessing', 'accessors')), ModelElement):
     """
     """
@@ -246,7 +242,21 @@ blocks.singleton = True
 blocks.accepts_none = True
 
 
-class Fill(namedtuple('_FillBase', ('size', 'value')), ModelElement):
+class Reduce(SingletonElement):
+    """
+    """
+    accepts_none = True
+
+    def __new__(cls, value):
+        if isinstance(value, Enlarge):
+            return value
+        return super().__new__(cls, value)
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class Enlarge(namedtuple('_EnlargeBase', ('size', 'value')), ModelElement):
     """
     """
 
@@ -321,9 +331,16 @@ class UntilDo(namedtuple('_UntilDoBase', ('until', 'do', 'otherwise')), ModelEle
         raise NotImplementedError()
 
 
-class ModifierDef(namedtuple('_ModifierDefBase', ('name', 'args', 'definition')), ModelElement):
+class ModifierDef(namedtuple('_ModifierDefBase', ('target', 'parameters', 'definition')),
+                  ModelElement):
     """
     """
+
+    def __new__(cls, *, target, body):
+        parameters = body.get('parameters') or ()
+        definition = body.get('definition') or ()
+        parameters = tuple(p.value if isinstance(p, Reference) else p for p in parameters)
+        return super().__new__(cls, target=target, parameters=parameters, definition=definition)
 
     def resolve(self, context):
         raise NotImplementedError()

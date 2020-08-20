@@ -2,7 +2,7 @@
 @@eol_comments:: /\/\/.*?$"/
 @@keyword:: use roll if then when while for do until and or not define
 @@keyword:: int float number clear load as from has
-@@keyword:: otherwise skip unless continue
+@@keyword:: otherwise skip unless continue into
 
 #start = load $;
 
@@ -46,8 +46,8 @@ NUMBER::IGNORE
 unless::Unless
     = 'unless' ~ predicate:conditional 'then' then:statement;
 
-if_statement::If
-    = 'if' ~ predicate:conditional 'then' then:statement
+if_body::If
+    = ~ predicate:conditional 'then' then:statement
     unless:{&'unless' ~ unless} ['otherwise' otherwise:statement];
 
 # Loops
@@ -60,54 +60,45 @@ until_do::UntilDo
 flow_control::FlowControl
     = 'skip' | 'continue';
 
-dialects_list::IGNORE
-    =
-    | ','%{ @+:KEBAB_NAME }+
-    | '(' ','%{ @+:KEBAB_NAME }+ ')'
-    ;
+dialect_name = KEBAB_NAME | NAME;
 
-loadables_list::IGNORE
-    =
-    | '*'
-    | ','%{ @+:NAME }+
-    | '(' ','%{ @+:NAME }+ ')'
+load_body::load
+    = to_load:({dialect_name}+ | '*')
+      ['from' ~ from_dialect:(dialect_name)]
+      ['into' ~ into:(reference | '~')]
     ;
-
-load::load
-    = 'load' to_load:({reference}+ | '*') ['from' ~ from_dialect:(KEBAB_NAME|reference)];
 
 modifier_args::IGNORE
-    = '(' ','%{ @+:expression } [','] ')';
+    = '(' @+:','.{ expression } [','] ')';
 
 modifier_call::ModifierCall
     = '->' modifier:reference args:[modifier_args] ;
 
-length::Length
-    = '#' ~ @:access;
-
 reference::Reference
     = NAME | '?';
 
-fill::Fill
+enlarge::Enlarge
     = size:[expression] '@' value:[expression];
 
-roll::Roll
+reduce_enlarge::Reduce
     =
-    | '[' !']' ~ value:(fill | expression | '*'| '-')']'
-    | '[' &']' ~ value:`'-'` ']'
+    | '{' !'}' ~ value:(@:enlarge | expression | '*'| '-')'}'
+    | '{' &'}' ~ value:`'-'` '}'
     ;
 
 accessor::IGNORE
     =
     | '.' @:NAME
-    | roll
+    | reduce_enlarge
     ;
 
 negation::Negation
     = 'not' value:conditional;
 
 expression::IGNORE
-    = use_if;
+    =
+    | '()' ~ !()
+    | use_if;
 
 use_if::UseIf
     =
@@ -139,36 +130,36 @@ math::Math
     =
     | left:math op:('+'|'-') ~ right:math
     | left:access op:('*'|'//'|'/') ~ right:access
-    | access
+    | length
     ;
 
-access::Access
+length::IGNORE
     =
-    | accessing:modify accessors:{accessor}+
-    | unary_expr
-    ;
-
-unary_expr::IGNORE
-    =
-    | &'#' ~ length
+    | '#' ~ value:length _type:`'Length'`
     | modify
     ;
 
 modify::Modify
     =
     | modifying:access  &'->' ~ modifiers:{modifier_call}+
+    | access
+    ;
+
+access::Access
+    =
+    | accessing:modify accessors:{accessor}+
     | dice
     ;
 
 dice::Dice
     =
-    | number_of_dice:[roll_expr] /d|D/ ~ sides:roll_expr
-    | roll_expr
+    | number_of_dice:[reduce_enlarge_expr] /d|D/ ~ sides:reduce_enlarge_expr
+    | reduce_enlarge_expr
     ;
 
-roll_expr::IGNORE
+reduce_enlarge_expr::IGNORE
     =
-    | &'[' ~ roll
+    | &'{' ~ reduce_enlarge
     | factor
     ;
 
@@ -184,30 +175,30 @@ atom::IGNORE
     | reference
     ;
 
-return::Return
-    = '@' @:expression;
+return_body::Return
+    = @:expression;
 
 #TODO allow assignment to an access
 assignment::Assignment
     = name:NAME '=' ~ value:expression ;
 
 modifier_params::IGNORE
-    = '(' ','%{ @+:NAME } [','] ')';
+    = '(' @:','.{ reference } [','] ')';
 
 #TODO allow assignment to an access
-modifier_def::ModifierDef
-    = name:NAME '<-' ~ args:[modifier_params] definition:statement ;
+modifier_def_body::IGNORE
+    =  parameters:[modifier_params] definition:statement ;
 
 basic_statement
     =
-    | '{' ~ @:{statement} '}'
-    | &'if' ~ if_statement
-    | &'load' ~ load
-    | >flow_control
-    | &(NAME '<-') ~ modifier_def
-    | &(NAME '=') ~ assignment
-    | &'@' ~ return
+    | 'if' ~ @:if_body
+    | 'load' ~ @:load_body
+    | !('('|'#') target:access '<-' ~ body:modifier_def_body _type:`'ModifierDef'`
     | expression
+    | &(NAME '=') ~ assignment
+    | >flow_control
+    | '[' ~ @:{statement} ']'
+    | &'@' ~ return_body
     ;
 
 

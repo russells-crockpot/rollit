@@ -7,14 +7,14 @@ tests:
   categories:
   - blocks
   tests:
-  - script: '{}'
+  - script: '[]'
     result: []
-  - script: '{1d6}'
+  - script: '[1d6]'
     result:
     - _class: Dice
       number_of_dice: 1
       sides: 6
-  - script: '{2d3 | 3d4}'
+  - script: '[2d3 | 3d4]'
     result:
     - _class: Dice
       number_of_dice: 2
@@ -22,10 +22,10 @@ tests:
     - _class: Dice
       number_of_dice: 3
       sides: 4
-  - script: '{
+  - script: '[
       1d6
       2d3
-    }'
+    ]'
     result:
     - _class: Dice
       number_of_dice: 1
@@ -33,11 +33,11 @@ tests:
     - _class: Dice
       number_of_dice: 2
       sides: 3
-  - script: '{
+  - script: '[
       1d6
       2d3 | 8
       test | 1d2
-    }'
+    ]'
     result:
     - _class: Dice
       number_of_dice: 1
@@ -51,7 +51,7 @@ tests:
     - _class: Dice
       number_of_dice: 1
       sides: 2
-  - script: '{1d6 | {2d6 | 3d6}}'
+  - script: '[1d6 | [2d6 | 3d6]]'
     result:
     - _class: Dice
       number_of_dice: 1
@@ -62,3 +62,135 @@ tests:
       - _class: Dice
         number_of_dice: 3
         sides: 6
+
+- name: basic_load
+  categories:
+  - load
+  tests:
+  - script: 'load *'
+    result:
+      _class: Load
+      dialects:
+      - '*'
+      into: null
+  - script: 'load test test2'
+    result:
+      _class: Load
+      dialects:
+      - 'test'
+      - 'test2'
+      into: null
+  - script: 'load test into alias'
+    result:
+      _class: Load
+      dialects:
+      - 'test'
+      into:
+        _class: Reference
+        value: 'alias'
+  - script: 'load test test-two into ~'
+    result:
+      _class: Load
+      dialects:
+      - 'test'
+      - 'test-two'
+      into: '~'
+
+- name: basic_load_from
+  categories:
+  - load_from
+  tests:
+  - script: 'load * from test'
+    result:
+      _class: LoadFrom
+      to_load:
+      - '*'
+      into: null
+      from_dialect: 'test'
+  - script: 'load test test2 from dialect-name'
+    result:
+      _class: LoadFrom
+      to_load:
+      - 'test'
+      - 'test2'
+      into: null
+      from_dialect: 'dialect-name'
+  - script: 'load test from dialect-name into alias'
+    result:
+      _class: LoadFrom
+      to_load:
+      - 'test'
+      into:
+        _class: Reference
+        value: 'alias'
+      from_dialect: 'dialect-name'
+  - script: 'load test test-two from dialect-info into ~'
+    result:
+      _class: LoadFrom
+      to_load:
+      - 'test'
+      - 'test-two'
+      into: '~'
+      from_dialect: 'dialect-info'
+
+- name: basic_modifier_defs
+  categories:
+  - modifier_defs
+  tests:
+  - script: 'name<-|'
+    result:
+      _class: ModifierDef
+      target:
+        _class: Reference
+        value: 'name'
+      parameters: []
+      definition: []
+  - script: 'name<-[]'
+    result:
+      _class: ModifierDef
+      target:
+        _class: Reference
+        value: 'name'
+      parameters: []
+      definition: []
+  - script: 'name<-()[]'
+    result:
+      _class: ModifierDef
+      target:
+        _class: Reference
+        value: 'name'
+      parameters: []
+      definition: []
+  - script: 'name<-(param1) ? + 2'
+    result:
+      _class: ModifierDef
+      target:
+        _class: Reference
+        value: 'name'
+      parameters:
+      - param1
+      definition:
+        _class: Math
+        left:
+          _class: Reference
+          value: '?'
+        op: '+'
+        right: 2
+  - script: 'name<-(param1, param2)[param1 + param2]'
+    result:
+      _class: ModifierDef
+      target:
+        _class: Reference
+        value: 'name'
+      parameters:
+      - param1
+      - param2
+      definition:
+      - _class: Math
+        left:
+          _class: Reference
+          value: param1
+        op: '+'
+        right:
+          _class: Reference
+          value: param2

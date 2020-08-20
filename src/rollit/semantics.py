@@ -14,6 +14,10 @@ class RollItSemantics:
     """
 
     def _default(self, ast, model_cls=None):
+        if not model_cls:
+            with suppress(TypeError):
+                if '_type' in ast:
+                    model_cls = ast.pop('_type')
         if not isinstance(ast, model.ModelElement) and model_cls and model_cls != 'IGNORE':
             module = model
             if model_cls.startswith('pybuiltin_'):
