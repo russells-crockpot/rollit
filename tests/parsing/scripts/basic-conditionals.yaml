@@ -1,0 +1,136 @@
+name: basic_conditionals
+categories:
+- conditionals
+tests:
+
+- name: negation
+  categories:
+  - negation
+  - expressions
+  tests:
+  - script: 'not 1'
+    result:
+      _class: Negation
+      value: 1
+  - script: 'not test'
+    result:
+      _class: Negation
+      value:
+        _class: Reference
+        value: 'test'
+  - script: 'not 1d6'
+    result:
+      _class: Negation
+      value:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+
+- name: comparisons
+  categories:
+  - comparisons
+  - expressions
+  tests:
+  - script: '1 > 2'
+    result:
+      _class: Comparison
+      left: 1
+      op: '>'
+      right: 2
+  - script: '1d6 has 2'
+    result:
+      _class: Comparison
+      left:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      op: 'has'
+      right: 2
+  - script: '1d6 has 2 - 3'
+    result:
+      _class: Comparison
+      left:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      op: 'has'
+      right:
+        _class: Math
+        left: 2
+        op: '-'
+        right: 3
+  - script: '1d6 < 2 !=  3'
+    result:
+      _class: Comparison
+      left:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      op: '<'
+      right:
+        _class: Comparison
+        left: 2
+        op: '!='
+        right: 3
+  - script: '(1d6 < 2) !=  3'
+    result:
+      _class: Comparison
+      left:
+        _class: Comparison
+        left:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        op: '<'
+        right: 2
+      op: '!='
+      right: 3
+
+- name: use_if
+  categories:
+  - expressions
+  - use_if
+  tests:
+  - script: 'use 1 if 1 otherwise 0'
+    result:
+      _class: UseIf
+      use: 1
+      predicate: 1
+      otherwise: 0
+  - script: 'use 1d6 if use_d6 otherwise 2d4'
+    result:
+      _class: UseIf
+      use:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      predicate:
+        _class: Reference
+        value: 'use_d6'
+      otherwise:
+        _class: Dice
+        number_of_dice: 2
+        sides: 4
+  - script: 'use 1d6 if use_d6 otherwise use 2d4 if use_d4 otherwise 3d3'
+    result:
+      _class: UseIf
+      use:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      predicate:
+        _class: Reference
+        value: 'use_d6'
+      otherwise:
+        _class: UseIf
+        use:
+          _class: Dice
+          number_of_dice: 2
+          sides: 4
+        predicate:
+          _class: Reference
+          value: 'use_d4'
+        otherwise:
+          _class: Dice
+          number_of_dice: 3
+          sides: 3

@@ -1,6 +1,7 @@
 """
 """
 import builtins
+from collections.abc import Mapping
 from contextlib import suppress
 
 from . import model
@@ -18,8 +19,8 @@ class RollItSemantics:
             if model_cls.startswith('pybuiltin_'):
                 return getattr(builtins, model_cls.replace('pybuiltin_', '', 1))(ast)
             model_cls = getattr(module, model_cls)
-            with suppress(TypeError):
-                if (ast is None and model_cls.accepts_none) or model_cls.singleton:
-                    return model_cls(ast)
+            if (ast is None and model_cls.accepts_none) or model_cls.singleton:
+                return model_cls(ast)
+            if isinstance(ast, Mapping):
                 return model_cls(**ast)
         return ast

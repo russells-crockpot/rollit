@@ -1,7 +1,13 @@
 # pylint: disable=missing-docstring
 import itertools
+from importlib import import_module
 
+import pytest
 from rollit.model import ModelElement
+
+from .conftest import script_tests
+
+_MONKEYPATCH_VALUES = ()
 
 _VALUES_MAP = {
     '_operator': {
@@ -12,6 +18,27 @@ _VALUES_MAP = {
         'floordiv': '//',
     }
 }
+
+
+def create_scripttest_func(category):
+
+    def _func(parser, monkeypatch, scripttest):
+        for module_name, overrides in _MONKEYPATCH_VALUES:
+            module = import_module(module_name)
+            for attr, v in overrides:
+                monkeypatch.setattr(module, attr, v)
+        expected_results = scripttest.result
+        if not isinstance(expected_results, (tuple, list, set)):
+            expected_results = (expected_results,)
+        actual_results = tuple(
+            ast_element_to_dict(stmt)
+            for stmt in parser.parse(scripttest.script)
+            if not isinstance(stmt, str))
+        for expected, actual in itertools.zip_longest(expected_results, actual_results):
+            assert expected == reorder_keys(expected, actual)
+
+    _func.__name__ = f'test_{category}'
+    return pytest.mark.parametrize('scripttest', getattr(script_tests, category))(_func)
 
 
 def ast_element_to_dict(elem):

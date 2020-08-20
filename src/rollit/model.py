@@ -266,7 +266,7 @@ class Negation(SingletonElement):
         raise NotImplementedError()
 
 
-class If(namedtuple('_IfBase', ('predicate', 'then', 'otherwise')), ModelElement):
+class Unless(namedtuple('_UnlessBase', ('predicate', 'then')), ModelElement):
     """
     """
 
@@ -274,7 +274,18 @@ class If(namedtuple('_IfBase', ('predicate', 'then', 'otherwise')), ModelElement
         raise NotImplementedError()
 
 
-class UseIf(namedtuple('_UseIfBase', ('if_true', 'predicate', 'if_false')), ModelElement):
+class If(namedtuple('_IfBase', ('predicate', 'then', 'unless', 'otherwise')), ModelElement):
+    """
+    """
+
+    def __new__(cls, predicate, then, unless=(), otherwise=None):
+        return super().__new__(cls, predicate, then, unless, otherwise)
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+class UseIf(namedtuple('_UseIfBase', ('use', 'predicate', 'otherwise')), ModelElement):
     """
     """
 

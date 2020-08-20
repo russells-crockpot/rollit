@@ -43,18 +43,25 @@ INT::pybuiltin_int
 NUMBER::IGNORE
     = FLOAT | INT;
 
-return::Return
-    = '@' @:expression;
+# return::Return
+#     = '@' @:expression;
 
-if::If
-    = 'if' predicate:predicate 'then' then:expression ['otherwise' otherwise:statement];
+unless::Unless
+    = 'unless' ~ predicate:conditional 'then' then:statement;
+
+if_statement2::If
+    = 'if' ~ predicate:conditional 'then' then:statement;
+
+if_statement::If
+    = 'if' ~ predicate:conditional 'then' then:statement
+    unless:{&'unless' ~ unless} ['otherwise' otherwise:statement];
 
 # Loops
 do_until::DoUntil
-    = 'do' do:statement 'until' until:predicate ['otherwise' otherwise:statement];
+    = 'do' do:statement 'until' until:conditional ['otherwise' otherwise:statement];
 
 until_do::UntilDo
-    = 'until' until:predicate 'do' do:statement ['otherwise' otherwise:statement];
+    = 'until' until:conditional 'do' do:statement ['otherwise' otherwise:statement];
 
 flow_control::FlowControl
     = 'skip' | 'continue';
@@ -107,18 +114,18 @@ accessor::IGNORE
     ;
 
 negation::Negation
-    = 'not' @:predicate;
+    = 'not' value:conditional;
 
 expression::IGNORE
     = use_if;
 
 use_if::UseIf
     =
-    | 'use' ~ if_true:expression 'if' predicate:predicate 'otherwise' if_false:expression
-    | predicate
+    | 'use' ~ use:expression 'if' predicate:conditional 'otherwise' otherwise:expression
+    | conditional
     ;
 
-predicate::IGNORE
+conditional::IGNORE
     =
     | &'not' ~ @:negation
     | comparison
@@ -166,12 +173,6 @@ modify::Modify
 dice::Dice
     =
     | number_of_dice:[roll_expr] /d|D/ ~ sides:roll_expr
-    | block
-    ;
-
-block::IGNORE
-    =
-    | '{' ~ @:{statement} '}'
     | roll_expr
     ;
 
@@ -199,8 +200,10 @@ assignment::Assignment
 
 basic_statement
     =
-    | &'if' ~ if
+    | &'if' ~ if_statement
+    | >flow_control
     | expression
+    | '{' ~ @:{statement} '}'
     | assignment
     | load_from
     #| load
