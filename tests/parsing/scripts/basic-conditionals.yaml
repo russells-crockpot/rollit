@@ -26,6 +26,55 @@ tests:
         number_of_dice: 1
         sides: 6
 
+- name: comparison_operators
+  categories:
+  - comparisons
+  - comparison_operators
+  - expressions
+  tests:
+  - script: '1 == 2'
+    result:
+      _class: Comparison
+      left: 1
+      op: '=='
+      right: 2
+  - script: '1 >= 2'
+    result:
+      _class: Comparison
+      left: 1
+      op: '>='
+      right: 2
+  - script: '1 <= 2'
+    result:
+      _class: Comparison
+      left: 1
+      op: '<='
+      right: 2
+  - script: '1 != 2'
+    result:
+      _class: Comparison
+      left: 1
+      op: '!='
+      right: 2
+  - script: '1 > 2'
+    result:
+      _class: Comparison
+      left: 1
+      op: '>'
+      right: 2
+  - script: '1 < 2'
+    result:
+      _class: Comparison
+      left: 1
+      op: '<'
+      right: 2
+  - script: '1 has 2'
+    result:
+      _class: Comparison
+      left: 1
+      op: 'has'
+      right: 2
+
 - name: comparisons
   categories:
   - comparisons

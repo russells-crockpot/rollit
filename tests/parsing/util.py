@@ -16,6 +16,7 @@ _VALUES_MAP = {
         'sub': '-',
         'truediv': '/',
         'floordiv': '//',
+        'mod': '%',
     }
 }
 

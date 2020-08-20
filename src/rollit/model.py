@@ -1,6 +1,6 @@
 """
 """
-import operator
+import enum
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
@@ -54,6 +54,42 @@ class SingletonElement(tuple, ModelElement):
         return f'{type(self).__name__}({repr(self.value)})'
 
 
+class ModelConstant(enum.Enum):
+    """
+    """
+
+    @property
+    def _fields(self):
+        return ('value',)
+
+    @property
+    def value(self):
+        """
+        """
+        # pylint: disable=no-member
+        return self._value_
+
+    # pylint: disable=missing-docstring
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
+ModelElement.register(ModelConstant)
+
+
+class FlowControl(ModelConstant):
+    """
+    """
+    SKIP = 'skip'
+    """ """
+    BREAK = 'break'
+    """ """
+
+    # pylint: disable=missing-docstring
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
 class Reference(SingletonElement):
     """
     """
@@ -62,12 +98,17 @@ class Reference(SingletonElement):
         return context.dialect.get_variable(self.value)
 
 
-class Assignment(namedtuple('_AssignmentBase', ('name', 'value')), ModelElement):
+class Assignment(namedtuple('_AssignmentBase', ('target', 'value')), ModelElement):
     """
     """
 
+    def __new__(cls, target, value):
+        if isinstance(target, Reference):
+            target = target.value
+        return super().__new__(cls, target, value)
+
     def resolve(self, context):
-        context.dialect.add_variable(self.name, context[self.value])
+        raise NotImplementedError()
 
 
 def load(*, to_load, from_dialect=None, into=None):
@@ -102,21 +143,8 @@ class Math(namedtuple('_MathBase', ('left', 'op', 'right')), ModelElement):
     """
     """
 
-    _OP_MAP = {
-        '*': operator.mul,
-        '+': operator.add,
-        '-': operator.sub,
-        '/': operator.truediv,
-        '//': operator.floordiv,
-    }
-
-    def __new__(cls, left, op, right):
-        if isinstance(op, str):
-            op = cls._OP_MAP[op]
-        return super().__new__(cls, left, op, right)
-
     def resolve(self, context):
-        return self.op(context[self.left], context[self.right])
+        raise NotImplemented()
 
     def __str__(self):
         return f'<{type(self).__qualname__}: {self.left} {self.op} {self.right}>'
@@ -206,6 +234,12 @@ class Length(SingletonElement):
     """
     """
 
+    def __new__(cls, ast):
+        if isinstance(ast, list) and len(ast) == 2 \
+                and ast[0] == '#' and isinstance(ast[1], ModelElement):
+            return super().__new__(cls, ast[1])
+        return ast
+
     def resolve(self, context):
         raise NotImplementedError()
 
@@ -288,6 +322,14 @@ class Negation(SingletonElement):
         raise NotImplementedError()
 
 
+class ExceptWhen(namedtuple('_ExceptWhenBase', ('predicate', 'then')), ModelElement):
+    """
+    """
+
+    def resolve(self, context):
+        raise NotImplementedError()
+
+
 class Unless(namedtuple('_UnlessBase', ('predicate', 'then')), ModelElement):
     """
     """
@@ -315,17 +357,33 @@ class UseIf(namedtuple('_UseIfBase', ('use', 'predicate', 'otherwise')), ModelEl
         raise NotImplementedError()
 
 
-class DoUntil(namedtuple('_DoUntilBase', ('do', 'until', 'otherwise')), ModelElement):
+class DoUntil(namedtuple('_DoUntilBase', ('do', 'until', 'except_when', 'otherwise')),
+              ModelElement):
     """
     """
+
+    def __new__(cls, *, do, until, except_when=(), otherwise=None):
+        return super().__new__(cls,
+                               do=do,
+                               until=until,
+                               except_when=except_when,
+                               otherwise=otherwise)
 
     def resolve(self, context):
         raise NotImplementedError()
 
 
-class UntilDo(namedtuple('_UntilDoBase', ('until', 'do', 'otherwise')), ModelElement):
+class UntilDo(namedtuple('_UntilDoBase', ('until', 'do', 'except_when', 'otherwise')),
+              ModelElement):
     """
     """
+
+    def __new__(cls, until, do, except_when=(), otherwise=None):
+        return super().__new__(cls,
+                               until=until,
+                               do=do,
+                               except_when=except_when,
+                               otherwise=otherwise)
 
     def resolve(self, context):
         raise NotImplementedError()
@@ -339,6 +397,8 @@ class ModifierDef(namedtuple('_ModifierDefBase', ('target', 'parameters', 'defin
     def __new__(cls, *, target, body):
         parameters = body.get('parameters') or ()
         definition = body.get('definition') or ()
+        if isinstance(target, Reference):
+            target = target.value
         parameters = tuple(p.value if isinstance(p, Reference) else p for p in parameters)
         return super().__new__(cls, target=target, parameters=parameters, definition=definition)
 
@@ -352,3 +412,9 @@ class ModifierDef(namedtuple('_ModifierDefBase', ('target', 'parameters', 'defin
 #
 #     def resolve(self, context):
 #         raise NotImplementedError()
+
+STATEMENT_KEYWORDS = {
+    'skip': FlowControl.SKIP,
+    'break': FlowControl.BREAK,
+}
+"""Keywords that are also a full statement."""

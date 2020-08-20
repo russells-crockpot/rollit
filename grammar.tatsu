@@ -1,8 +1,7 @@
 @@grammar::RollIt
 @@eol_comments:: /\/\/.*?$"/
-@@keyword:: use roll if then when while for do until and or not define
-@@keyword:: int float number clear load as from has
-@@keyword:: otherwise skip unless continue into
+@@keyword:: use if then for do until and or not clear load as from has
+@@keyword:: otherwise skip unless break into except when
 
 #start = load $;
 
@@ -25,12 +24,12 @@ KEBAB_NAME::IGNORE
 
 COMP_OP::IGNORE
     =
-    | '<'
-    | '>'
     | '=='
     | '>='
     | '<='
     | '!='
+    | '<'
+    | '>'
     | 'has'
     ;
 
@@ -44,28 +43,34 @@ NUMBER::IGNORE
     = FLOAT | INT;
 
 unless::Unless
-    = 'unless' ~ predicate:conditional 'then' then:statement;
+    = 'unless' predicate:conditional 'then' then:statement;
 
 if_body::If
     = ~ predicate:conditional 'then' then:statement
     unless:{&'unless' ~ unless} ['otherwise' otherwise:statement];
 
+except_when::ExceptWhen
+    = 'except when' predicate:conditional 'then' then:statement;
+
 # Loops
-do_until::DoUntil
-    = 'do' do:statement 'until' until:conditional ['otherwise' otherwise:statement];
+do_until_body::DoUntil
+    = do:statement 'until' until:conditional
+      except_when:{&'except when' ~ except_when}
+      ['otherwise' otherwise:statement]
+    ;
 
-until_do::UntilDo
-    = 'until' until:conditional 'do' do:statement ['otherwise' otherwise:statement];
-
-flow_control::FlowControl
-    = 'skip' | 'continue';
+until_do_body::UntilDo
+    = until:conditional 'do' do:statement
+      except_when:{&'except when' ~ except_when}
+      ['otherwise' otherwise:statement]
+    ;
 
 dialect_name = KEBAB_NAME | NAME;
 
 load_body::load
     = to_load:({dialect_name}+ | '*')
       ['from' ~ from_dialect:(dialect_name)]
-      ['into' ~ into:(reference | '~')]
+      ['into' ~ into:reference]
     ;
 
 modifier_args::IGNORE
@@ -75,7 +80,7 @@ modifier_call::ModifierCall
     = '->' modifier:reference args:[modifier_args] ;
 
 reference::Reference
-    = NAME | '?';
+    = NAME | '?' | '~';
 
 enlarge::Enlarge
     = size:[expression] '@' value:[expression];
@@ -92,9 +97,6 @@ accessor::IGNORE
     | reduce_enlarge
     ;
 
-negation::Negation
-    = 'not' value:conditional;
-
 expression::IGNORE
     =
     | '()' ~ !()
@@ -108,13 +110,20 @@ use_if::UseIf
 
 conditional::IGNORE
     =
-    | &'not' ~ @:negation
+    | 'not' ~ conditional
     | comparison
     ;
 
 comparison::Comparison
     =
-    | left:comparison op:(>COMP_OP) right:expression
+    | left:comparison op:(>COMP_OP) ~ right:expression
+    | math
+    ;
+
+math::Math
+    =
+    | left:math op:('+'|'-') ~ right:math
+    | left:access op:('*'|'//'|'/' | '%') ~ right:access
     | roll_math
     ;
 
@@ -122,20 +131,13 @@ comparison::Comparison
 # ^: remove x number of dice
 roll_math::RollMath
     =
-    | right:modify op:('&' | '^') left: expression
-    | math
-    ;
-
-math::Math
-    =
-    | left:math op:('+'|'-') ~ right:math
-    | left:access op:('*'|'//'|'/') ~ right:access
+    | left:roll_math op:('&' | '^') ~ right: expression
     | length
     ;
 
-length::IGNORE
+length::Length
     =
-    | '#' ~ value:length _type:`'Length'`
+    | '#' ~ length
     | modify
     ;
 
@@ -178,14 +180,9 @@ atom::IGNORE
 return_body::Return
     = @:expression;
 
-#TODO allow assignment to an access
-assignment::Assignment
-    = name:NAME '=' ~ value:expression ;
-
 modifier_params::IGNORE
     = '(' @:','.{ reference } [','] ')';
 
-#TODO allow assignment to an access
 modifier_def_body::IGNORE
     =  parameters:[modifier_params] definition:statement ;
 
@@ -193,12 +190,13 @@ basic_statement
     =
     | 'if' ~ @:if_body
     | 'load' ~ @:load_body
-    | !('('|'#') target:access '<-' ~ body:modifier_def_body _type:`'ModifierDef'`
+    | !'#' target:access '<-' ~ body:modifier_def_body _type:`'ModifierDef'`
+    | 'do' ~ @:do_until_body
+    | 'until' ~ @:until_do_body
+    | target:access '=' !'=' ~ value:expression _type:`Assignment`
+    | 'skip'
+    | 'break'
     | expression
-    | &(NAME '=') ~ assignment
-    | >flow_control
     | '[' ~ @:{statement} ']'
-    | &'@' ~ return_body
+    | '@' ~ return_body
     ;
-
-

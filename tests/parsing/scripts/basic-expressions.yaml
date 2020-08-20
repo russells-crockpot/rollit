@@ -25,6 +25,36 @@ tests:
       left: 1
       op: '+'
       right: 2
+  - script: '2 - 1'
+    result:
+      _class: Math
+      left: 2
+      op: '-'
+      right: 1
+  - script: '2 - -1'
+    result:
+      _class: Math
+      left: 2
+      op: '-'
+      right: -1
+  - script: '2 -- 1'
+    result:
+      _class: Math
+      left: 2
+      op: '-'
+      right: -1
+  - script: '2 * 3'
+    result:
+      _class: Math
+      left: 2
+      op: '*'
+      right: 3
+  - script: '3 % 2'
+    result:
+      _class: Math
+      left: 3
+      op: '%'
+      right: 2
   - script: '2 / 1'
     result:
       _class: Math
@@ -62,6 +92,75 @@ tests:
         right: 5
       op: '+'
       right: 6
+
+- name: basic_roll_math
+  categories:
+  - roll_math
+  tests:
+  - script: 'test & 2'
+    result:
+      _class: RollMath
+      left:
+        _class: Reference
+        value: 'test'
+      op: '&'
+      right: 2
+  - script: 'test ^ 2'
+    result:
+      _class: RollMath
+      left:
+        _class: Reference
+        value: 'test'
+      op: '^'
+      right: 2
+  - script: 'test ^ 2 + 3'
+    result:
+      _class: RollMath
+      left:
+        _class: Reference
+        value: 'test'
+      op: '^'
+      right:
+        _class: Math
+        left: 2
+        op: '+'
+        right: 3
+  - script: 'test ^ 2 * 3'
+    result:
+      _class: RollMath
+      left:
+        _class: Reference
+        value: 'test'
+      op: '^'
+      right:
+        _class: Math
+        left: 2
+        op: '*'
+        right: 3
+  - script: '1 ^ test & 3'
+    result:
+      _class: RollMath
+      left: 1
+      op: '^'
+      right:
+        _class: RollMath
+        left:
+          _class: Reference
+          value: 'test'
+        op: '&'
+        right: 3
+  - script: '(test ^ 2) & 3'
+    result:
+      _class: RollMath
+      left:
+        _class: RollMath
+        left:
+          _class: Reference
+          value: 'test'
+        op: '^'
+        right: 2
+      op: '&'
+      right: 3
 
 - name: basic_dice
   categories:
@@ -264,75 +363,6 @@ tests:
           _class: Math
         - 7
         _class: ModifierCall
-
-- name: basic_freeze
-  categories:
-  - freeze
-  tests:
-  - script: '!1'
-    result:
-      value: 1
-  - script: '!1d6'
-    result:
-      _class: Freeze
-      value:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-  - script: '!1d6 + 3'
-    result:
-      left:
-        _class: Freeze
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-      op: '+'
-      right: 3
-  - script: '!(1d6 + 3)'
-    result:
-      value:
-        _class: Freeze
-        left:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-        op: '+'
-        right: 3
-  - script: '3 + !1d6'
-    result:
-      left: 3
-      op: '+'
-      right:
-        _class: Freeze
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-  - script: '!1d6->top(3)'
-    result:
-      value:
-        modifying:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-        modifiers:
-        - value: 'top'
-          args: [3]
-  - script: '!?'
-    result:
-      value: '?'
-  - script: '!#1d6'
-    categories:
-    - length
-    result:
-      _class: Freeze
-      value:
-        _class: Length
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
 
 - name: basic_length
   categories:

@@ -94,7 +94,9 @@ tests:
       dialects:
       - 'test'
       - 'test-two'
-      into: '~'
+      into:
+        _class: Reference
+        value: '~'
 
 - name: basic_load_from
   categories:
@@ -130,7 +132,9 @@ tests:
       to_load:
       - 'test'
       - 'test-two'
-      into: '~'
+      into:
+        _class: Reference
+        value: '~'
       from_dialect: 'dialect-info'
 
 - name: basic_modifier_defs
@@ -140,57 +144,158 @@ tests:
   - script: 'name<-|'
     result:
       _class: ModifierDef
-      target:
-        _class: Reference
-        value: 'name'
+      target: name
       parameters: []
       definition: []
   - script: 'name<-[]'
     result:
       _class: ModifierDef
-      target:
-        _class: Reference
-        value: 'name'
+      target: 'name'
       parameters: []
       definition: []
   - script: 'name<-()[]'
     result:
       _class: ModifierDef
-      target:
-        _class: Reference
-        value: 'name'
+      target: 'name'
       parameters: []
       definition: []
   - script: 'name<-(param1) ? + 2'
     result:
       _class: ModifierDef
-      target:
-        _class: Reference
-        value: 'name'
+      target: 'name'
       parameters:
       - param1
       definition:
         _class: Math
         left:
-          _class: Reference
           value: '?'
         op: '+'
         right: 2
   - script: 'name<-(param1, param2)[param1 + param2]'
     result:
       _class: ModifierDef
-      target:
-        _class: Reference
-        value: 'name'
+      target: 'name'
       parameters:
       - param1
       - param2
       definition:
       - _class: Math
         left:
-          _class: Reference
           value: param1
         op: '+'
         right:
-          _class: Reference
           value: param2
+
+- name: basic_assignment
+  categories:
+  - assignment
+  tests:
+  - script: 'name = 1'
+    result:
+      _class: Assignment
+      target: name
+      value: 1
+  - script: 'name = 1d6'
+    result:
+      _class: Assignment
+      target: name
+      value:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+  - script: 'name = {2}'
+    result:
+      _class: Assignment
+      target: name
+      value:
+        _class: Reduce
+        value: 2
+  - script: 'name = {@}'
+    result:
+      _class: Assignment
+      target: name
+      value:
+        _class: Enlarge
+        size: null
+        value: null
+  - script: 'name = {1d6@(3d4 + 5)}'
+    result:
+      _class: Assignment
+      target: name
+      value:
+        _class: Enlarge
+        size:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        value:
+          _class: Math
+          left:
+            _class: Dice
+            number_of_dice: 3
+            sides: 4
+          op: '+'
+          right: 5
+  - script: 'name = value'
+    result:
+      _class: Assignment
+      target: name
+      value:
+        _class: Reference
+        value: 'value'
+  - script: 'name = {1d6}->top(2)'
+    result:
+      _class: Assignment
+      target: name
+      value:
+        _class: Modify
+        modifying:
+          _class: Reduce
+          value:
+            _class: Dice
+            number_of_dice: 1
+            sides: 6
+        modifiers:
+        - modifier:
+            _class: Reference
+            value: 'top'
+          args: [2]
+          _class: ModifierCall
+  - script: 'name = {{(2d4)d6}->top(3)}'
+    result:
+      _class: Assignment
+      target: name
+      value:
+        _class: Reduce
+        value:
+          _class: Modify
+          modifying:
+            _class: Reduce
+            value:
+              _class: Dice
+              number_of_dice:
+                _class: Dice
+                number_of_dice: 2
+                sides: 4
+              sides: 6
+          modifiers:
+          - modifier:
+              _class: Reference
+              value: 'top'
+            args: [3]
+            _class: ModifierCall
+
+#FIXME These statments work, but they the tests don't because they're enums and not tuples
+- name: flow_control
+  categories:
+  - flow_control
+  - loops
+  tests:
+  - script: 'break'
+    result:
+      _class: FlowControl
+      value: 'break'
+  - script: 'skip'
+    result:
+      _class: FlowControl
+      value: 'skip'
