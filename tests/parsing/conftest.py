@@ -29,7 +29,7 @@ def __load():
             categories = tuple(itertools.chain(entry.get('categories', ()), parent_categories))
             tests = tuple(cls(child, categories) for child in entry.get('tests', ()))
             script = entry.get('script')
-            result = entry.get('result')
+            result = entry.get('result', entry.get('results'))
             self = super().__new__(
                 cls,
                 script=script,

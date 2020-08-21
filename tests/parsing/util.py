@@ -16,7 +16,7 @@ def get_element_value(elem):
     if isinstance(elem, enum.Enum):
         # pylint: disable=protected-access
         rval = {'value': elem._name_}
-    elif isinstance(elem, model.SingletonElement):
+    elif isinstance(elem, model.SingleValueElement):
         rval = {'value': elem.value}
     else:
         rval = elem._asdict()

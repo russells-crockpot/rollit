@@ -261,7 +261,7 @@ tests:
   - script: '?->top'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: SpecialReference
         value: 'SUBJECT'
       modifiers:
@@ -273,7 +273,7 @@ tests:
   - script: 'test->top(2)'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Reference
         value: 'test'
       modifiers:
@@ -284,7 +284,7 @@ tests:
   - script: '1d6->bottom'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Dice
         number_of_dice: 1
         sides: 6
@@ -297,7 +297,7 @@ tests:
   - script: '1d6->bottom(2d3)'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Dice
         number_of_dice: 1
         sides: 6
@@ -312,7 +312,7 @@ tests:
   - script: '1d6->bottom(2d3)->top'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Dice
         number_of_dice: 1
         sides: 6
@@ -333,7 +333,7 @@ tests:
   - script: '1d6->bottom(2d3)->top(1)'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Dice
         number_of_dice: 1
         sides: 6
@@ -354,7 +354,7 @@ tests:
   - script: '1d6->bottom(2d3)->top(1, 4d5 - 6, 7)'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Dice
         number_of_dice: 1
         sides: 6
@@ -433,7 +433,7 @@ tests:
     result:
       _class: Length
       value:
-        modifying:
+        subject:
           _class: Dice
           number_of_dice: 1
           sides: 6
@@ -442,7 +442,7 @@ tests:
           args: [3]
   - script: '(#1d6)->top(3)'
     result:
-      modifying:
+      subject:
         _class: Length
         value:
           _class: Dice
@@ -453,7 +453,7 @@ tests:
         args: [3]
   - script: '(#1d6)->top(3)'
     result:
-      modifying:
+      subject:
         _class: Length
         value:
           _class: Dice
@@ -561,7 +561,7 @@ tests:
   - script: '{1}->top'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Reduce
         value: 1
       modifiers:
@@ -573,7 +573,7 @@ tests:
   - script: '{1d4}->top'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Reduce
         value:
           _class: Dice
@@ -588,7 +588,7 @@ tests:
   - script: '{1d{2d4}}->top'
     result:
       _class: Modify
-      modifying:
+      subject:
         _class: Reduce
         value:
           _class: Dice

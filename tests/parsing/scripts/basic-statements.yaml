@@ -400,7 +400,7 @@ tests:
       target: name
       value:
         _class: Modify
-        modifying:
+        subject:
           _class: Reduce
           value:
             _class: Dice
@@ -420,7 +420,7 @@ tests:
         _class: Reduce
         value:
           _class: Modify
-          modifying:
+          subject:
             _class: Reduce
             value:
               _class: Dice

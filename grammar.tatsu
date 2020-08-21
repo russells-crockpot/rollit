@@ -1,7 +1,8 @@
 @@grammar::RollIt
 @@eol_comments:: /\/\/.*?$"/
-@@keyword:: use if then for do until and or not clear load as from has
-@@keyword:: otherwise skip unless into except when stop fullstop
+@@keyword:: use if then for do until and or not load as from has finish
+@@keyword:: otherwise unless into except when for every that
+@@keyword:: at after restart before
 
 #start = load $;
 
@@ -15,12 +16,12 @@ statement
     ;
 
 @name
-NAME = /[a-zA-Z_][a-zA-Z_0-9]*/;
+name = /[a-zA-Z_][a-zA-Z_0-9]*/;
 
 @name
-KEBAB_NAME = /[a-zA-Z_]([\-a-zA-Z_0-9]*[\-a-zA-Z_0-9])?/ ;
+kebab_name = /[a-zA-Z_]([\-a-zA-Z_0-9]*[\-a-zA-Z_0-9])?/ ;
 
-COMP_OP =
+comp_op =
     | '=='
     | '>='
     | '<='
@@ -32,34 +33,29 @@ COMP_OP =
     | 'or'
     ;
 
-FLOAT = /-?\d*\.\d+/ ;
+float = /-?\d*\.\d+/ ;
 
-INT = /-?\d+/ ;
+int = /-?\d+/ ;
 
-NUMBER = FLOAT | INT;
+number = float | int;
 
 unless = 'unless' predicate:conditional 'then' then:statement;
 
-if_body::If
+if_body
     = ~ predicate:conditional 'then' then:statement
     unless:{&'unless' ~ unless} ['otherwise' otherwise:statement];
 
-except_when = 'except when' predicate:conditional 'then' then:statement;
-
 # Loops
-do_until_body
-    = do:statement 'until' until:conditional
-      except_when:{&'except when' ~ except_when}
-      ['otherwise' otherwise:statement]
-    ;
-
 until_do_body
-    = until:conditional 'do' do:statement
-      except_when:{&'except when' ~ except_when}
-      ['otherwise' otherwise:statement]
+    = [('@' name:name)] until:conditional 'do' do:statement
+      except_when:{'except' ~ 'when'  conditional 'then' statement}
+      ['otherwise' ~ otherwise:statement]
     ;
 
-dialect_name = KEBAB_NAME | NAME;
+for_every_body
+    = [('@' name:name)] item_name:name 'that' iterable:expression 'has' 'do' do:statement;
+
+dialect_name = kebab_name | name;
 
 load_body
     = to_load:({dialect_name}+ | '*')
@@ -71,7 +67,7 @@ modifier_args = '(' @:','.{ expression } [','] ')';
 
 modifier_call = '->' modifier:reference args:[modifier_args] ;
 
-reference = NAME | '?' | '~' | '!';
+reference = name | '?' | '~' | '!';
 
 enlarge = size:[expression] '@' value:[expression];
 
@@ -83,7 +79,7 @@ reduce_enlarge
 
 accessor
     =
-    | '.' @:NAME
+    | '.' @:name
     | reduce_enlarge
     ;
 
@@ -92,7 +88,7 @@ expression
     | '()' ~ !()
     | use_if;
 
-use_if::UseIf
+use_if
     =
     | 'use' ~ use:expression 'if' predicate:conditional 'otherwise' otherwise:expression
     | conditional
@@ -104,13 +100,13 @@ conditional
     | comparison
     ;
 
-comparison::Comparison
+comparison
     =
-    | left:comparison op:(>COMP_OP) ~ right:expression
+    | left:comparison op:(>comp_op) ~ right:expression
     | math
     ;
 
-math::Math
+math
     =
     | left:math op:('+'|'-') ~ right:math
     | left:access op:('*'|'//'|'/' | '%') ~ right:access
@@ -119,7 +115,7 @@ math::Math
 
 # &: combine rolls
 # ^: remove x number of values
-roll_math::RollMath
+roll_math
     =
     | left:roll_math op:('&' | '^') ~ right: expression
     | length
@@ -131,19 +127,19 @@ length
     | modify
     ;
 
-modify::Modify
+modify
     =
-    | modifying:access  &'->' ~ modifiers:{modifier_call}+
+    | subject:access  &'->' ~ modifiers:{modifier_call}+
     | access
     ;
 
-access::Access
+access
     =
     | accessing:modify accessors:{accessor}+
     | dice
     ;
 
-dice::Dice
+dice
     =
     | number_of_dice:[reduce_enlarge_expr] /d|D/ ~ sides:reduce_enlarge_expr
     | reduce_enlarge_expr
@@ -163,7 +159,7 @@ factor
 
 atom
     =
-    | NUMBER
+    | number
     | reference
     ;
 
@@ -171,7 +167,7 @@ modifier_params = '(' @:','.{ reference } [','] ')';
 
 modifier_def_body =  parameters:[modifier_params] definition:statement ;
 
-ASSIGN_OP
+assign_op
     =
     | '='
     | '+='
@@ -186,17 +182,23 @@ ASSIGN_OP
 
 modifier_def = target:access '<-' parameters:[modifier_params] definition:statement;
 
+restart_body
+    =
+    | location_specifier:'before' ~ [target:(name | '~' | '!')]
+    | location_specifier:'at' ~ [target:(name | '~' | '!')]
+    | location_specifier:'after' ~ [target:(name | '~' | '!')]
+    ;
+
 basic_statement
     =
     | 'if' ~ @:if_body
     | 'load' ~ @:load_body
     | &(access '<-') ~ @:modifier_def
-    | 'do' ~ @:do_until_body
     | 'until' ~ @:until_do_body
-    | target:access op:(>ASSIGN_OP) !'=' ~ value:expression
-    | 'skip'
-    | 'stop'
-    | 'fullstop' stoppage:[expression]
+    | 'for' 'every' ~ @:for_every_body
+    | target:access op:(>assign_op) !'=' ~ value:expression
+    | 'restart' ~ restart_body
+    | 'finisn'
     | expression
     | '[' ~ @:{statement} ']'
     ;

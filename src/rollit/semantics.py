@@ -1,7 +1,8 @@
 """
 """
-import builtins
+import inspect
 import re
+from collections import namedtuple
 from collections.abc import Mapping
 from contextlib import suppress
 
@@ -13,6 +14,46 @@ __all__ = ['RollItSemantics']
 STATMENTS_END_PAT = re.compile(r'[\r\n\|]')
 
 
+class CreateTypeProperty(
+        namedtuple('_CreateTypePropertyBase',
+                   ('model_cls', 'single_value', 'defaults', 'requires'))):
+    """
+    """
+
+    def __new__(cls, model_cls, single_value=None, defaults=None, requires=()):
+        if single_value is None:
+            single_value = True
+            if inspect.isclass(model_cls) \
+                    and issubclass(model_cls, (model.ModelElement, Mapping)) \
+                    and not issubclass(model_cls, model.SingleValueElement):
+                single_value = False
+        if single_value and requires:
+            raise ValueError()
+        return super().__new__(
+            cls,
+            model_cls=model_cls,
+            single_value=single_value,
+            defaults=defaults,
+            requires=requires,
+        )
+
+    def __call__(self, ast, *args, **kwargs):
+        if self.single_value:
+            if ast is None:
+                ast = self.defaults
+            return self.model_cls(ast)
+        if not isinstance(ast, Mapping):
+            return ast
+        for name in self.requires:
+            if name not in ast:
+                return ast
+        if self.defaults:
+            new_ast = self.defaults.copy()
+            new_ast.update(ast)
+            ast = new_ast
+        return self.model_cls(**ast)
+
+
 # pylint: disable=missing-function-docstring
 class RollItSemantics:
     """
@@ -20,27 +61,23 @@ class RollItSemantics:
     _in_modifier_def = False
     _name_not_ref = False
 
-    def _default(self, ast, model_cls=None):
-        if not model_cls:
-            with suppress(TypeError):
-                if '_type' in ast:
-                    model_cls = ast.pop('_type')
-        if model_cls and model_cls != 'IGNORE' and not isinstance(ast, model.ModelElement):
-            module = model
-            if model_cls.startswith('pybuiltin_'):
-                return getattr(builtins, model_cls.replace('pybuiltin_', '', 1))(ast)
-            model_cls = getattr(module, model_cls)
-            if issubclass(model_cls, model.SingletonElement):
-                return model_cls(ast)
-            if isinstance(ast, Mapping):
-                return model_cls(**ast)
-        return ast
+    for_every_body = CreateTypeProperty(model.ForEvery, False, {'name': None})
+    use_if = CreateTypeProperty(model.UseIf, False, requires=('use', 'predicate', 'otherwise'))
+    enlarge = CreateTypeProperty(model.Enlarge, False)
+    roll_math = CreateTypeProperty(model.RollMath, False, requires=('left', 'op', 'right'))
+    math = CreateTypeProperty(model.Math, False, requires=('left', 'op', 'right'))
+    comparison = CreateTypeProperty(model.Comparison, False, requires=('left', 'op', 'right'))
+    dice = CreateTypeProperty(model.Dice, False, requires=('number_of_dice', 'sides'))
+    access = CreateTypeProperty(model.Access, False, requires=('accessing', 'accessors'))
+    modify = CreateTypeProperty(model.Modify, False, requires=('subject', 'modifiers'))
+    int = CreateTypeProperty(int, True)
+    float = CreateTypeProperty(float, True)
 
     def conditional(self, ast, *args, **kwargs):
         if not isinstance(ast, model.ModelElement) and isinstance(ast, tuple) \
                 and len(ast) > 1 and ast[0] == 'not':
             return model.Negation(ast[1])
-        return self._default(ast, *args, **kwargs)
+        return ast
 
     def modifier_def(self, ast, *args, **kwargs):
         target = ast['target']
@@ -106,8 +143,9 @@ class RollItSemantics:
     def statement(self, ast, *args, **kwargs):
         if isinstance(ast, str) and not (ast and STATMENTS_END_PAT.sub('', ast)):
             return None
-        return self._default(ast, *args, **kwargs)
+        return ast
 
+    #FIXME Unlesses need to have a negation of the initial if predicate anded to them
     def if_body(self, ast, *args, **kwargs):
         rval = model.If(predicate=ast['predicate'],
                         then=ast['then'],
@@ -116,30 +154,19 @@ class RollItSemantics:
             rval = model.If(predicate=unless['predicate'], then=unless['then'], otherwise=rval)
         return rval
 
-    def _replace_do_body(self, ast):
-        ast.setdefault('otherwise', None)
-        if 'except_when' not in ast:
-            return
-        rval = ast.pop('do')
-        for except_when in ast.pop('except_when'):
-            rval = model.If(predicate=except_when.predicate,
-                            then=(except_when.then, model.FlowControlConstant.SKIP),
-                            otherwise=rval)
-        ast['do'] = rval
-
-    def do_until_body(self, ast, *args, **kwargs):
-        self._replace_do_body(ast)
-        return (
-            ast['do'],
-            model.UntilDo(**ast),
-        )
+    @staticmethod
+    def _negate(element):
+        return element.value if isinstance(element, model.Negation) else model.Negation(element)
 
     def until_do_body(self, ast, *args, **kwargs):
-        self._replace_do_body(ast)
+        ast.setdefault('name', None)
+        ast.setdefault('otherwise', None)
+        do = ast.pop('do')
+        if 'except_when' in ast:
+            for _, _, ew_predicate, _, ew_then in ast.pop('except_when'):
+                do = model.If(predicate=ew_predicate, then=ew_then, otherwise=do)
+        ast['do'] = do
         return model.UntilDo(**ast)
-
-    def enlarge(self, ast, *args, **kwargs):
-        return model.Enlarge(**ast)
 
     def reduce_enlarge(self, ast, *args, **kwargs):
         if isinstance(ast, model.Enlarge):
@@ -161,19 +188,23 @@ class RollItSemantics:
             ast['args'] = ()
         return model.ModifierCall(**ast)
 
-    def FLOAT(self, ast, *args, **kwargs):
-        return float(ast)
-
-    def INT(self, ast, *args, **kwargs):
-        return int(ast)
+    def restart_body(self, ast):
+        specifier = model.RestartLocationSpecifier(ast['location_specifier'])
+        target = ast.get('target', '!')
+        if target in ('~', '!'):
+            target = 'NONE' if target == '!' else 'ROOT'
+            # pylint: disable=protected-access
+            return getattr(model.Restart, f'{specifier._name_}_{target}')
+        return model.Restart(location_specifier=specifier, target=target)
 
     def basic_statement(self, ast, *args, **kwargs):
-        if ast == 'skip':
-            return model.FlowControlConstant.SKIP
-        if ast == 'stop':
-            return model.FlowControlConstant.STOP
-        with suppress(TypeError):
-            if len(ast) == 3 and 'op' in ast \
-                    and ast['op'][-1] == '=' and ast['op'] != '==':
-                return self._assigment(ast)
-        return self._default(ast, *args, **kwargs)
+        if not isinstance(ast, model.ModelElement):
+            if isinstance(ast, Mapping):
+                with suppress(TypeError, LookupError):
+                    if len(ast) == 3 and 'op' and ast['op'][-1] == '=' and ast['op'] != '==':
+                        return self._assigment(ast)
+            elif isinstance(ast, (list, tuple)):
+                with suppress(IndexError):
+                    if ast[0] == 'restart':
+                        return ast[1]
+        return ast
