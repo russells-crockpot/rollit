@@ -3,323 +3,6 @@ categories:
 - loops
 tests:
 
-- name: basic_do_until
-  categories:
-  - do_until
-  tests:
-  - script: 'do 1 until 2'
-    result:
-      _class: DoUntil
-      do: 1
-      until: 2
-      except_when: []
-      otherwise: null
-  - script: 'do 1 until 2 otherwise 3'
-    result:
-      _class: DoUntil
-      do: 1
-      until: 2
-      except_when: []
-      otherwise: 3
-  - script: 'do 1 until 2 except when 3 then 4'
-    result:
-      _class: DoUntil
-      do: 1
-      until: 2
-      except_when:
-      - _class: ExceptWhen
-        predicate: 3
-        then: 4
-      otherwise: null
-  - script: 'do 1 until 2 except when 3 then 4 otherwise 5'
-    result:
-      _class: DoUntil
-      do: 1
-      until: 2
-      except_when:
-      - _class: ExceptWhen
-        predicate: 3
-        then: 4
-      otherwise: 5
-  - script: 'do 1 + 2 until 3'
-    result:
-      _class: DoUntil
-      do:
-        _class: Math
-        left: 1
-        op: '+'
-        right: 2
-      until: 3
-      except_when: []
-      otherwise: null
-  - script: 'do 1 until 2 > 3'
-    result:
-      _class: DoUntil
-      do: 1
-      until:
-        _class: Comparison
-        left: 2
-        op: '>'
-        right: 3
-      except_when: []
-      otherwise: null
-  - script: 'do 1 + 2 until 3 >= 4'
-    result:
-      _class: DoUntil
-      do:
-        _class: Math
-        left: 1
-        op: '+'
-        right: 2
-      until:
-        _class: Comparison
-        left: 3
-        op: '>='
-        right: 4
-      except_when: []
-      otherwise: null
-  - script: 'do test = 1d6 until 3'
-    result:
-      _class: DoUntil
-      do:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-      until: 3
-      except_when: []
-      otherwise: null
-  - script: 'do 1 until test >= 5'
-    result:
-      _class: DoUntil
-      do: 1
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>='
-        right: 5
-      except_when: []
-      otherwise: null
-  - script: 'do 1d6 until test >= 5'
-    result:
-      _class: DoUntil
-      do:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>='
-        right: 5
-      except_when: []
-      otherwise: null
-  - script: 'do 1d6 until test >= 5 otherwise 6'
-    result:
-      _class: DoUntil
-      do:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>='
-        right: 5
-      except_when: []
-      otherwise: 6
-  - script: 'do test = 1d6 until test >= 5'
-    result:
-      _class: DoUntil
-      do:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>='
-        right: 5
-      except_when: []
-      otherwise: null
-  - script: 'do test = test & 1d6 until test > 25'
-    result:
-      _class: DoUntil
-      do:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
-          op: '&'
-          right:
-            _class: Dice
-            number_of_dice: 1
-            sides: 6
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>'
-        right: 25
-      except_when: []
-      otherwise: null
-  - script: 'do test = test & 1d6 until test > 25 otherwise test = 2'
-    result:
-      _class: DoUntil
-      do:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
-          op: '&'
-          right:
-            _class: Dice
-            number_of_dice: 1
-            sides: 6
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>'
-        right: 25
-      except_when: []
-      otherwise:
-        _class: Assignment
-        target: 'test'
-        value: 2
-  - script: 'do test = test & 1d6 until test > 25 otherwise test = {2}'
-    result:
-      _class: DoUntil
-      do:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
-          op: '&'
-          right:
-            _class: Dice
-            number_of_dice: 1
-            sides: 6
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>'
-        right: 25
-      except_when: []
-      otherwise:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: Reduce
-          value: 2
-  - script: 'do test = {@7} until test > 25'
-    result:
-      _class: DoUntil
-      do:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: Enlarge
-          size: null
-          value: 7
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>'
-        right: 25
-      except_when: []
-      otherwise: null
-  - script: 'do test = test & 1d6 until test > 25 otherwise test = {@}'
-    result:
-      _class: DoUntil
-      do:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
-          op: '&'
-          right:
-            _class: Dice
-            number_of_dice: 1
-            sides: 6
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>'
-        right: 25
-      except_when: []
-      otherwise:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: Enlarge
-          size: null
-          value: null
-  - script: 'do test = test & 1d6 until test > 25 otherwise test = {@0}'
-    result:
-      _class: DoUntil
-      do:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
-          op: '&'
-          right:
-            _class: Dice
-            number_of_dice: 1
-            sides: 6
-      until:
-        _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
-        op: '>'
-        right: 25
-      except_when: []
-      otherwise:
-        _class: Assignment
-        target: 'test'
-        value:
-          _class: Enlarge
-          size: null
-          value: 0
-
 - name: basic_until_do
   categories:
   - until_do
@@ -329,34 +12,32 @@ tests:
       _class: UntilDo
       until: 1
       do: 2
-      except_when: []
       otherwise: null
   - script: 'until 1 do 2 otherwise 3'
     result:
       _class: UntilDo
       until: 1
       do: 2
-      except_when: []
       otherwise: 3
   - script: 'until 1 do 2 except when 3 then 4'
     result:
       _class: UntilDo
       until: 1
-      do: 2
-      except_when:
-      - _class: ExceptWhen
+      do:
+        _class: If
         predicate: 3
         then: 4
+        otherwise: 2
       otherwise: null
   - script: 'until 1 do 2 except when 3 then 4 otherwise 5'
     result:
       _class: UntilDo
       until: 1
-      do: 2
-      except_when:
-      - _class: ExceptWhen
+      do:
+        _class: If
         predicate: 3
         then: 4
+        otherwise: 2
       otherwise: 5
   - script: 'until 1 + 2 do 3'
     result:
@@ -367,7 +48,6 @@ tests:
         op: '+'
         right: 2
       do: 3
-      except_when: []
       otherwise: null
   - script: 'until 1 do 2 > 3'
     result:
@@ -378,7 +58,6 @@ tests:
         left: 2
         op: '>'
         right: 3
-      except_when: []
       otherwise: null
   - script: 'until 1 + 2 do 3 >= 4'
     result:
@@ -393,7 +72,6 @@ tests:
         left: 3
         op: '>='
         right: 4
-      except_when: []
       otherwise: null
   - script: 'until test >=  5 do test = test & 1d6'
     result:
@@ -418,7 +96,6 @@ tests:
             _class: Dice
             number_of_dice: 1
             sides: 6
-      except_when: []
       otherwise: null
   - script: 'until test > 25 do test = test & 1d6'
     result:
@@ -443,7 +120,6 @@ tests:
             _class: Dice
             number_of_dice: 1
             sides: 6
-      except_when: []
       otherwise: null
   - script: 'until test > 25 do test = test & 1d6 otherwise test = {@0}'
     result:
@@ -468,7 +144,309 @@ tests:
             _class: Dice
             number_of_dice: 1
             sides: 6
-      except_when: []
+      otherwise:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: Enlarge
+          size: null
+          value: 0
+
+#FIXME
+- name: basic_do_until
+  categories:
+  - do_until
+  tests:
+  - script: 'do 1 until 2'
+    result:
+    - 1
+    - _class: UntilDo
+      do: 1
+      until: 2
+      otherwise: null
+  - script: 'do 1 until 2 otherwise 3'
+    result:
+      _class: UntilDo
+      do: 1
+      until: 2
+      otherwise: 3
+  - script: 'do 1 until 2 except when 3 then 4'
+    result:
+      _class: UntilDo
+      do: 1
+      until: 2
+      except_when:
+      - _class: ExceptWhen
+        predicate: 3
+        then: 4
+      otherwise: null
+  - script: 'do 1 until 2 except when 3 then 4 otherwise 5'
+    result:
+      _class: UntilDo
+      do: 1
+      until: 2
+      except_when:
+      - _class: ExceptWhen
+        predicate: 3
+        then: 4
+      otherwise: 5
+  - script: 'do 1 + 2 until 3'
+    result:
+      _class: UntilDo
+      do:
+        _class: Math
+        left: 1
+        op: '+'
+        right: 2
+      until: 3
+      otherwise: null
+  - script: 'do 1 until 2 > 3'
+    result:
+      _class: UntilDo
+      do: 1
+      until:
+        _class: Comparison
+        left: 2
+        op: '>'
+        right: 3
+      otherwise: null
+  - script: 'do 1 + 2 until 3 >= 4'
+    result:
+      _class: UntilDo
+      do:
+        _class: Math
+        left: 1
+        op: '+'
+        right: 2
+      until:
+        _class: Comparison
+        left: 3
+        op: '>='
+        right: 4
+      otherwise: null
+  - script: 'do test = 1d6 until 3'
+    result:
+      _class: UntilDo
+      do:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      until: 3
+      otherwise: null
+  - script: 'do 1 until test >= 5'
+    result:
+      _class: UntilDo
+      do: 1
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>='
+        right: 5
+      otherwise: null
+  - script: 'do 1d6 until test >= 5'
+    result:
+      _class: UntilDo
+      do:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>='
+        right: 5
+      otherwise: null
+  - script: 'do 1d6 until test >= 5 otherwise 6'
+    result:
+      _class: UntilDo
+      do:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>='
+        right: 5
+      otherwise: 6
+  - script: 'do test = 1d6 until test >= 5'
+    result:
+      _class: UntilDo
+      do:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>='
+        right: 5
+      otherwise: null
+  - script: 'do test = test & 1d6 until test > 25'
+    result:
+      _class: UntilDo
+      do:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: RollMath
+          left:
+            _class: Reference
+            value: 'test'
+          op: '&'
+          right:
+            _class: Dice
+            number_of_dice: 1
+            sides: 6
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>'
+        right: 25
+      otherwise: null
+  - script: 'do test = test & 1d6 until test > 25 otherwise test = 2'
+    result:
+      _class: UntilDo
+      do:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: RollMath
+          left:
+            _class: Reference
+            value: 'test'
+          op: '&'
+          right:
+            _class: Dice
+            number_of_dice: 1
+            sides: 6
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>'
+        right: 25
+      otherwise:
+        _class: Assignment
+        target: 'test'
+        value: 2
+  - script: 'do test = test & 1d6 until test > 25 otherwise test = {2}'
+    result:
+      _class: UntilDo
+      do:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: RollMath
+          left:
+            _class: Reference
+            value: 'test'
+          op: '&'
+          right:
+            _class: Dice
+            number_of_dice: 1
+            sides: 6
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>'
+        right: 25
+      otherwise:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: Reduce
+          value: 2
+  - script: 'do test = {@7} until test > 25'
+    result:
+      _class: UntilDo
+      do:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: Enlarge
+          size: null
+          value: 7
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>'
+        right: 25
+      otherwise: null
+  - script: 'do test = test & 1d6 until test > 25 otherwise test = {@}'
+    result:
+      _class: UntilDo
+      do:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: RollMath
+          left:
+            _class: Reference
+            value: 'test'
+          op: '&'
+          right:
+            _class: Dice
+            number_of_dice: 1
+            sides: 6
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>'
+        right: 25
+      otherwise:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: Enlarge
+          size: null
+          value: null
+  - script: 'do test = test & 1d6 until test > 25 otherwise test = {@0}'
+    result:
+      _class: UntilDo
+      do:
+        _class: Assignment
+        target: 'test'
+        value:
+          _class: RollMath
+          left:
+            _class: Reference
+            value: 'test'
+          op: '&'
+          right:
+            _class: Dice
+            number_of_dice: 1
+            sides: 6
+      until:
+        _class: Comparison
+        left:
+          _class: Reference
+          value: 'test'
+        op: '>'
+        right: 25
       otherwise:
         _class: Assignment
         target: 'test'

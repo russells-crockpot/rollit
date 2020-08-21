@@ -1,59 +1,43 @@
 # pylint: disable=missing-docstring
+import enum
 import itertools
-from importlib import import_module
 
 import pytest
-from rollit.model import ModelElement
+from rollit import model
 
 from .conftest import script_tests
 
-_MONKEYPATCH_VALUES = ()
 
-_VALUES_MAP = {
-    '_operator': {
-        'mul': '*',
-        'add': '+',
-        'sub': '-',
-        'truediv': '/',
-        'floordiv': '//',
-        'mod': '%',
-    }
-}
+def get_element_value(elem):
+    if not isinstance(elem, model.ModelElement) and not isinstance(elem, enum.Enum):
+        if isinstance(elem, (tuple, list, set)):
+            return type(elem)(get_element_value(item) for item in elem)
+        return elem
+    if isinstance(elem, enum.Enum):
+        # pylint: disable=protected-access
+        rval = {'value': elem._name_}
+    elif isinstance(elem, model.SingletonElement):
+        rval = {'value': elem.value}
+    else:
+        rval = elem._asdict()
+    for k, v in rval.items():
+        rval[k] = get_element_value(v)
+    rval['_class'] = type(elem).__name__
+    return rval
 
 
 def create_scripttest_func(category):
 
-    def _func(parser, monkeypatch, scripttest):
-        for module_name, overrides in _MONKEYPATCH_VALUES:
-            module = import_module(module_name)
-            for attr, v in overrides:
-                monkeypatch.setattr(module, attr, v)
+    def _func(parser, scripttest):
         expected_results = scripttest.result
         if not isinstance(expected_results, (tuple, list, set)):
             expected_results = (expected_results,)
-        actual_results = tuple(
-            ast_element_to_dict(stmt)
-            for stmt in parser.parse(scripttest.script)
-            if not isinstance(stmt, str))
+        actual_results = get_element_value(parser.parse(scripttest.script))
         for expected, actual in itertools.zip_longest(expected_results, actual_results):
             assert expected == reorder_keys(expected, actual)
 
     _func.__name__ = f'test_{category}'
     return pytest.mark.parametrize('scripttest', getattr(script_tests, category))(_func)
-
-
-def ast_element_to_dict(elem):
-    if not isinstance(elem, ModelElement):
-        if isinstance(elem, (tuple, list, set)):
-            return type(elem)(ast_element_to_dict(e) for e in elem)
-        if hasattr(elem, '__module__'):
-            if elem.__module__ in _VALUES_MAP and elem.__name__ in _VALUES_MAP[elem.__module__]:
-                return _VALUES_MAP[elem.__module__][elem.__name__]
-        return elem
-    rval = {'_class': type(elem).__name__}
-    for k, v in zip(elem._fields, elem):
-        rval[k] = ast_element_to_dict(v)
-    return rval
 
 
 def reorder_keys(expected, actual):

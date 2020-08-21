@@ -15,6 +15,24 @@ tests:
   - script: -4.5
     result: -4.5
 
+- name: special_references
+  categories:
+  - special_references
+  - references
+  tests:
+  - script: '?'
+    result:
+      _class: SpecialReference
+      value: 'MODIFYING'
+  - script: '~'
+    result:
+      _class: SpecialReference
+      value: 'ROOT'
+  - script: '!'
+    result:
+      _class: SpecialReference
+      value: 'NONE'
+
 - name: basic_math
   categories:
   - math
@@ -244,13 +262,13 @@ tests:
     result:
       _class: Modify
       modifying:
-        _class: Reference
-        value: '?'
+        _class: SpecialReference
+        value: 'MODIFYING'
       modifiers:
       - modifier:
           _class: Reference
           value: 'top'
-        args: null
+        args: []
         _class: ModifierCall
   - script: 'test->top(2)'
     result:
@@ -274,7 +292,7 @@ tests:
       - modifier:
           _class: Reference
           value: 'bottom'
-        args: null
+        args: []
         _class: ModifierCall
   - script: '1d6->bottom(2d3)'
     result:
@@ -310,7 +328,7 @@ tests:
       - modifier:
           _class: Reference
           value: 'top'
-        args: null
+        args: []
         _class: ModifierCall
   - script: '1d6->bottom(2d3)->top(1)'
     result:
@@ -466,21 +484,27 @@ tests:
   - script: '{}'
     result:
       _class: Reduce
-      value: '-'
-  - script: '{-}'
+      value:
+        _class: SpecialReference
+        value: 'NONE'
+  - script: '{!}'
     result:
       _class: Reduce
-      value: '-'
+      value:
+        _class: SpecialReference
+        value: 'NONE'
   - script: '{*}'
     result:
       _class: Reduce
-      value: '*'
+      value:
+        _class: SpecialReference
+        value: 'ALL'
   - script: '{?}'
     result:
       _class: Reduce
       value:
-        _class: Reference
-        value: '?'
+        _class: SpecialReference
+        value: 'MODIFYING'
   - script: '{1d6}'
     result:
       _class: Reduce
@@ -499,7 +523,7 @@ tests:
           sides: 6
         op: '+'
         right: 2
-  - script: '{1d6] +2'
+  - script: '{1d6} +2'
     result:
       _class: Math
       left:
@@ -534,10 +558,34 @@ tests:
             _class: Dice
             number_of_dice: 2
             sides: 4
+  - script: '{1}->top'
+    result:
+      _class: Modify
+      modifying:
+        _class: Reduce
+        value: 1
+      modifiers:
+      - modifier:
+          _class: Reference
+          value: 'top'
+        args: []
+        _class: ModifierCall
+  - script: '{1d4}->top'
+    result:
+      _class: Modify
+      modifying:
+        _class: Reduce
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 4
+      modifiers:
+      - modifier:
+          _class: Reference
+          value: 'top'
+        args: []
+        _class: ModifierCall
   - script: '{1d{2d4}}->top'
-    categories:
-    - modify
-    - modifiers
     result:
       _class: Modify
       modifying:
@@ -555,7 +603,7 @@ tests:
       - modifier:
           _class: Reference
           value: 'top'
-        args: null
+        args: []
         _class: ModifierCall
   - script: '{1}'
     result:

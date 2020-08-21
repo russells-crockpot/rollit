@@ -3,66 +3,6 @@ categories:
 - statements
 tests:
 
-- name: basic_blocks
-  categories:
-  - blocks
-  tests:
-  - script: '[]'
-    result: []
-  - script: '[1d6]'
-    result:
-    - _class: Dice
-      number_of_dice: 1
-      sides: 6
-  - script: '[2d3 | 3d4]'
-    result:
-    - _class: Dice
-      number_of_dice: 2
-      sides: 3
-    - _class: Dice
-      number_of_dice: 3
-      sides: 4
-  - script: '[
-      1d6
-      2d3
-    ]'
-    result:
-    - _class: Dice
-      number_of_dice: 1
-      sides: 6
-    - _class: Dice
-      number_of_dice: 2
-      sides: 3
-  - script: '[
-      1d6
-      2d3 | 8
-      test | 1d2
-    ]'
-    result:
-    - _class: Dice
-      number_of_dice: 1
-      sides: 6
-    - _class: Dice
-      number_of_dice: 2
-      sides: 3
-    - 8
-    - _class: Reference
-      value: test
-    - _class: Dice
-      number_of_dice: 1
-      sides: 2
-  - script: '[1d6 | [2d6 | 3d6]]'
-    result:
-    - _class: Dice
-      number_of_dice: 1
-      sides: 6
-    - - _class: Dice
-        number_of_dice: 2
-        sides: 6
-      - _class: Dice
-        number_of_dice: 3
-        sides: 6
-
 - name: basic_load
   categories:
   - load
@@ -195,6 +135,83 @@ tests:
       _class: Assignment
       target: name
       value: 1
+  - script: 'name += 1'
+    result:
+      _class: Assignment
+      target: 'name'
+      value:
+        _class: Math
+        left:
+          _class: Reference
+          value: 'name'
+        op: '+'
+        right: 1
+  - script: 'name -= 1'
+    result:
+      _class: Assignment
+      target: 'name'
+      value:
+        _class: Math
+        left:
+          _class: Reference
+          value: 'name'
+        op: '-'
+        right: 1
+  - script: 'name /= 1'
+    result:
+      _class: Assignment
+      target: 'name'
+      value:
+        _class: Math
+        left:
+          _class: Reference
+          value: 'name'
+        op: '/'
+        right: 1
+  - script: 'name //= 1'
+    result:
+      _class: Assignment
+      target: 'name'
+      value:
+        _class: Math
+        left:
+          _class: Reference
+          value: 'name'
+        op: '//'
+        right: 1
+  - script: 'name %= 1'
+    result:
+      _class: Assignment
+      target: 'name'
+      value:
+        _class: Math
+        left:
+          _class: Reference
+          value: 'name'
+        op: '%'
+        right: 1
+  - script: 'name &= 1'
+    result:
+      _class: Assignment
+      target: 'name'
+      value:
+        _class: RollMath
+        left:
+          _class: Reference
+          value: 'name'
+        op: '&'
+        right: 1
+  - script: 'name ^= 1'
+    result:
+      _class: Assignment
+      target: 'name'
+      value:
+        _class: RollMath
+        left:
+          _class: Reference
+          value: 'name'
+        op: '^'
+        right: 1
   - script: 'name = 1d6'
     result:
       _class: Assignment

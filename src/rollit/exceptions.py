@@ -2,16 +2,26 @@
 """
 
 __all__ = [
-    'RollWithItException',
+    'RollItException',
     'InvalidNameError',
 ]
 
 
-class RollWithItException(Exception):
+class RollItException(Exception):
     """
     """
 
 
-class InvalidNameError(RollWithItException, LookupError):
+class ParsingError(RollItException, ValueError):
+    """
+    """
+
+
+class InvalidReferenceError(ParsingError):
+    """
+    """
+
+
+class InvalidNameError(RollItException, LookupError):
     """
     """

@@ -1,13 +1,13 @@
 @@grammar::RollIt
 @@eol_comments:: /\/\/.*?$"/
 @@keyword:: use if then for do until and or not clear load as from has
-@@keyword:: otherwise skip unless break into except when
+@@keyword:: otherwise skip unless into except when stop fullstop
 
 #start = load $;
 
 start = {statement} $;
 
-statement::statement
+statement
     =
     | @:basic_statement
     | /[\n\r]+/
@@ -31,6 +31,8 @@ COMP_OP::IGNORE
     | '<'
     | '>'
     | 'has'
+    | 'and'
+    | 'or'
     ;
 
 FLOAT::pybuiltin_float
@@ -42,15 +44,13 @@ INT::pybuiltin_int
 NUMBER::IGNORE
     = FLOAT | INT;
 
-unless::Unless
-    = 'unless' predicate:conditional 'then' then:statement;
+unless = 'unless' predicate:conditional 'then' then:statement;
 
 if_body::If
     = ~ predicate:conditional 'then' then:statement
     unless:{&'unless' ~ unless} ['otherwise' otherwise:statement];
 
-except_when::ExceptWhen
-    = 'except when' predicate:conditional 'then' then:statement;
+except_when = 'except when' predicate:conditional 'then' then:statement;
 
 # Loops
 do_until_body::DoUntil
@@ -67,28 +67,25 @@ until_do_body::UntilDo
 
 dialect_name = KEBAB_NAME | NAME;
 
-load_body::load
+load_body
     = to_load:({dialect_name}+ | '*')
       ['from' ~ from_dialect:(dialect_name)]
       ['into' ~ into:reference]
     ;
 
 modifier_args::IGNORE
-    = '(' @+:','.{ expression } [','] ')';
+    = '(' @:','.{ expression } [','] ')';
 
-modifier_call::ModifierCall
-    = '->' modifier:reference args:[modifier_args] ;
+modifier_call = '->' modifier:reference args:[modifier_args] ;
 
-reference::Reference
-    = NAME | '?' | '~';
+reference = NAME | '?' | '~' | '!';
 
-enlarge::Enlarge
-    = size:[expression] '@' value:[expression];
+enlarge = size:[expression] '@' value:[expression];
 
-reduce_enlarge::Reduce
+reduce_enlarge
     =
-    | '{' !'}' ~ value:(@:enlarge | expression | '*'| '-')'}'
-    | '{' &'}' ~ value:`'-'` '}'
+    | '{' !'}' ~ @:(enlarge | expression | '*'| '!') '}'
+    | '{' &'}' ~ @:`''` '}'
     ;
 
 accessor::IGNORE
@@ -128,14 +125,14 @@ math::Math
     ;
 
 # &: combine rolls
-# ^: remove x number of dice
+# ^: remove x number of values
 roll_math::RollMath
     =
     | left:roll_math op:('&' | '^') ~ right: expression
     | length
     ;
 
-length::Length
+length
     =
     | '#' ~ length
     | modify
@@ -182,20 +179,37 @@ return_body::Return
 
 modifier_params::IGNORE
     = '(' @:','.{ reference } [','] ')';
+    #= '(' @:','.{ reference } [','] ')';
 
 modifier_def_body::IGNORE
     =  parameters:[modifier_params] definition:statement ;
+
+ASSIGN_OP
+    =
+    | '='
+    | '+='
+    | '-='
+    | '/='
+    | '//='
+    | '*='
+    | '%='
+    | '^='
+    | '&='
+    ;
+
+modifier_def = target:access '<-' parameters:[modifier_params] definition:statement;
 
 basic_statement
     =
     | 'if' ~ @:if_body
     | 'load' ~ @:load_body
-    | !'#' target:access '<-' ~ body:modifier_def_body _type:`'ModifierDef'`
+    | &(access '<-') ~ @:modifier_def
     | 'do' ~ @:do_until_body
     | 'until' ~ @:until_do_body
-    | target:access '=' !'=' ~ value:expression _type:`Assignment`
+    | target:access op:(>ASSIGN_OP) !'=' ~ value:expression
     | 'skip'
-    | 'break'
+    | 'stop'
+    | 'fullstop' stoppage:[expression]
     | expression
     | '[' ~ @:{statement} ']'
     | '@' ~ return_body
