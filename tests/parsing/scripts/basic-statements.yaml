@@ -7,75 +7,101 @@ tests:
   categories:
   - load
   tests:
-  - script: 'load *'
+  - script: 'load test'
     result:
       _class: Load
-      dialects:
-      - '*'
-      into: null
+      to_load:
+        _class: SpecialReference
+        value: ALL
+      from_dialect: 'test'
+      into:
+        _class: Reference
+        value: 'test'
   - script: 'load test test2'
     result:
-      _class: Load
-      dialects:
-      - 'test'
-      - 'test2'
-      into: null
+    - _class: Load
+      to_load:
+        _class: SpecialReference
+        value: ALL
+      from_dialect: 'test'
+      into:
+        _class: Reference
+        value: 'test'
+    - _class: Load
+      to_load:
+        _class: SpecialReference
+        value: ALL
+      from_dialect: 'test2'
+      into:
+        _class: Reference
+        value: 'test2'
   - script: 'load test into alias'
     result:
       _class: Load
-      dialects:
-      - 'test'
+      to_load:
+        _class: SpecialReference
+        value: ALL
+      from_dialect: 'test'
       into:
         _class: Reference
         value: 'alias'
   - script: 'load test test-two into ~'
     result:
-      _class: Load
-      dialects:
-      - 'test'
-      - 'test-two'
+    - _class: Load
+      to_load:
+        _class: SpecialReference
+        value: ALL
+      from_dialect: 'test'
       into:
-        _class: Reference
-        value: '~'
-
-- name: basic_load_from
-  categories:
-  - load_from
-  tests:
+        _class: SpecialReference
+        value: ROOT
+    - _class: Load
+      to_load:
+        _class: SpecialReference
+        value: ALL
+      from_dialect: 'test-two'
+      into:
+        _class: SpecialReference
+        value: ROOT
   - script: 'load * from test'
     result:
-      _class: LoadFrom
+      _class: Load
       to_load:
-      - '*'
-      into: null
+        _class: SpecialReference
+        value: ALL
       from_dialect: 'test'
+      into:
+        _class: SpecialReference
+        value: ROOT
   - script: 'load test test2 from dialect-name'
     result:
-      _class: LoadFrom
+    - _class: Load
       to_load:
       - 'test'
       - 'test2'
-      into: null
       from_dialect: 'dialect-name'
+      into:
+        _class: SpecialReference
+        value: ROOT
   - script: 'load test from dialect-name into alias'
     result:
-      _class: LoadFrom
+      _class: Load
       to_load:
       - 'test'
+      from_dialect: 'dialect-name'
       into:
         _class: Reference
         value: 'alias'
-      from_dialect: 'dialect-name'
-  - script: 'load test test-two from dialect-info into ~'
+  - script: 'load test test_two from dialect-info into ~'
     result:
-      _class: LoadFrom
+      _class: Load
       to_load:
       - 'test'
-      - 'test-two'
-      into:
-        _class: Reference
-        value: '~'
+      - 'test_two'
       from_dialect: 'dialect-info'
+      into:
+        _class: SpecialReference
+        value: ROOT
 
 - name: basic_modifier_defs
   categories:
@@ -87,6 +113,15 @@ tests:
       target: name
       parameters: []
       definition: []
+  - script: 'name<-1d6'
+    result:
+      _class: ModifierDef
+      target: name
+      parameters: []
+      definition:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
   - script: 'name<-[]'
     result:
       _class: ModifierDef
@@ -99,32 +134,119 @@ tests:
       target: 'name'
       parameters: []
       definition: []
+  - script: 'name <- () 1'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: []
+      definition: 1
+  - script: 'name<-(param)[]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: ['param']
+      definition: []
+  - script: 'name<-(param1) 1 + 2'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: ['param1']
+      definition:
+        _class: Math
+        left: 1
+        op: '+'
+        right: 2
   - script: 'name<-(param1) ? + 2'
     result:
       _class: ModifierDef
       target: 'name'
-      parameters:
-      - param1
+      parameters: ['param1']
       definition:
         _class: Math
         left:
-          value: '?'
+          _class: SpecialReference
+          value: SUBJECT
         op: '+'
         right: 2
-  - script: 'name<-(param1, param2)[param1 + param2]'
+  - script: 'name<-(param1, param2) param1 + param2'
     result:
       _class: ModifierDef
       target: 'name'
       parameters:
-      - param1
-      - param2
+      - 'param1'
+      - 'param2'
+      definition:
+        _class: Math
+        left:
+          _class: Reference
+          value: 'param1'
+        op: '+'
+        right:
+          _class: Reference
+          value: 'param2'
+  - script: 'name<-(param1, param2) [param1 + param2]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters:
+      - 'param1'
+      - 'param2'
       definition:
       - _class: Math
         left:
-          value: param1
+          _class: Reference
+          value: 'param1'
         op: '+'
         right:
-          value: param2
+          _class: Reference
+          value: 'param2'
+  - script: 'name<-(param1, param2)[ ?{1} = 3 ]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters:
+      - 'param1'
+      - 'param2'
+      definition:
+      - _class: Assignment
+        target:
+          _class: Access
+          accessing:
+            _class: SpecialReference
+            value: SUBJECT
+          accessors:
+          - _class: Reduce
+            value: 1
+        value: 3
+  - script: 'name<-(param1, param2)[
+            param1 + param2
+            ?{1} = 3
+        ]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters:
+      - 'param1'
+      - 'param2'
+      definition:
+      - _class: Math
+        left:
+          _class: Reference
+          value: 'param1'
+        op: '+'
+        right:
+          _class: Reference
+          value: 'param2'
+      - _class: Assignment
+        target:
+          _class: Access
+          accessing:
+            _class: SpecialReference
+            value: SUBJECT
+          accessors:
+          - _class: Reduce
+            value: 1
+        value: 3
 
 - name: basic_assignment
   categories:
@@ -212,6 +334,18 @@ tests:
           value: 'name'
         op: '^'
         right: 1
+  - script: '?{1} = 3'
+    result:
+      _class: Assignment
+      target:
+        _class: Access
+        accessing:
+          _class: SpecialReference
+          value: SUBJECT
+        accessors:
+        - _class: Reduce
+          value: 1
+      value: 3
   - script: 'name = 1d6'
     result:
       _class: Assignment
@@ -301,18 +435,3 @@ tests:
               value: 'top'
             args: [3]
             _class: ModifierCall
-
-#FIXME These statments work, but they the tests don't because they're enums and not tuples
-- name: flow_control
-  categories:
-  - flow_control
-  - loops
-  tests:
-  - script: 'break'
-    result:
-      _class: FlowControl
-      value: 'break'
-  - script: 'skip'
-    result:
-      _class: FlowControl
-      value: 'skip'

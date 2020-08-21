@@ -32,9 +32,13 @@ def create_scripttest_func(category):
         expected_results = scripttest.result
         if not isinstance(expected_results, (tuple, list, set)):
             expected_results = (expected_results,)
-        actual_results = get_element_value(parser.parse(scripttest.script))
+        actual_results = get_element_value(parser.parse(scripttest.script))[0]
+        if not isinstance(actual_results, (tuple, list, set)) \
+                or isinstance(actual_results, model.ModelElement):
+            actual_results = (actual_results,)
         for expected, actual in itertools.zip_longest(expected_results, actual_results):
-            assert expected == reorder_keys(expected, actual)
+            actual = reorder_keys(expected, actual)
+            assert expected == actual
 
     _func.__name__ = f'test_{category}'
     return pytest.mark.parametrize('scripttest', getattr(script_tests, category))(_func)

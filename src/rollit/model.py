@@ -45,7 +45,7 @@ class Reference(SingletonElement, metaclass=ABCMeta):
 
     def __new__(cls, value):
         if value == '?':
-            return SpecialReference.MODIFYING
+            return SpecialReference.SUBJECT
         if value == '~':
             return SpecialReference.ROOT
         if value == '*':
@@ -56,7 +56,7 @@ class Reference(SingletonElement, metaclass=ABCMeta):
 
 
 class SpecialReference(enum.Enum):
-    MODIFYING = '?'
+    SUBJECT = '?'
     ROOT = '~'
     ALL = '*'
     NONE = '!'

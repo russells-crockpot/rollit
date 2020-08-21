@@ -15,15 +15,12 @@ statement
     ;
 
 @name
-NAME::IGNORE
-    = /[a-zA-Z_][a-zA-Z_0-9]*/;
+NAME = /[a-zA-Z_][a-zA-Z_0-9]*/;
 
 @name
-KEBAB_NAME::IGNORE
-    = /[a-zA-Z_]([\-a-zA-Z_0-9]*[\-a-zA-Z_0-9])?/ ;
+KEBAB_NAME = /[a-zA-Z_]([\-a-zA-Z_0-9]*[\-a-zA-Z_0-9])?/ ;
 
-COMP_OP::IGNORE
-    =
+COMP_OP =
     | '=='
     | '>='
     | '<='
@@ -35,14 +32,11 @@ COMP_OP::IGNORE
     | 'or'
     ;
 
-FLOAT::pybuiltin_float
-    = /-?\d*\.\d+/ ;
+FLOAT = /-?\d*\.\d+/ ;
 
-INT::pybuiltin_int
-    = /-?\d+/ ;
+INT = /-?\d+/ ;
 
-NUMBER::IGNORE
-    = FLOAT | INT;
+NUMBER = FLOAT | INT;
 
 unless = 'unless' predicate:conditional 'then' then:statement;
 
@@ -53,13 +47,13 @@ if_body::If
 except_when = 'except when' predicate:conditional 'then' then:statement;
 
 # Loops
-do_until_body::DoUntil
+do_until_body
     = do:statement 'until' until:conditional
       except_when:{&'except when' ~ except_when}
       ['otherwise' otherwise:statement]
     ;
 
-until_do_body::UntilDo
+until_do_body
     = until:conditional 'do' do:statement
       except_when:{&'except when' ~ except_when}
       ['otherwise' otherwise:statement]
@@ -73,8 +67,7 @@ load_body
       ['into' ~ into:reference]
     ;
 
-modifier_args::IGNORE
-    = '(' @:','.{ expression } [','] ')';
+modifier_args = '(' @:','.{ expression } [','] ')';
 
 modifier_call = '->' modifier:reference args:[modifier_args] ;
 
@@ -88,13 +81,13 @@ reduce_enlarge
     | '{' &'}' ~ @:`''` '}'
     ;
 
-accessor::IGNORE
+accessor
     =
     | '.' @:NAME
     | reduce_enlarge
     ;
 
-expression::IGNORE
+expression
     =
     | '()' ~ !()
     | use_if;
@@ -105,7 +98,7 @@ use_if::UseIf
     | conditional
     ;
 
-conditional::IGNORE
+conditional
     =
     | 'not' ~ conditional
     | comparison
@@ -156,33 +149,27 @@ dice::Dice
     | reduce_enlarge_expr
     ;
 
-reduce_enlarge_expr::IGNORE
+reduce_enlarge_expr
     =
     | &'{' ~ reduce_enlarge
     | factor
     ;
 
-factor::IGNORE
+factor
     =
     | '(' !')' ~ @:expression ')'
     | atom
     ;
 
-atom::IGNORE
+atom
     =
     | NUMBER
     | reference
     ;
 
-return_body::Return
-    = @:expression;
+modifier_params = '(' @:','.{ reference } [','] ')';
 
-modifier_params::IGNORE
-    = '(' @:','.{ reference } [','] ')';
-    #= '(' @:','.{ reference } [','] ')';
-
-modifier_def_body::IGNORE
-    =  parameters:[modifier_params] definition:statement ;
+modifier_def_body =  parameters:[modifier_params] definition:statement ;
 
 ASSIGN_OP
     =
@@ -212,5 +199,4 @@ basic_statement
     | 'fullstop' stoppage:[expression]
     | expression
     | '[' ~ @:{statement} ']'
-    | '@' ~ return_body
     ;

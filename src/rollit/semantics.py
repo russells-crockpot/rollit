@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from contextlib import suppress
 
 from . import model
+from .exceptions import ParsingError
 
 __all__ = ['RollItSemantics']
 
@@ -77,6 +78,8 @@ class RollItSemantics:
 
     def load_body(self, ast, *args, **kwargs):
         if 'from_dialect' not in ast:
+            if '*' in ast['to_load']:
+                raise ParsingError('Cannot load "all (*)" of nothing.')
             items = []
             into = ast.get('into')
             for child in ast.pop('to_load'):
@@ -90,6 +93,13 @@ class RollItSemantics:
             if len(items) == 1:
                 return items[0]
             return items
+        with suppress(TypeError):
+            if '*' in ast['to_load']:
+                if len(ast['to_load']) > 1:
+                    raise ParsingError('Loading * loads everything, other values cannot be '
+                                       'specified.')
+                del ast['to_load']
+                ast['to_load'] = model.SpecialReference.ALL
         ast.setdefault('into', model.SpecialReference.ROOT)
         return model.Load(**ast)
 
@@ -112,7 +122,9 @@ class RollItSemantics:
             return
         rval = ast.pop('do')
         for except_when in ast.pop('except_when'):
-            rval = model.If(predicate=except_when.predicate, then=except_when.then, otherwise=rval)
+            rval = model.If(predicate=except_when.predicate,
+                            then=(except_when.then, model.FlowControlConstant.SKIP),
+                            otherwise=rval)
         ast['do'] = rval
 
     def do_until_body(self, ast, *args, **kwargs):
@@ -148,6 +160,12 @@ class RollItSemantics:
         if ast['args'] is None:
             ast['args'] = ()
         return model.ModifierCall(**ast)
+
+    def FLOAT(self, ast, *args, **kwargs):
+        return float(ast)
+
+    def INT(self, ast, *args, **kwargs):
+        return int(ast)
 
     def basic_statement(self, ast, *args, **kwargs):
         if ast == 'skip':

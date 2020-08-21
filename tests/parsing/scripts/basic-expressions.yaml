@@ -23,7 +23,7 @@ tests:
   - script: '?'
     result:
       _class: SpecialReference
-      value: 'MODIFYING'
+      value: 'SUBJECT'
   - script: '~'
     result:
       _class: SpecialReference
@@ -263,7 +263,7 @@ tests:
       _class: Modify
       modifying:
         _class: SpecialReference
-        value: 'MODIFYING'
+        value: 'SUBJECT'
       modifiers:
       - modifier:
           _class: Reference
@@ -504,7 +504,7 @@ tests:
       _class: Reduce
       value:
         _class: SpecialReference
-        value: 'MODIFYING'
+        value: 'SUBJECT'
   - script: '{1d6}'
     result:
       _class: Reduce
