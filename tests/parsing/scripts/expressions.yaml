@@ -1,8 +1,8 @@
-name: basic_expressions
+name: expressions
 categories:
 - expressions
 tests:
-- name: basic_atoms
+- name: atoms
   categories:
   - atoms
   tests:
@@ -33,7 +33,7 @@ tests:
       _class: SpecialReference
       value: 'NONE'
 
-- name: basic_math
+- name: math
   categories:
   - math
   tests:
@@ -86,7 +86,7 @@ tests:
       op: '//'
       right: 2
 
-- name: basic_order_of_operations
+- name: order_of_operations
   categories:
   - math
   tests:
@@ -111,32 +111,26 @@ tests:
       op: '+'
       right: 6
 
-- name: basic_roll_math
+- name: roll_math
   categories:
   - roll_math
   tests:
   - script: 'test & 2'
     result:
       _class: RollMath
-      left:
-        _class: Reference
-        value: 'test'
+      left: 'test'
       op: '&'
       right: 2
   - script: 'test ^ 2'
     result:
       _class: RollMath
-      left:
-        _class: Reference
-        value: 'test'
+      left: 'test'
       op: '^'
       right: 2
   - script: 'test ^ 2 + 3'
     result:
       _class: RollMath
-      left:
-        _class: Reference
-        value: 'test'
+      left: 'test'
       op: '^'
       right:
         _class: Math
@@ -146,9 +140,7 @@ tests:
   - script: 'test ^ 2 * 3'
     result:
       _class: RollMath
-      left:
-        _class: Reference
-        value: 'test'
+      left: 'test'
       op: '^'
       right:
         _class: Math
@@ -162,9 +154,7 @@ tests:
       op: '^'
       right:
         _class: RollMath
-        left:
-          _class: Reference
-          value: 'test'
+        left: 'test'
         op: '&'
         right: 3
   - script: '(test ^ 2) & 3'
@@ -172,15 +162,13 @@ tests:
       _class: RollMath
       left:
         _class: RollMath
-        left:
-          _class: Reference
-          value: 'test'
+        left: 'test'
         op: '^'
         right: 2
       op: '&'
       right: 3
 
-- name: basic_dice
+- name: dice
   categories:
   - dice
   tests:
@@ -253,136 +241,7 @@ tests:
         number_of_dice: 2
         sides: 5
 
-- name: basic_modify
-  categories:
-  - modify
-  - modifiers
-  tests:
-  - script: '?->top'
-    result:
-      _class: Modify
-      subject:
-        _class: SpecialReference
-        value: 'SUBJECT'
-      modifiers:
-      - modifier:
-          _class: Reference
-          value: 'top'
-        args: []
-        _class: ModifierCall
-  - script: 'test->top(2)'
-    result:
-      _class: Modify
-      subject:
-        _class: Reference
-        value: 'test'
-      modifiers:
-      - modifier:
-          _class: Reference
-          value: 'top'
-        args: [2]
-  - script: '1d6->bottom'
-    result:
-      _class: Modify
-      subject:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-      modifiers:
-      - modifier:
-          _class: Reference
-          value: 'bottom'
-        args: []
-        _class: ModifierCall
-  - script: '1d6->bottom(2d3)'
-    result:
-      _class: Modify
-      subject:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-      modifiers:
-      - modifier:
-          _class: Reference
-          value: 'bottom'
-        args:
-        - number_of_dice: 2
-          sides: 3
-        _class: ModifierCall
-  - script: '1d6->bottom(2d3)->top'
-    result:
-      _class: Modify
-      subject:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-      modifiers:
-      - modifier:
-          _class: Reference
-          value: 'bottom'
-        args:
-        - number_of_dice: 2
-          _class: Dice
-          sides: 3
-        _class: ModifierCall
-      - modifier:
-          _class: Reference
-          value: 'top'
-        args: []
-        _class: ModifierCall
-  - script: '1d6->bottom(2d3)->top(1)'
-    result:
-      _class: Modify
-      subject:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-      modifiers:
-      - modifier:
-          _class: Reference
-          value: 'bottom'
-        args:
-        - number_of_dice: 2
-          sides: 3
-          _class: Dice
-        _class: ModifierCall
-      - modifier:
-          _class: Reference
-          value: 'top'
-        args: [1]
-        _class: ModifierCall
-  - script: '1d6->bottom(2d3)->top(1, 4d5 - 6, 7)'
-    result:
-      _class: Modify
-      subject:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-      modifiers:
-      - modifier:
-          _class: Reference
-          value: 'bottom'
-        args:
-        - number_of_dice: 2
-          sides: 3
-          _class: Dice
-        _class: ModifierCall
-      - modifier:
-          _class: Reference
-          value: 'top'
-        args:
-        - 1
-        - left:
-            number_of_dice: 4
-            sides: 5
-            _class: Dice
-          op: '-'
-          right: 6
-          _class: Math
-        - 7
-        _class: ModifierCall
-
-- name: basic_length
+- name: length
   categories:
   - length
   tests:
@@ -394,6 +253,7 @@ tests:
     result:
       _class: Length
       value:
+        _class: Dice
         number_of_dice: 1
         sides: 6
   - script: '#1d6 + 3'
@@ -433,15 +293,18 @@ tests:
     result:
       _class: Length
       value:
+        _class: Modify
         subject:
           _class: Dice
           number_of_dice: 1
           sides: 6
         modifiers:
-        - value: 'top'
+        - modifier: 'top'
           args: [3]
+          _class: ModifierCall
   - script: '(#1d6)->top(3)'
     result:
+      _class: Modify
       subject:
         _class: Length
         value:
@@ -449,10 +312,12 @@ tests:
           number_of_dice: 1
           sides: 6
       modifiers:
-      - value: 'top'
+      - modifier: 'top'
         args: [3]
+        _class: ModifierCall
   - script: '(#1d6)->top(3)'
     result:
+      _class: Modify
       subject:
         _class: Length
         value:
@@ -460,24 +325,17 @@ tests:
           number_of_dice: 1
           sides: 6
       modifiers:
-      - value: 'top'
+      - modifier: 'top'
         args: [3]
+        _class: ModifierCall
   - script: '#?'
-    result:
-      value: '?'
-  - script: '#!1d6'
-    categories:
-    - freeze
     result:
       _class: Length
       value:
-        _class: Freeze
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
+        _class: SpecialReference
+        value: 'SUBJECT'
 
-- name: basic_reduce
+- name: reduce
   categories:
   - reduce
   tests:
@@ -541,9 +399,7 @@ tests:
       _class: Access
       accessing:
         _class: Reduce
-        value:
-          _class: Reference
-          value: 'test'
+        value: 'test'
       accessors:
       - 'attr'
   - script: '{1d{2d4}}'
@@ -565,9 +421,7 @@ tests:
         _class: Reduce
         value: 1
       modifiers:
-      - modifier:
-          _class: Reference
-          value: 'top'
+      - modifier: 'top'
         args: []
         _class: ModifierCall
   - script: '{1d4}->top'
@@ -580,9 +434,7 @@ tests:
           number_of_dice: 1
           sides: 4
       modifiers:
-      - modifier:
-          _class: Reference
-          value: 'top'
+      - modifier: 'top'
         args: []
         _class: ModifierCall
   - script: '{1d{2d4}}->top'
@@ -600,9 +452,7 @@ tests:
               number_of_dice: 2
               sides: 4
       modifiers:
-      - modifier:
-          _class: Reference
-          value: 'top'
+      - modifier: 'top'
         args: []
         _class: ModifierCall
   - script: '{1}'
@@ -656,7 +506,7 @@ tests:
             op: '-'
             right: 4
 
-- name: basic_enlarge
+- name: enlarge
   categories:
   - enlarge
   tests:
@@ -709,7 +559,7 @@ tests:
 #      _class: Enlarge
 #      value:
 
-- name: basic_access
+- name: access
   categories:
   - access
   - reference

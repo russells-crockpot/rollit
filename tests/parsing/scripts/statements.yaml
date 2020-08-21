@@ -1,9 +1,9 @@
-name: basic_statements
+name: statements
 categories:
 - statements
 tests:
 
-- name: basic_load
+- name: load
   categories:
   - load
   tests:
@@ -14,27 +14,21 @@ tests:
         _class: SpecialReference
         value: ALL
       from_dialect: 'test'
-      into:
-        _class: Reference
-        value: 'test'
-  - script: 'load test test2'
+      into: 'test'
+  - script: 'load test, test2'
     result:
     - _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
       from_dialect: 'test'
-      into:
-        _class: Reference
-        value: 'test'
+      into: 'test'
     - _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
       from_dialect: 'test2'
-      into:
-        _class: Reference
-        value: 'test2'
+      into: 'test2'
   - script: 'load test into alias'
     result:
       _class: Load
@@ -42,10 +36,8 @@ tests:
         _class: SpecialReference
         value: ALL
       from_dialect: 'test'
-      into:
-        _class: Reference
-        value: 'alias'
-  - script: 'load test test-two into ~'
+      into: 'alias'
+  - script: 'load test, test_two into ~'
     result:
     - _class: Load
       to_load:
@@ -59,7 +51,7 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      from_dialect: 'test-two'
+      from_dialect: 'test_two'
       into:
         _class: SpecialReference
         value: ROOT
@@ -73,182 +65,35 @@ tests:
       into:
         _class: SpecialReference
         value: ROOT
-  - script: 'load test test2 from dialect-name'
+  - script: 'load test, test2 from dialect_name'
     result:
     - _class: Load
       to_load:
       - 'test'
       - 'test2'
-      from_dialect: 'dialect-name'
+      from_dialect: 'dialect_name'
       into:
         _class: SpecialReference
         value: ROOT
-  - script: 'load test from dialect-name into alias'
+  - script: 'load test from dialect_name into alias'
     result:
       _class: Load
       to_load:
       - 'test'
-      from_dialect: 'dialect-name'
-      into:
-        _class: Reference
-        value: 'alias'
-  - script: 'load test test_two from dialect-info into ~'
+      from_dialect: 'dialect_name'
+      into: 'alias'
+  - script: 'load test, test_two from dialect_info into ~'
     result:
       _class: Load
       to_load:
       - 'test'
       - 'test_two'
-      from_dialect: 'dialect-info'
+      from_dialect: 'dialect_info'
       into:
         _class: SpecialReference
         value: ROOT
 
-- name: basic_modifier_defs
-  categories:
-  - modifier_defs
-  tests:
-  - script: 'name<-|'
-    result:
-      _class: ModifierDef
-      target: name
-      parameters: []
-      definition: []
-  - script: 'name<-1d6'
-    result:
-      _class: ModifierDef
-      target: name
-      parameters: []
-      definition:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-  - script: 'name<-[]'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters: []
-      definition: []
-  - script: 'name<-()[]'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters: []
-      definition: []
-  - script: 'name <- () 1'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters: []
-      definition: 1
-  - script: 'name<-(param)[]'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters: ['param']
-      definition: []
-  - script: 'name<-(param1) 1 + 2'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters: ['param1']
-      definition:
-        _class: Math
-        left: 1
-        op: '+'
-        right: 2
-  - script: 'name<-(param1) ? + 2'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters: ['param1']
-      definition:
-        _class: Math
-        left:
-          _class: SpecialReference
-          value: SUBJECT
-        op: '+'
-        right: 2
-  - script: 'name<-(param1, param2) param1 + param2'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters:
-      - 'param1'
-      - 'param2'
-      definition:
-        _class: Math
-        left:
-          _class: Reference
-          value: 'param1'
-        op: '+'
-        right:
-          _class: Reference
-          value: 'param2'
-  - script: 'name<-(param1, param2) [param1 + param2]'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters:
-      - 'param1'
-      - 'param2'
-      definition:
-      - _class: Math
-        left:
-          _class: Reference
-          value: 'param1'
-        op: '+'
-        right:
-          _class: Reference
-          value: 'param2'
-  - script: 'name<-(param1, param2)[ ?{1} = 3 ]'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters:
-      - 'param1'
-      - 'param2'
-      definition:
-      - _class: Assignment
-        target:
-          _class: Access
-          accessing:
-            _class: SpecialReference
-            value: SUBJECT
-          accessors:
-          - _class: Reduce
-            value: 1
-        value: 3
-  - script: 'name<-(param1, param2)[
-            param1 + param2
-            ?{1} = 3
-        ]'
-    result:
-      _class: ModifierDef
-      target: 'name'
-      parameters:
-      - 'param1'
-      - 'param2'
-      definition:
-      - _class: Math
-        left:
-          _class: Reference
-          value: 'param1'
-        op: '+'
-        right:
-          _class: Reference
-          value: 'param2'
-      - _class: Assignment
-        target:
-          _class: Access
-          accessing:
-            _class: SpecialReference
-            value: SUBJECT
-          accessors:
-          - _class: Reduce
-            value: 1
-        value: 3
-
-- name: basic_assignment
+- name: assignment
   categories:
   - assignment
   tests:
@@ -263,9 +108,7 @@ tests:
       target: 'name'
       value:
         _class: Math
-        left:
-          _class: Reference
-          value: 'name'
+        left: 'name'
         op: '+'
         right: 1
   - script: 'name -= 1'
@@ -274,9 +117,7 @@ tests:
       target: 'name'
       value:
         _class: Math
-        left:
-          _class: Reference
-          value: 'name'
+        left: 'name'
         op: '-'
         right: 1
   - script: 'name /= 1'
@@ -285,9 +126,7 @@ tests:
       target: 'name'
       value:
         _class: Math
-        left:
-          _class: Reference
-          value: 'name'
+        left: 'name'
         op: '/'
         right: 1
   - script: 'name //= 1'
@@ -296,9 +135,7 @@ tests:
       target: 'name'
       value:
         _class: Math
-        left:
-          _class: Reference
-          value: 'name'
+        left: 'name'
         op: '//'
         right: 1
   - script: 'name %= 1'
@@ -307,9 +144,7 @@ tests:
       target: 'name'
       value:
         _class: Math
-        left:
-          _class: Reference
-          value: 'name'
+        left: 'name'
         op: '%'
         right: 1
   - script: 'name &= 1'
@@ -318,9 +153,7 @@ tests:
       target: 'name'
       value:
         _class: RollMath
-        left:
-          _class: Reference
-          value: 'name'
+        left: 'name'
         op: '&'
         right: 1
   - script: 'name ^= 1'
@@ -329,9 +162,7 @@ tests:
       target: 'name'
       value:
         _class: RollMath
-        left:
-          _class: Reference
-          value: 'name'
+        left: name
         op: '^'
         right: 1
   - script: '?{1} = 3'
@@ -391,9 +222,7 @@ tests:
     result:
       _class: Assignment
       target: name
-      value:
-        _class: Reference
-        value: 'value'
+      value: 'value'
   - script: 'name = {1d6}->top(2)'
     result:
       _class: Assignment
@@ -407,9 +236,7 @@ tests:
             number_of_dice: 1
             sides: 6
         modifiers:
-        - modifier:
-            _class: Reference
-            value: 'top'
+        - modifier: 'top'
           args: [2]
           _class: ModifierCall
   - script: 'name = {{(2d4)d6}->top(3)}'
@@ -430,8 +257,6 @@ tests:
                 sides: 4
               sides: 6
           modifiers:
-          - modifier:
-              _class: Reference
-              value: 'top'
+          - modifier: 'top'
             args: [3]
             _class: ModifierCall

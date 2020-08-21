@@ -93,9 +93,7 @@ tests:
       name: null
       until:
         _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
+        left: 'test'
         op: '>='
         right: 5
       do:
@@ -103,9 +101,7 @@ tests:
         target: 'test'
         value:
           _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
+          left: 'test'
           op: '&'
           right:
             _class: Dice
@@ -118,9 +114,7 @@ tests:
       name: null
       until:
         _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
+        left: 'test'
         op: '>'
         right: 25
       do:
@@ -128,9 +122,7 @@ tests:
         target: 'test'
         value:
           _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
+          left: 'test'
           op: '&'
           right:
             _class: Dice
@@ -143,9 +135,7 @@ tests:
       name: null
       until:
         _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
+        left: 'test'
         op: '>'
         right: 25
       do:
@@ -153,9 +143,7 @@ tests:
         target: 'test'
         value:
           _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
+          left: 'test'
           op: '&'
           right:
             _class: Dice
@@ -174,9 +162,7 @@ tests:
       name: 'name'
       until:
         _class: Comparison
-        left:
-          _class: Reference
-          value: 'test'
+        left: 'test'
         op: '>'
         right: 25
       do:
@@ -184,9 +170,7 @@ tests:
         target: 'test'
         value:
           _class: RollMath
-          left:
-            _class: Reference
-            value: 'test'
+          left: 'test'
           op: '&'
           right:
             _class: Dice
@@ -306,3 +290,67 @@ tests:
         _class: RestartLocationSpecifier
         value: 'AFTER'
       target: 'test'
+
+- name: for_every
+  categories:
+  - for_every
+  tests:
+  - script: 'for every item that 2 has do 3'
+    result:
+      _class: ForEvery
+      name: null
+      item_name: 'item'
+      iterable: 2
+      do: 3
+  - script: 'for every @ loop_name item that 2 has do 3'
+    result:
+      _class: ForEvery
+      name: 'loop_name'
+      item_name: 'item'
+      iterable: 2
+      do: 3
+  - script: 'for every @ loop_name item that {1d6} has do 3'
+    result:
+      _class: ForEvery
+      name: 'loop_name'
+      item_name: 'item'
+      iterable:
+        _class: Reduce
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      do: 3
+  - script: 'for every @ loop_name item that {1d6} has do restart after'
+    result:
+      _class: ForEvery
+      name: 'loop_name'
+      item_name: 'item'
+      iterable:
+        _class: Reduce
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      do:
+        _class: Restart
+        location_specifier:
+          _class: RestartLocationSpecifier
+          value: 'AFTER'
+        target:
+          _class: SpecialReference
+          value: 'NONE'
+  - script: 'for every @ loop_name item that {1d6} has do leave'
+    result:
+      _class: ForEvery
+      name: 'loop_name'
+      item_name: 'item'
+      iterable:
+        _class: Reduce
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      do:
+        _class: SingleWordStatment
+        value: 'LEAVE'

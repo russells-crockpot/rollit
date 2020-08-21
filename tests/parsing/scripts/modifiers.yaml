@@ -1,0 +1,252 @@
+name: modifiers
+categories:
+- modifiers
+tests:
+
+- name: modifier_defs
+  categories:
+  - modifier_defs
+  tests:
+  - script: 'name<-|'
+    result:
+      _class: ModifierDef
+      target: name
+      parameters: []
+      definition: []
+  - script: 'name<-1d6'
+    result:
+      _class: ModifierDef
+      target: name
+      parameters: []
+      definition:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+  - script: 'name<-[]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: []
+      definition: []
+  - script: 'name<-()[]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: []
+      definition: []
+  - script: 'name <- () 1'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: []
+      definition: 1
+  - script: 'name<-(param)[]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: ['param']
+      definition: []
+  - script: 'name<-(param1) 1 + 2'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: ['param1']
+      definition:
+        _class: Math
+        left: 1
+        op: '+'
+        right: 2
+  - script: 'name<-(param1) ? + 2'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: ['param1']
+      definition:
+        _class: Math
+        left:
+          _class: SpecialReference
+          value: SUBJECT
+        op: '+'
+        right: 2
+  - script: 'name<-(param1, param2) param1 + param2'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters:
+      - 'param1'
+      - 'param2'
+      definition:
+        _class: Math
+        left: 'param1'
+        op: '+'
+        right: 'param2'
+  - script: 'name<-(param1, param2) [param1 + param2]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters:
+      - 'param1'
+      - 'param2'
+      definition:
+      - _class: Math
+        left: 'param1'
+        op: '+'
+        right: 'param2'
+  - script: 'name<-(param1, param2)[ ?{1} = 3 ]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters:
+      - 'param1'
+      - 'param2'
+      definition:
+      - _class: Assignment
+        target:
+          _class: Access
+          accessing:
+            _class: SpecialReference
+            value: SUBJECT
+          accessors:
+          - _class: Reduce
+            value: 1
+        value: 3
+  - script: 'name<-(param1, param2)[
+            param1 + param2
+            ?{1} = 3
+        ]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters:
+      - 'param1'
+      - 'param2'
+      definition:
+      - _class: Math
+        left: 'param1'
+        op: '+'
+        right: 'param2'
+      - _class: Assignment
+        target:
+          _class: Access
+          accessing:
+            _class: SpecialReference
+            value: SUBJECT
+          accessors:
+          - _class: Reduce
+            value: 1
+        value: 3
+
+- name: modifier_calls
+  categories:
+  - modifier_calls
+  tests:
+  - script: '?->top'
+    result:
+      _class: Modify
+      subject:
+        _class: SpecialReference
+        value: 'SUBJECT'
+      modifiers:
+      - modifier: 'top'
+        args: []
+        _class: ModifierCall
+  - script: 'test->top(2)'
+    result:
+      _class: Modify
+      subject: 'test'
+      modifiers:
+      - modifier: 'top'
+        args: [2]
+  - script: '1d6->bottom'
+    result:
+      _class: Modify
+      subject:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      modifiers:
+      - modifier: 'bottom'
+        args: []
+        _class: ModifierCall
+  - script: '1d6->bottom(2d3)'
+    result:
+      _class: Modify
+      subject:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      modifiers:
+      - modifier: 'bottom'
+        args:
+        - number_of_dice: 2
+          sides: 3
+        _class: ModifierCall
+  - script: '1d6->bottom(2d3)->top'
+    result:
+      _class: Modify
+      subject:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      modifiers:
+      - modifier: 'bottom'
+        args:
+        - number_of_dice: 2
+          _class: Dice
+          sides: 3
+        _class: ModifierCall
+      - modifier: 'top'
+        args: []
+        _class: ModifierCall
+  - script: '1d6->bottom(2d3)->top(1)'
+    result:
+      _class: Modify
+      subject:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      modifiers:
+      - modifier: 'bottom'
+        args:
+        - number_of_dice: 2
+          sides: 3
+          _class: Dice
+        _class: ModifierCall
+      - modifier: 'top'
+        args: [1]
+        _class: ModifierCall
+  - script: '1d6->bottom(2d3)->top(1, 4d5 - 6, 7)'
+    result:
+      _class: Modify
+      subject:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      modifiers:
+      - modifier: 'bottom'
+        args:
+        - number_of_dice: 2
+          sides: 3
+          _class: Dice
+        _class: ModifierCall
+      - modifier: 'top'
+        args:
+        - 1
+        - left:
+            number_of_dice: 4
+            sides: 5
+            _class: Dice
+          op: '-'
+          right: 6
+          _class: Math
+        - 7
+        _class: ModifierCall
+
+- name: leave
+  categories:
+  - leave
+  tests:
+  - script: 'leave'
+    result:
+      _class: SingleWordStatment
+      value: 'LEAVE'

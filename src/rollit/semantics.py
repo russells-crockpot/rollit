@@ -48,9 +48,9 @@ class CreateTypeProperty(
             if name not in ast:
                 return ast
         if self.defaults:
-            new_ast = self.defaults.copy()
-            new_ast.update(ast)
-            ast = new_ast
+            for k, v in self.defaults.items():
+                if k not in ast or ast[k] is None:
+                    ast[k] = v
         return self.model_cls(**ast)
 
 
@@ -70,6 +70,9 @@ class RollItSemantics:
     dice = CreateTypeProperty(model.Dice, False, requires=('number_of_dice', 'sides'))
     access = CreateTypeProperty(model.Access, False, requires=('accessing', 'accessors'))
     modify = CreateTypeProperty(model.Modify, False, requires=('subject', 'modifiers'))
+    modifier_def = CreateTypeProperty(model.ModifierDef,
+                                      False,
+                                      defaults=dict(parameters=(), definition=()))
     int = CreateTypeProperty(int, True)
     float = CreateTypeProperty(float, True)
 
@@ -79,41 +82,22 @@ class RollItSemantics:
             return model.Negation(ast[1])
         return ast
 
-    def modifier_def(self, ast, *args, **kwargs):
-        target = ast['target']
-        parameters = ast['parameters'] or ()
-        definition = ast['definition'] or ()
-        if isinstance(target, model.Reference):
-            target = target.value
-        parameters = tuple(p.value if isinstance(p, model.Reference) else p for p in parameters)
-        return model.ModifierDef(
-            target=target,
-            parameters=parameters,
-            definition=definition,
-        )
-
-    def reference(self, ast, *args, **kwargs):
-        # if not self._in_modifier_def and ast == '?':
-        #     raise InvalidReferenceError('"?" cannot be used outside of a modifier definition!')
-        if self._name_not_ref:
-            return ast
-        return model.Reference(ast)
+    def name(self, ast):
+        with suppress(ValueError):
+            return model.SpecialReference(ast)
+        return ast
 
     #FIXME Handle accesses
     def _assigment(self, ast):
         target = ast['target']
         if ast['op'] == '=':
-            if isinstance(target, model.Reference):
-                target = target.value
             return model.Assignment(target=target, value=ast['value'])
-        if not isinstance(target, model.Reference):
-            target = model.Reference(target)
         op = ast['op'][:-1]
         value_cls = model.RollMath if op in ('&', '^') else model.Math
-        return model.Assignment(target=target.value,
+        return model.Assignment(target=target,
                                 value=value_cls(left=target, op=op, right=ast['value']))
 
-    def load_body(self, ast, *args, **kwargs):
+    def load_body(self, ast):
         if 'from_dialect' not in ast:
             if '*' in ast['to_load']:
                 raise ParsingError('Cannot load "all (*)" of nothing.')
@@ -125,7 +109,7 @@ class RollItSemantics:
                         dict(
                             from_dialect=child,
                             to_load=model.SpecialReference.ALL,
-                            into=into or model.Reference(child),
+                            into=into or child,
                         )))
             if len(items) == 1:
                 return items[0]
@@ -198,6 +182,8 @@ class RollItSemantics:
         return model.Restart(location_specifier=specifier, target=target)
 
     def basic_statement(self, ast, *args, **kwargs):
+        if ast == 'leave':
+            return model.SingleWordStatment.LEAVE
         if not isinstance(ast, model.ModelElement):
             if isinstance(ast, Mapping):
                 with suppress(TypeError, LookupError):

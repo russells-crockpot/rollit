@@ -33,20 +33,6 @@ class SingleValueElement(tuple):
 ModelElement.register(SingleValueElement)
 
 
-class Reference(SingleValueElement, metaclass=ABCMeta):
-
-    def __new__(cls, value):
-        if value == '?':
-            return SpecialReference.SUBJECT
-        if value == '~':
-            return SpecialReference.ROOT
-        if value == '*':
-            return SpecialReference.ALL
-        if value == '!':
-            return SpecialReference.NONE
-        return super().__new__(cls, value)
-
-
 class SpecialReference(enum.Enum):
     SUBJECT = '?'
     ROOT = '~'
@@ -54,7 +40,6 @@ class SpecialReference(enum.Enum):
     NONE = '!'
 
 
-Reference.register(SpecialReference)
 ModelElement.register(SpecialReference)
 
 
@@ -63,6 +48,12 @@ class RestartLocationSpecifier(enum.Enum):
     BEFORE = 'before'
     AFTER = 'after'
 
+
+class SingleWordStatment(enum.Enum):
+    LEAVE = 'leave'
+
+
+ModelElement.register(SingleWordStatment)
 
 # Loops
 UntilDo = namedtuple('UntilDo', ('name', 'until', 'do', 'otherwise'))

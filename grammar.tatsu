@@ -1,6 +1,6 @@
 @@grammar::RollIt
 @@eol_comments:: /\/\/.*?$"/
-@@keyword:: use if then for do until and or not load as from has finish
+@@keyword:: use if then for do until and or not load as from has leave
 @@keyword:: otherwise unless into except when for every that
 @@keyword:: at after restart before
 
@@ -10,16 +10,18 @@ start = {statement} $;
 
 statement
     =
-    | @:basic_statement
-    | /[\n\r]+/
+    | '\n'
+    | '\r'
     | '|'
+    | @:basic_statement
     ;
 
 @name
-name = /[a-zA-Z_][a-zA-Z_0-9]*/;
+basic_name = /[a-zA-Z_][a-zA-Z_0-9]*/;
 
 @name
-kebab_name = /[a-zA-Z_]([\-a-zA-Z_0-9]*[\-a-zA-Z_0-9])?/ ;
+name =  '?' | '~' | '!' | basic_name;
+
 
 comp_op =
     | '=='
@@ -28,7 +30,7 @@ comp_op =
     | '!='
     | '<'
     | '>'
-    | 'has'
+    | 'has' !'do'
     | 'and'
     | 'or'
     ;
@@ -47,27 +49,26 @@ if_body
 
 # Loops
 until_do_body
-    = [('@' name:name)] until:conditional 'do' do:statement
+    = [('@' name:basic_name)] until:conditional 'do' do:statement
       except_when:{'except' ~ 'when'  conditional 'then' statement}
       ['otherwise' ~ otherwise:statement]
     ;
 
 for_every_body
-    = [('@' name:name)] item_name:name 'that' iterable:expression 'has' 'do' do:statement;
-
-dialect_name = kebab_name | name;
+    = [('@' name:basic_name)] item_name:[basic_name]
+      'that' ~ iterable:expression 'has' 'do' do:statement;
 
 load_body
-    = to_load:({dialect_name}+ | '*')
-      ['from' ~ from_dialect:(dialect_name)]
-      ['into' ~ into:reference]
+    = to_load:(','.{basic_name}+ | '*')
+      ['from' ~ from_dialect:(basic_name)]
+      ['into' ~ into:name]
     ;
 
 modifier_args = '(' @:','.{ expression } [','] ')';
 
-modifier_call = '->' modifier:reference args:[modifier_args] ;
+#CONSIDER allow modifier to be an access
+modifier_call = '->' modifier:basic_name args:[modifier_args] ;
 
-reference = name | '?' | '~' | '!';
 
 enlarge = size:[expression] '@' value:[expression];
 
@@ -79,7 +80,7 @@ reduce_enlarge
 
 accessor
     =
-    | '.' @:name
+    | '.' @:basic_name
     | reduce_enlarge
     ;
 
@@ -160,10 +161,10 @@ factor
 atom
     =
     | number
-    | reference
+    | name
     ;
 
-modifier_params = '(' @:','.{ reference } [','] ')';
+modifier_params = '(' @:','.{ name } [','] ')';
 
 modifier_def_body =  parameters:[modifier_params] definition:statement ;
 
@@ -184,9 +185,9 @@ modifier_def = target:access '<-' parameters:[modifier_params] definition:statem
 
 restart_body
     =
-    | location_specifier:'before' ~ [target:(name | '~' | '!')]
-    | location_specifier:'at' ~ [target:(name | '~' | '!')]
-    | location_specifier:'after' ~ [target:(name | '~' | '!')]
+    | location_specifier:'before' ~ [target:name]
+    | location_specifier:'at' ~ [target:name]
+    | location_specifier:'after' ~ [target:name]
     ;
 
 basic_statement
@@ -198,7 +199,7 @@ basic_statement
     | 'for' 'every' ~ @:for_every_body
     | target:access op:(>assign_op) !'=' ~ value:expression
     | 'restart' ~ restart_body
-    | 'finisn'
+    | 'leave'
     | expression
     | '[' ~ @:{statement} ']'
     ;

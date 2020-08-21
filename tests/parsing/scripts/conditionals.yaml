@@ -15,9 +15,7 @@ tests:
   - script: 'not test'
     result:
       _class: Negation
-      value:
-        _class: Reference
-        value: 'test'
+      value: 'test'
   - script: 'not 1d6'
     result:
       _class: Negation
@@ -153,9 +151,7 @@ tests:
         _class: Dice
         number_of_dice: 1
         sides: 6
-      predicate:
-        _class: Reference
-        value: 'use_d6'
+      predicate: 'use_d6'
       otherwise:
         _class: Dice
         number_of_dice: 2
@@ -167,18 +163,14 @@ tests:
         _class: Dice
         number_of_dice: 1
         sides: 6
-      predicate:
-        _class: Reference
-        value: 'use_d6'
+      predicate: 'use_d6'
       otherwise:
         _class: UseIf
         use:
           _class: Dice
           number_of_dice: 2
           sides: 4
-        predicate:
-          _class: Reference
-          value: 'use_d4'
+        predicate: 'use_d4'
         otherwise:
           _class: Dice
           number_of_dice: 3
