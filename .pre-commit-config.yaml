@@ -57,4 +57,3 @@ repos:
   rev: pylint-2.4.4
   hooks:
   - id: pylint
-    files: '^grammar.lark$'
