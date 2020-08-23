@@ -32,43 +32,43 @@ tests:
   tests:
   - script: '1 == 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left: 1
       op: '=='
       right: 2
   - script: '1 >= 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left: 1
       op: '>='
       right: 2
   - script: '1 <= 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left: 1
       op: '<='
       right: 2
   - script: '1 != 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left: 1
       op: '!='
       right: 2
   - script: '1 > 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left: 1
       op: '>'
       right: 2
   - script: '1 < 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left: 1
       op: '<'
       right: 2
   - script: '1 has 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left: 1
       op: 'has'
       right: 2
@@ -80,13 +80,13 @@ tests:
   tests:
   - script: '1 > 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left: 1
       op: '>'
       right: 2
   - script: '1d6 has 2'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left:
         _class: Dice
         number_of_dice: 1
@@ -95,35 +95,35 @@ tests:
       right: 2
   - script: '1d6 has 2 - 3'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left:
         _class: Dice
         number_of_dice: 1
         sides: 6
       op: 'has'
       right:
-        _class: Math
+        _class: BinaryOp
         left: 2
         op: '-'
         right: 3
   - script: '1d6 < 2 !=  3'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left:
         _class: Dice
         number_of_dice: 1
         sides: 6
       op: '<'
       right:
-        _class: Comparison
+        _class: BinaryOp
         left: 2
         op: '!='
         right: 3
   - script: '(1d6 < 2) !=  3'
     result:
-      _class: Comparison
+      _class: BinaryOp
       left:
-        _class: Comparison
+        _class: BinaryOp
         left:
           _class: Dice
           number_of_dice: 1

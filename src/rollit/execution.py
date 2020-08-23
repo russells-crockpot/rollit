@@ -1,89 +1,383 @@
 """
 """
-from contextlib import suppress
+import inspect
+import operator
+import sys
+from collections import ChainMap
+from functools import lru_cache
 
-from .dialect import Dialect
-from .dialects.default import dialect as default_dialect
-from .exceptions import InvalidNameError
-from .model import Resolvable
+from . import model
+from .exceptions import InvalidNameError, RollItSyntaxError, NoSuchLoopError, RollItTypeError, \
+        NoneError
+from .internal_objects import Reducable, Roll
+from .towers import DefaultTower
 
-__all__ = [
-    'Session',
-    'ExecutionContext',
-]
+if sys.version_info.minor >= 8:
+    from functools import cached_property
+else:
+    cached_property = property
+
+__all__ = ['ExecutionEnvironment', 'ExecutionContext', 'NoSubject', 'Scope']
+
+
+def _raise_not_implemented(*args):
+    raise NotImplementedError
+
+
+_OPERATOR_MAP = {
+    '+': operator.add,
+    '-': operator.sub,
+    '*': operator.mul,
+    '/': operator.floordiv,
+    '//': operator.truediv,
+    '%': operator.mod,
+    '&': _raise_not_implemented,
+    '^': _raise_not_implemented,
+    '>': operator.gt,
+    '<': operator.lt,
+    '==': operator.eq,
+    '!=': operator.ne,
+    '>=': operator.ge,
+    '<=': operator.le,
+    'has': lambda x, y: y in x,
+    'and': operator.and_,
+    'or': operator.or_,
+}
+
+
+class Scope:
+    """
+    """
+
+    # pylint: disable=protected-access
+    def __init__(self, parent=None, *, isolate=False):
+        """
+        :param parent: The parent scope.
+        :param bool isolate: When a scope is isolated, any values assigned will not override the
+            values of the parent scope.
+        """
+        self._parent = parent
+        self._isolated = isolate
+        if not self._parent:
+            self._loops = ChainMap()
+            self._variables = ChainMap()
+        else:
+            self._loops = ChainMap({}, *self._parent._loops.maps)
+            if not self._isolated:
+                self._variables = ChainMap({}, *self._parent._variables.maps)
+            else:
+                self._loops = ChainMap()
+
+    def add_loop(self, name, loop):
+        """
+        """
+        self._loops[name] = loop
+
+    def get_loop(self, name):
+        """
+        """
+        try:
+            return self._loops[name]
+        except KeyError:
+            raise NoSuchLoopError(name) from None
+
+    def __contains__(self, key):
+        return key in self._variables
+
+    def __getitem__(self, name):
+        try:
+            return self._variables[name]
+        except KeyError:
+            raise InvalidNameError(name) from None
+
+    def __setitem__(self, name, value):
+        if self._parent and not self._isolated and name in self._parent:
+            self._parent[name] = value
+        self._variables[name] = value
+
+
+class ExecutionEnvironment:
+    """
+    """
+
+    def __init__(self, *, dice_tower=DefaultTower):
+        if inspect.isclass(dice_tower):
+            dice_tower = dice_tower()
+        self.dice_tower = dice_tower
+        self._context = ExecutionContext(env=self)
+
+
+def __create_no_subject():
+
+    class _NoSubjectBase(tuple):
+        __the_object = None
+
+        def __new__(cls):
+            if not cls.__the_object:
+                cls.__the_object = super().__new__(cls)
+            return cls.__the_object
+
+        def __bool__(self):
+            return False
+
+    return _NoSubjectBase()
+
+
+NoSubject = __create_no_subject()
+""" """
+del __create_no_subject
 
 
 class ExecutionContext:
     """
     """
-    root_dialect = None
-    """ """
-    current_dialect = None
-    """ """
+    _evaluators = ChainMap()
+    _reducers = ChainMap()
 
-    def __init__(self, root_dialect):
-        self._dialect_holder = {}
-        if not root_dialect:
-            root_dialect = Dialect(is_root=True, holder=self._dialect_holder)
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._reducers = cls._evaluators = None
+        for b in cls.__bases__:
+            if issubclass(b, ExecutionContext):
+                # pylint: disable=protected-access,no-member
+                cls._evaluators = b._evaluators.new_child()
+                cls._reducers = b._reducers.new_child()
+                break
+
+    def __init__(self, *, subject=NoSubject, loop=None, env=None, _parent=None):
+        self._parent = _parent
+        self._env = env or self._parent._env
+        self._loop = loop
+        self.__subject = subject
+        if not self._parent:
+            self._scope = Scope()
+        #TODO Consider scopes and modifier calls and defs
+        elif self.in_modifier and not self._parent.in_modifier:
+            self._parent = self._scope = Scope(self._parent.root, isolate=True)
+            self._parent = self._parent.root
         else:
-            root_dialect = root_dialect.child(root_dialect.name,
-                                              is_root=True,
-                                              holder=self._dialect_holder)
-        self.current_dialect = self.root_dialect = root_dialect
+            self._scope = Scope(self._parent._scope)
 
-    def get_dialect(self, name):
+    @classmethod
+    def reducer(cls, obj_type):
         """
         """
-        if not name:
+
+        def _decorator(func):
+            cls._reducers[obj_type] = func
+            return func
+
+        return _decorator
+
+    @classmethod
+    def evaluator(cls, obj_type):
+        """
+        """
+
+        def _decorator(func):
+            cls._evaluators[obj_type] = func
+            return func
+
+        return _decorator
+
+    @property
+    def subject(self):
+        """
+        """
+        return self.__subject
+
+    @subject.setter
+    def subject(self, value):
+        if value is NoSubject and self.__subject is not NoSubject:
+            raise ValueError('Cannot delete a subject after context creation!')
+        self.__subject = value
+
+    @cached_property
+    def root_loop(self):
+        """
+        """
+        if self._parent and self._parent.root_loop:
+            return self._parent.root_loop
+        return self._loop
+
+    @cached_property
+    def current_loop(self):
+        """
+        """
+        if self._loop or not self._parent:
+            return self._loop
+        return self._parent.current_loop
+
+    @cached_property
+    def in_modifier(self):
+        """
+        """
+        return self.__subject is not NoSubject
+
+    @cached_property
+    def root(self):
+        """
+        """
+        if self._parent:
+            return self._parent.root
+        return self
+
+    def create_child(self, subject=None, loop=None):
+        """
+        """
+        return type(self)(subject=subject, loop=loop, _parent=self)
+
+    def get_loop(self, name):
+        """
+        """
+        if name == model.SpecialReference.NONE:
+            return self.current_loop
+        if name == model.SpecialReference.ROOT:
+            return self.root_loop
+        return self._scope.get_loop(name)
+
+    def __getitem__(self, name):
+        if name == model.SpecialReference.SUBJECT:
+            if not self.in_modifier:
+                raise RollItSyntaxError('Cannot refer to the subject outside of a modifier!')
+            return self.subject
+        if name == model.SpecialReference.ROOT:
+            return self.root
+        if name == model.SpecialReference.NONE:
             return None
-        if name == '^':
-            if not self.current_dialect.parent:
-                raise Exception()
-            return self.current_dialect.parent
-        if name == '~':
-            return self.root_dialect
-        if name not in self._dialect_holder:
-            raise InvalidNameError()
-        return self._dialect_holder[name]
+        return self._scope[name]
 
-    def get_or_create_dialect(self, name, parent):
+    def __contains__(self, name):
+        return name in self._scope
+
+    def __setitem__(self, name, value):
+        self._scope[name] = value
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return
+
+    def roll(self, sides):
         """
         """
-        if isinstance(parent, str):
-            parent = self.get_dialect(parent)
-        if name:
-            with suppress(InvalidNameError):
-                dialect = self.get_dialect(name)
-                if dialect.parent != parent:
-                    #TODO
-                    raise ValueError()
-                return dialect
-        return Dialect(name, parent, holder=self._dialect_holder)
+        return self._env.dice_tower.roll(sides)
 
-    def value_for(self, item):
+    def value_for(self, obj):
         """
         """
-        if isinstance(item, Resolvable):
-            return item.resolve(self)
-        return item
+        raise NotImplementedError()
 
-    def add_variable(self, name, value):
+    def reduce(self, obj):
         """
         """
-        self.current_dialect.add_variable(name, value)
+        raise NotImplementedError()
 
-    def get_variable(self, name):
+    def access_obj(self, name, accessors):
         """
         """
-        return self.current_dialect.get_variable(name)
+        obj = self[name]
+        for item in accessors:
+            try:
+                if obj is None or item not in obj:
+                    raise NoneError()
+                obj = obj[item]
+            except TypeError:
+                raise RollItTypeError()
+        return obj
 
-    def __getitem__(self, item):
-        return self.value_for(item)
+
+@ExecutionContext.evaluator(model.Reduce)
+def _(context, obj):
+    return context.reduce(obj)
 
 
-class Session:
-    """
-    """
+@ExecutionContext.evaluator(model.Assignment)
+def _(context, obj):
+    if isinstance(obj.target, str):
+        context[obj.target] = context.value_for(obj.value)
+    else:
+        target = context.access_obj(obj.target.accessing, obj.target.accessors[:-1])
+        target[obj.target.accessors[-1]] = context.value_for(obj.value)
 
-    def __init__(self, root_dialect=default_dialect):
-        self._context = ExecutionContext(root_dialect)
+
+@ExecutionContext.evaluator(model.Access)
+def _(context, obj):
+    return context.access_obj(*obj)
+
+
+@ExecutionContext.evaluator(model.Enlarge)
+def _(context, obj):
+    return Roll([context.value_for(obj.value) for _ in range(obj.size)])
+
+
+@ExecutionContext.evaluator(model.Dice)
+@ExecutionContext.reducer(model.Dice)
+def _(context, obj):
+    number_of_dice = context.value_for(obj.number_of_dice)
+    sides = context.value_for(obj.sides)
+    return Roll([context.roll(sides) for _ in range(obj.number_of_dice)])
+
+
+@ExecutionContext.evaluator(model.Length)
+def _(context, obj):
+    try:
+        return len(context.value_for(obj.value))
+    except TypeError:
+        if obj is None:
+            raise NoneError()
+        raise RollItTypeError()
+
+
+@ExecutionContext.evaluator(model.Negation)
+def _(context, obj):
+    return not context.value_for(obj.value)
+
+
+@ExecutionContext.evaluator(model.BinaryOp)
+def _(context, obj):
+    return _OPERATOR_MAP[obj.op](context.value_for(obj.left), context.value_for(obj.right))
+
+
+@ExecutionContext.evaluator(model.Load)
+def _(context, obj):
+    #FIXME This is only for bag creation. I'll come up with an actual import system later.
+    if obj.to_load == model.SpecialReference.NONE:
+        obj = None
+    return
+
+
+# @ExecutionContext.evaluator(model.)
+# def _(context, obj):
+#     return
+#
+#
+# @ExecutionContext.evaluator(model.)
+# def _(context, obj):
+#     return
+#
+#
+# @ExecutionContext.evaluator(model.)
+# def _(context, obj):
+#     return
+#
+#
+# @ExecutionContext.evaluator(model.)
+# def _(context, obj):
+#     return
+#
+#
+# @ExecutionContext.evaluator(model.)
+# def _(context, obj):
+#     return
+#
+#
+# @ExecutionContext.evaluator(model.)
+# def _(context, obj):
+#     return
+#
+#
+# @ExecutionContext.evaluator(model.)
+# def _(context, obj):
+#     return

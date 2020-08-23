@@ -8,7 +8,7 @@ from collections import namedtuple
 ModelElement = ABCMeta('ModelElement', (tuple,), {})
 
 
-class SingleValueElement(tuple):
+class SingleValueElement(ModelElement):
     """
     """
 
@@ -30,7 +30,18 @@ class SingleValueElement(tuple):
         return f'{type(self).__name__}({self.value!r})'
 
 
-ModelElement.register(SingleValueElement)
+class SequenceValueElement(ModelElement):
+    """
+    """
+
+    def __str__(self):
+        return f'<{type(self).__name__}: {super().__str__()}>'
+
+    def __repr__(self):
+        return f'{type(self).__name__}{super().__repr__()}'
+
+
+# ModelElement.register(SingleValueElement)
 
 
 class SpecialReference(enum.Enum):
@@ -71,21 +82,20 @@ del spec
 ModelElement.register(Restart)
 
 Assignment = namedtuple('Assignment', ('target', 'value'))
-Load = namedtuple('Load', ('to_load', 'from_dialect', 'into'))
+Load = namedtuple('Load', ('to_load', 'load_from', 'into'))
 ModifierCall = namedtuple('ModifierCall', ('modifier', 'args'))
 Modify = namedtuple('Modify', ('subject', 'modifiers'))
 Access = namedtuple('Access', ('accessing', 'accessors'))
 Enlarge = namedtuple('Enlarge', ('size', 'value'))
-Comparison = namedtuple('Comparison', ('left', 'op', 'right'))
 If = namedtuple('If', ('predicate', 'then', 'otherwise'))
 UseIf = namedtuple('UseIf', ('use', 'predicate', 'otherwise'))
 ModifierDef = namedtuple('ModifierDef', ('target', 'parameters', 'definition'))
 Dice = namedtuple('Dice', ('number_of_dice', 'sides'))
-RollMath = namedtuple('RollMath', ('left', 'op', 'right'))
-Math = namedtuple('Math', ('left', 'op', 'right'))
+BinaryOp = namedtuple('BinaryOp', ('left', 'op', 'right'))
 Negation = type('Negation', (SingleValueElement,), {})
 Reduce = type('Reduce', (SingleValueElement,), {})
 Length = type('Length', (SingleValueElement,), {})
+CreateBag = type('CreateBag', (SingleValueElement,), {})
 
 ModelElement.register(Assignment)
 ModelElement.register(Load)
@@ -93,10 +103,8 @@ ModelElement.register(ModifierCall)
 ModelElement.register(Modify)
 ModelElement.register(Access)
 ModelElement.register(Enlarge)
-ModelElement.register(Comparison)
 ModelElement.register(If)
 ModelElement.register(UseIf)
 ModelElement.register(ModifierDef)
 ModelElement.register(Dice)
-ModelElement.register(RollMath)
-ModelElement.register(Math)
+ModelElement.register(BinaryOp)

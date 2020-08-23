@@ -14,5 +14,4 @@ RollIt Language Reference
    types.rst
    expressions.rst
    statements.rst
-   dialects.rst
 

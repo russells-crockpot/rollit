@@ -1,17 +1,17 @@
 """
 """
 import inspect
-import re
 from collections import namedtuple
 from collections.abc import Mapping
 from contextlib import suppress
+from functools import lru_cache
 
 from . import model
-from .exceptions import ParsingError
+from .exceptions import ParsingError, RollItSyntaxError
 
 __all__ = ['RollItSemantics']
 
-STATMENTS_END_PAT = re.compile(r'[\r\n\|]')
+_STATEMENT_ENDS = frozenset(('\n', '\r', '|', ''))
 
 
 class CreateTypeProperty(
@@ -37,7 +37,8 @@ class CreateTypeProperty(
             requires=requires,
         )
 
-    def __call__(self, ast, *args, **kwargs):
+    #@lru_cache
+    def __call__(self, ast):
         if self.single_value:
             if ast is None:
                 ast = self.defaults
@@ -64,85 +65,105 @@ class RollItSemantics:
     for_every_body = CreateTypeProperty(model.ForEvery, False, {'name': None})
     use_if = CreateTypeProperty(model.UseIf, False, requires=('use', 'predicate', 'otherwise'))
     enlarge = CreateTypeProperty(model.Enlarge, False)
-    roll_math = CreateTypeProperty(model.RollMath, False, requires=('left', 'op', 'right'))
-    math = CreateTypeProperty(model.Math, False, requires=('left', 'op', 'right'))
-    comparison = CreateTypeProperty(model.Comparison, False, requires=('left', 'op', 'right'))
+    roll_math = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
+    math = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
+    comparison = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
     dice = CreateTypeProperty(model.Dice, False, requires=('number_of_dice', 'sides'))
-    access = CreateTypeProperty(model.Access, False, requires=('accessing', 'accessors'))
-    modify = CreateTypeProperty(model.Modify, False, requires=('subject', 'modifiers'))
+    access = CreateTypeProperty(model.Access, False)
+    access_expr = CreateTypeProperty(model.Access, False, requires=('accessing', 'accessors'))
     modifier_def = CreateTypeProperty(model.ModifierDef,
                                       False,
                                       defaults=dict(parameters=(), definition=()))
     int = CreateTypeProperty(int, True)
     float = CreateTypeProperty(float, True)
 
-    def conditional(self, ast, *args, **kwargs):
+    #@lru_cache
+    def conditional(self, ast):
         if not isinstance(ast, model.ModelElement) and isinstance(ast, tuple) \
                 and len(ast) > 1 and ast[0] == 'not':
-            return model.Negation(ast[1])
+            return self._negate(ast[1])
         return ast
 
+    #@lru_cache
     def name(self, ast):
         with suppress(ValueError):
             return model.SpecialReference(ast)
         return ast
 
-    #FIXME Handle accesses
-    def _assigment(self, ast):
+    #@lru_cache
+    def assignment(self, ast):
         target = ast['target']
         if ast['op'] == '=':
             return model.Assignment(target=target, value=ast['value'])
         op = ast['op'][:-1]
-        value_cls = model.RollMath if op in ('&', '^') else model.Math
-        return model.Assignment(target=target,
-                                value=value_cls(left=target, op=op, right=ast['value']))
+        return model.Assignment(
+            target=target,
+            value=model.BinaryOp(left=target, op=op, right=ast['value']),
+        )
+
+    def modify(self, ast):
+        if not isinstance(ast, dict) or 'subject' not in ast or 'modifier' not in ast:
+            return ast
+        subject = ast['subject']
+        call = model.ModifierCall(modifier=ast['modifier'], args=ast.get('args', ()))
+        if isinstance(subject, model.Modify):
+            return model.Modify(subject=subject.subject, modifiers=subject.modifiers + (call,))
+        return model.Modify(subject=subject, modifiers=(call,))
 
     def load_body(self, ast):
-        if 'from_dialect' not in ast:
-            if '*' in ast['to_load']:
-                raise ParsingError('Cannot load "all (*)" of nothing.')
-            items = []
-            into = ast.get('into')
-            for child in ast.pop('to_load'):
-                items.append(
-                    self.load_body(
-                        dict(
-                            from_dialect=child,
-                            to_load=model.SpecialReference.ALL,
-                            into=into or child,
-                        )))
-            if len(items) == 1:
-                return items[0]
-            return items
-        with suppress(TypeError):
-            if '*' in ast['to_load']:
-                if len(ast['to_load']) > 1:
-                    raise ParsingError('Loading * loads everything, other values cannot be '
-                                       'specified.')
-                del ast['to_load']
-                ast['to_load'] = model.SpecialReference.ALL
-        ast.setdefault('into', model.SpecialReference.ROOT)
-        return model.Load(**ast)
+        if ast['to_load'] == '!':
+            return tuple(model.CreateBag(target) for target in ast['into'])
+        if ast['to_load'] == '*':
+            return tuple(
+                model.Load(
+                    to_load=model.SpecialReference.ALL,
+                    load_from=child,
+                    into=ast.get('into', model.SpecialReference.ROOT),
+                ) for child in ast['load_from'])
+        if not ast['to_load']:
+            return tuple(
+                model.Load(
+                    to_load=model.SpecialReference.ALL,
+                    load_from=child,
+                    into=ast.get('into', child),
+                ) for child in ast['load_from'])
+        return tuple(
+            model.Load(
+                to_load=child,
+                load_from=ast.get('load_from'),
+                into=ast.get('into', child),
+            ) for child in ast['to_load'])
 
-    def statement(self, ast, *args, **kwargs):
-        if isinstance(ast, str) and not (ast and STATMENTS_END_PAT.sub('', ast)):
+    #@lru_cache
+    def statement(self, ast):
+        if isinstance(ast, str) and ast in _STATEMENT_ENDS:
             return None
         return ast
 
-    #FIXME Unlesses need to have a negation of the initial if predicate anded to them
-    def if_body(self, ast, *args, **kwargs):
+    #@lru_cache
+    def if_body(self, ast):
         rval = model.If(predicate=ast['predicate'],
                         then=ast['then'],
                         otherwise=ast.get('otherwise'))
-        for unless in ast['unless']:
-            rval = model.If(predicate=unless['predicate'], then=unless['then'], otherwise=rval)
+        if ast['unless']:
+            previous = None
+            for unless in ast['unless']:
+                previous = model.If(predicate=unless['predicate'],
+                                    then=unless['then'],
+                                    otherwise=previous)
+            rval = model.If(
+                predicate=self._negate(ast['predicate']),
+                then=previous,
+                otherwise=rval,
+            )
         return rval
 
     @staticmethod
     def _negate(element):
         return element.value if isinstance(element, model.Negation) else model.Negation(element)
 
-    def until_do_body(self, ast, *args, **kwargs):
+    #@lru_cache
+    def until_do_body(self, ast):
         ast.setdefault('name', None)
         ast.setdefault('otherwise', None)
         do = ast.pop('do')
@@ -152,7 +173,8 @@ class RollItSemantics:
         ast['do'] = do
         return model.UntilDo(**ast)
 
-    def reduce_enlarge(self, ast, *args, **kwargs):
+    #@lru_cache
+    def enlarge_reduce(self, ast):
         if isinstance(ast, model.Enlarge):
             return ast
         if not ast:
@@ -161,17 +183,20 @@ class RollItSemantics:
             ast = model.SpecialReference.ALL
         return model.Reduce(ast)
 
-    def length(self, ast, *args, **kwargs):
+    #@lru_cache
+    def length(self, ast):
         if isinstance(ast, tuple) and not isinstance(ast, model.ModelElement) \
                 and len(ast) == 2 and ast[0] == '#':
             return model.Length(ast[1])
         return ast
 
-    def modifier_call(self, ast, *args, **kwargs):
+    #@lru_cache
+    def modifier_call(self, ast):
         if ast['args'] is None:
             ast['args'] = ()
         return model.ModifierCall(**ast)
 
+    #@lru_cache
     def restart_body(self, ast):
         specifier = model.RestartLocationSpecifier(ast['location_specifier'])
         target = ast.get('target', '!')
@@ -181,14 +206,15 @@ class RollItSemantics:
             return getattr(model.Restart, f'{specifier._name_}_{target}')
         return model.Restart(location_specifier=specifier, target=target)
 
-    def basic_statement(self, ast, *args, **kwargs):
+    #@lru_cache
+    def basic_statement(self, ast):
         if ast == 'leave':
             return model.SingleWordStatment.LEAVE
         if not isinstance(ast, model.ModelElement):
             if isinstance(ast, Mapping):
                 with suppress(TypeError, LookupError):
                     if len(ast) == 3 and 'op' and ast['op'][-1] == '=' and ast['op'] != '==':
-                        return self._assigment(ast)
+                        return self.assignment(ast)
             elif isinstance(ast, (list, tuple)):
                 with suppress(IndexError):
                     if ast[0] == 'restart':

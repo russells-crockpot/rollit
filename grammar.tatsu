@@ -8,11 +8,11 @@
 
 start = {statement} $;
 
+statement_end = '\n' | '\r' | '|';
+
 statement
     =
-    | '\n'
-    | '\r'
-    | '|'
+    | >statement_end
     | @:basic_statement
     ;
 
@@ -58,30 +58,39 @@ for_every_body
     = [('@' name:basic_name)] item_name:[basic_name]
       'that' ~ iterable:expression 'has' 'do' do:statement;
 
+accessor
+    =
+    | '.' ~ @:basic_name
+    | enlarge_reduce
+    ;
+
+access
+    =
+    | accessing:(name | modify) accessors:{accessor}+
+    | name
+    ;
+#access = accessing:name accessor:accessor;
+
+access_list = ','.{access}+ ;
+
+
 load_body
-    = to_load:(','.{basic_name}+ | '*')
-      ['from' ~ from_dialect:(basic_name)]
-      ['into' ~ into:name]
+    =
+    | to_load:'*' ~ 'from' ~ load_from:(>access_list) ['into' ~ into:access]
+    | to_load:'!' ~ 'into' ~ into:(>access_list)
+    | to_load:(','.{basic_name}+) 'from' ~ load_from:access ['into' ~ into:access]
+    | load_from:(','.{basic_name}+) ['into' ~ into:access] to_load:`''`
+    | to_load:(','.{basic_name}+)
     ;
 
 modifier_args = '(' @:','.{ expression } [','] ')';
 
-#CONSIDER allow modifier to be an access
-modifier_call = '->' modifier:basic_name args:[modifier_args] ;
-
-
 enlarge = size:[expression] '@' value:[expression];
 
-reduce_enlarge
+enlarge_reduce
     =
-    | '{' !'}' ~ @:(enlarge | expression | '*'| '!') '}'
+    | '{' !'}' ~ @:(enlarge | expression | '*') '}'
     | '{' &'}' ~ @:`''` '}'
-    ;
-
-accessor
-    =
-    | '.' @:basic_name
-    | reduce_enlarge
     ;
 
 expression
@@ -110,7 +119,7 @@ comparison
 math
     =
     | left:math op:('+'|'-') ~ right:math
-    | left:access op:('*'|'//'|'/' | '%') ~ right:access
+    | left:roll_math op:('*'|'//'|'/' | '%') ~ right:roll_math
     | roll_math
     ;
 
@@ -130,25 +139,25 @@ length
 
 modify
     =
-    | subject:access  &'->' ~ modifiers:{modifier_call}+
-    | access
+    | subject:modify  '->' ~ modifier:(basic_name|enlarge_reduce) [args:modifier_args]
+    | access_expr
     ;
 
-access
+access_expr
     =
-    | accessing:modify accessors:{accessor}+
+    | >access
     | dice
     ;
 
 dice
     =
-    | number_of_dice:[reduce_enlarge_expr] /d|D/ ~ sides:reduce_enlarge_expr
-    | reduce_enlarge_expr
+    | number_of_dice:[enlarge_reduce_expr] /d|D/ ~ sides:enlarge_reduce_expr
+    | enlarge_reduce_expr
     ;
 
-reduce_enlarge_expr
+enlarge_reduce_expr
     =
-    | &'{' ~ reduce_enlarge
+    | &'{' ~ enlarge_reduce
     | factor
     ;
 
@@ -190,6 +199,8 @@ restart_body
     | location_specifier:'after' ~ [target:name]
     ;
 
+assignment = target:access op:(>assign_op) !'=' ~ value:expression;
+
 basic_statement
     =
     | 'if' ~ @:if_body
@@ -197,7 +208,7 @@ basic_statement
     | &(access '<-') ~ @:modifier_def
     | 'until' ~ @:until_do_body
     | 'for' 'every' ~ @:for_every_body
-    | target:access op:(>assign_op) !'=' ~ value:expression
+    | >assignment
     | 'restart' ~ restart_body
     | 'leave'
     | expression

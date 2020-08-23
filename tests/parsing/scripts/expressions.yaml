@@ -39,49 +39,49 @@ tests:
   tests:
   - script: '1 + 2'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 1
       op: '+'
       right: 2
   - script: '2 - 1'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 2
       op: '-'
       right: 1
   - script: '2 - -1'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 2
       op: '-'
       right: -1
   - script: '2 -- 1'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 2
       op: '-'
       right: -1
   - script: '2 * 3'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 2
       op: '*'
       right: 3
   - script: '3 % 2'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 3
       op: '%'
       right: 2
   - script: '2 / 1'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 2
       op: '/'
       right: 1
   - script: '4 // 2'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 4
       op: '//'
       right: 2
@@ -92,19 +92,19 @@ tests:
   tests:
   - script: '1 + 2 * 3'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 1
       op: '+'
       right:
-        _class: Math
+        _class: BinaryOp
         left: 2
         op: '*'
         right: 3
   - script: '4 * 5 + 6'
     result:
-      _class: Math
+      _class: BinaryOp
       left:
-        _class: Math
+        _class: BinaryOp
         left: 4
         op: '*'
         right: 5
@@ -117,51 +117,51 @@ tests:
   tests:
   - script: 'test & 2'
     result:
-      _class: RollMath
+      _class: BinaryOp
       left: 'test'
       op: '&'
       right: 2
   - script: 'test ^ 2'
     result:
-      _class: RollMath
+      _class: BinaryOp
       left: 'test'
       op: '^'
       right: 2
   - script: 'test ^ 2 + 3'
     result:
-      _class: RollMath
+      _class: BinaryOp
       left: 'test'
       op: '^'
       right:
-        _class: Math
+        _class: BinaryOp
         left: 2
         op: '+'
         right: 3
   - script: 'test ^ 2 * 3'
     result:
-      _class: RollMath
+      _class: BinaryOp
       left: 'test'
       op: '^'
       right:
-        _class: Math
+        _class: BinaryOp
         left: 2
         op: '*'
         right: 3
   - script: '1 ^ test & 3'
     result:
-      _class: RollMath
+      _class: BinaryOp
       left: 1
       op: '^'
       right:
-        _class: RollMath
+        _class: BinaryOp
         left: 'test'
         op: '&'
         right: 3
   - script: '(test ^ 2) & 3'
     result:
-      _class: RollMath
+      _class: BinaryOp
       left:
-        _class: RollMath
+        _class: BinaryOp
         left: 'test'
         op: '^'
         right: 2
@@ -179,7 +179,7 @@ tests:
       sides: 6
   - script: '1 + 2d3'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 1
       op: '+'
       right:
@@ -188,7 +188,7 @@ tests:
         sides: 3
   - script: '2d3 * 4'
     result:
-      _class: Math
+      _class: BinaryOp
       left:
         _class: Dice
         number_of_dice: 2
@@ -199,7 +199,7 @@ tests:
     result:
       _class: Dice
       number_of_dice:
-        _class: Math
+        _class: BinaryOp
         left: 1
         op: '+'
         right: 2
@@ -209,7 +209,7 @@ tests:
       _class: Dice
       number_of_dice: 1
       sides:
-        _class: Math
+        _class: BinaryOp
         left: 2
         op: '*'
         right: 3
@@ -258,7 +258,7 @@ tests:
         sides: 6
   - script: '#1d6 + 3'
     result:
-      _class: Math
+      _class: BinaryOp
       left:
         _class: Length
         value:
@@ -271,7 +271,7 @@ tests:
     result:
       _class: Length
       value:
-        _class: Math
+        _class: BinaryOp
         left:
           _class: Dice
           number_of_dice: 1
@@ -280,7 +280,7 @@ tests:
         right: 3
   - script: '3 + #1d6'
     result:
-      _class: Math
+      _class: BinaryOp
       left: 3
       op: '+'
       right:
@@ -374,7 +374,7 @@ tests:
     result:
       _class: Reduce
       value:
-        _class: Math
+        _class: BinaryOp
         left:
           _class: Dice
           number_of_dice: 1
@@ -383,7 +383,7 @@ tests:
         right: 2
   - script: '{1d6} +2'
     result:
-      _class: Math
+      _class: BinaryOp
       left:
         _class: Reduce
         value:
@@ -463,7 +463,7 @@ tests:
     result:
       _class: Reduce
       value:
-        _class: Math
+        _class: BinaryOp
         left: 1
         op: '+'
         right: 2
@@ -471,9 +471,9 @@ tests:
     result:
       _class: Reduce
       value:
-        _class: Math
+        _class: BinaryOp
         left:
-          _class: Math
+          _class: BinaryOp
           left: 3
           op: '*'
           right: 2
@@ -483,11 +483,11 @@ tests:
     result:
       _class: Reduce
       value:
-        _class: Math
+        _class: BinaryOp
         left: 3
         op: '*'
         right:
-          _class: Math
+          _class: BinaryOp
           left: 2
           op: '-'
           right: 4
@@ -495,13 +495,13 @@ tests:
     result:
       _class: Reduce
       value:
-        _class: Math
+        _class: BinaryOp
         left: 3
         op: '*'
         right:
           _class: Reduce
           value:
-            _class: Math
+            _class: BinaryOp
             left: 2
             op: '-'
             right: 4

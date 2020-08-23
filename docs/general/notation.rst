@@ -8,10 +8,6 @@ RollIt uses a super set of
 `standard dice notation <https://en.wikipedia.org/wiki/Dice_notation>`_. The primary differences are
 modifiers and substitutions.
 
-.. seealso::
-
-    :ref:`Dialects` for a list of built in and prepackaged modifiers and substitutions.
-
 .. _Notation | Substitutions:
 
 Substitutions
@@ -43,5 +39,3 @@ following example:
 
 >>> 4d6:lowest(2)
 
-Standard modifiers (as well as names and aliases) are explained below, as well as different
-dialects.

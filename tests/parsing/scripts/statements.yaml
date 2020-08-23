@@ -6,14 +6,25 @@ tests:
 - name: load
   categories:
   - load
+  - bags
   tests:
+  - script: 'load ! into test'
+    result:
+      _class: CreateBag
+      value: 'test'
+  - script: 'load ! into test, test2'
+    result:
+    - _class: CreateBag
+      value: 'test'
+    - _class: CreateBag
+      value: 'test2'
   - script: 'load test'
     result:
       _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
-      from_dialect: 'test'
+      load_from: 'test'
       into: 'test'
   - script: 'load test, test2'
     result:
@@ -21,13 +32,13 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      from_dialect: 'test'
+      load_from: 'test'
       into: 'test'
     - _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
-      from_dialect: 'test2'
+      load_from: 'test2'
       into: 'test2'
   - script: 'load test into alias'
     result:
@@ -35,7 +46,7 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      from_dialect: 'test'
+      load_from: 'test'
       into: 'alias'
   - script: 'load test, test_two into ~'
     result:
@@ -43,7 +54,7 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      from_dialect: 'test'
+      load_from: 'test'
       into:
         _class: SpecialReference
         value: ROOT
@@ -51,7 +62,7 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      from_dialect: 'test_two'
+      load_from: 'test_two'
       into:
         _class: SpecialReference
         value: ROOT
@@ -61,37 +72,70 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      from_dialect: 'test'
+      load_from: 'test'
       into:
         _class: SpecialReference
         value: ROOT
-  - script: 'load test, test2 from dialect_name'
+  - script: 'load test from bag'
+    result:
+    - _class: Load
+      to_load: 'test'
+      load_from: 'bag'
+      into: 'test'
+  - script: 'load test1 from bag into other_bag'
+    result:
+    - _class: Load
+      to_load: 'test1'
+      load_from: 'bag'
+      into: 'other_bag'
+  - script: 'load bag into other_bag'
     result:
     - _class: Load
       to_load:
-      - 'test'
-      - 'test2'
-      from_dialect: 'dialect_name'
-      into:
         _class: SpecialReference
-        value: ROOT
-  - script: 'load test from dialect_name into alias'
+        value: ALL
+      load_from: 'bag'
+      into: 'other_bag'
+  - script: 'load test, test2 from bag'
+    result:
+    - _class: Load
+      to_load: 'test'
+      load_from: 'bag'
+      into: 'test'
+    - _class: Load
+      to_load: 'test2'
+      load_from: 'bag'
+      into: 'test2'
+  - script: 'load test from bag into alias'
     result:
       _class: Load
-      to_load:
-      - 'test'
-      from_dialect: 'dialect_name'
+      to_load: 'test'
+      load_from: 'bag'
       into: 'alias'
-  - script: 'load test, test_two from dialect_info into ~'
+  - script: 'load test2, test3 from bag into ~'
     result:
-      _class: Load
-      to_load:
-      - 'test'
-      - 'test_two'
-      from_dialect: 'dialect_info'
+    - _class: Load
+      to_load: 'test2'
+      load_from: 'bag'
       into:
         _class: SpecialReference
         value: ROOT
+    - _class: Load
+      to_load: 'test3'
+      load_from: 'bag'
+      into:
+        _class: SpecialReference
+        value: ROOT
+  - script: 'load test4, test5 from bag into other_bag'
+    result:
+    - _class: Load
+      to_load: 'test4'
+      load_from: 'bag'
+      into: 'other_bag'
+    - _class: Load
+      to_load: 'test5'
+      load_from: 'bag'
+      into: 'other_bag'
 
 - name: assignment
   categories:
@@ -107,7 +151,7 @@ tests:
       _class: Assignment
       target: 'name'
       value:
-        _class: Math
+        _class: BinaryOp
         left: 'name'
         op: '+'
         right: 1
@@ -116,7 +160,7 @@ tests:
       _class: Assignment
       target: 'name'
       value:
-        _class: Math
+        _class: BinaryOp
         left: 'name'
         op: '-'
         right: 1
@@ -125,7 +169,7 @@ tests:
       _class: Assignment
       target: 'name'
       value:
-        _class: Math
+        _class: BinaryOp
         left: 'name'
         op: '/'
         right: 1
@@ -134,7 +178,7 @@ tests:
       _class: Assignment
       target: 'name'
       value:
-        _class: Math
+        _class: BinaryOp
         left: 'name'
         op: '//'
         right: 1
@@ -143,7 +187,7 @@ tests:
       _class: Assignment
       target: 'name'
       value:
-        _class: Math
+        _class: BinaryOp
         left: 'name'
         op: '%'
         right: 1
@@ -152,7 +196,7 @@ tests:
       _class: Assignment
       target: 'name'
       value:
-        _class: RollMath
+        _class: BinaryOp
         left: 'name'
         op: '&'
         right: 1
@@ -161,7 +205,7 @@ tests:
       _class: Assignment
       target: 'name'
       value:
-        _class: RollMath
+        _class: BinaryOp
         left: name
         op: '^'
         right: 1
@@ -211,7 +255,7 @@ tests:
           number_of_dice: 1
           sides: 6
         value:
-          _class: Math
+          _class: BinaryOp
           left:
             _class: Dice
             number_of_dice: 3

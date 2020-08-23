@@ -52,7 +52,7 @@ tests:
       target: 'name'
       parameters: ['param1']
       definition:
-        _class: Math
+        _class: BinaryOp
         left: 1
         op: '+'
         right: 2
@@ -62,7 +62,7 @@ tests:
       target: 'name'
       parameters: ['param1']
       definition:
-        _class: Math
+        _class: BinaryOp
         left:
           _class: SpecialReference
           value: SUBJECT
@@ -76,7 +76,7 @@ tests:
       - 'param1'
       - 'param2'
       definition:
-        _class: Math
+        _class: BinaryOp
         left: 'param1'
         op: '+'
         right: 'param2'
@@ -88,7 +88,7 @@ tests:
       - 'param1'
       - 'param2'
       definition:
-      - _class: Math
+      - _class: BinaryOp
         left: 'param1'
         op: '+'
         right: 'param2'
@@ -121,7 +121,7 @@ tests:
       - 'param1'
       - 'param2'
       definition:
-      - _class: Math
+      - _class: BinaryOp
         left: 'param1'
         op: '+'
         right: 'param2'
@@ -238,7 +238,7 @@ tests:
             _class: Dice
           op: '-'
           right: 6
-          _class: Math
+          _class: BinaryOp
         - 7
         _class: ModifierCall
 

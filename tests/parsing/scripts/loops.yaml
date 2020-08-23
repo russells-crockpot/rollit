@@ -55,7 +55,7 @@ tests:
       _class: UntilDo
       name: null
       until:
-        _class: Math
+        _class: BinaryOp
         left: 1
         op: '+'
         right: 2
@@ -67,7 +67,7 @@ tests:
       name: null
       until: 1
       do:
-        _class: Comparison
+        _class: BinaryOp
         left: 2
         op: '>'
         right: 3
@@ -77,22 +77,36 @@ tests:
       _class: UntilDo
       name: null
       until:
-        _class: Math
+        _class: BinaryOp
         left: 1
         op: '+'
         right: 2
       do:
-        _class: Comparison
+        _class: BinaryOp
         left: 3
         op: '>='
         right: 4
+      otherwise: null
+  - script: 'until test >=  5 do 1d6'
+    result:
+      _class: UntilDo
+      name: null
+      until:
+        _class: BinaryOp
+        left: 'test'
+        op: '>='
+        right: 5
+      do:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
       otherwise: null
   - script: 'until test >=  5 do test = test & 1d6'
     result:
       _class: UntilDo
       name: null
       until:
-        _class: Comparison
+        _class: BinaryOp
         left: 'test'
         op: '>='
         right: 5
@@ -100,7 +114,7 @@ tests:
         _class: Assignment
         target: 'test'
         value:
-          _class: RollMath
+          _class: BinaryOp
           left: 'test'
           op: '&'
           right:
@@ -113,7 +127,7 @@ tests:
       _class: UntilDo
       name: null
       until:
-        _class: Comparison
+        _class: BinaryOp
         left: 'test'
         op: '>'
         right: 25
@@ -121,7 +135,7 @@ tests:
         _class: Assignment
         target: 'test'
         value:
-          _class: RollMath
+          _class: BinaryOp
           left: 'test'
           op: '&'
           right:
@@ -134,7 +148,7 @@ tests:
       _class: UntilDo
       name: null
       until:
-        _class: Comparison
+        _class: BinaryOp
         left: 'test'
         op: '>'
         right: 25
@@ -142,7 +156,7 @@ tests:
         _class: Assignment
         target: 'test'
         value:
-          _class: RollMath
+          _class: BinaryOp
           left: 'test'
           op: '&'
           right:
@@ -161,7 +175,7 @@ tests:
       _class: UntilDo
       name: 'name'
       until:
-        _class: Comparison
+        _class: BinaryOp
         left: 'test'
         op: '>'
         right: 25
@@ -169,7 +183,7 @@ tests:
         _class: Assignment
         target: 'test'
         value:
-          _class: RollMath
+          _class: BinaryOp
           left: 'test'
           op: '&'
           right:

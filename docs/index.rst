@@ -10,7 +10,6 @@ RollIt documentation!
 
    general/overview.rst
    general/notation.rst
-   general/dialects.rst
    language-reference/toc.rst
    api-reference/rollit/modules.rst
 
