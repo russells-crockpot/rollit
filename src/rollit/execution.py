@@ -4,11 +4,10 @@ import inspect
 import operator
 import sys
 from collections import ChainMap
-from functools import lru_cache
 
 from . import model
 from .exceptions import InvalidNameError, RollItSyntaxError, NoSuchLoopError, RollItTypeError, \
-        NoneError
+        NoneError, CannotReduceError
 from .internal_objects import Reducable, Roll
 from .towers import DefaultTower
 
@@ -100,11 +99,18 @@ class ExecutionEnvironment:
     """
     """
 
-    def __init__(self, *, dice_tower=DefaultTower):
+    def __init__(self, parser, *, dice_tower=DefaultTower):
         if inspect.isclass(dice_tower):
             dice_tower = dice_tower()
         self.dice_tower = dice_tower
         self._context = ExecutionContext(env=self)
+        self._parser = parser
+
+    def evaluate(self, stmt):
+        """
+        """
+        stmt_model = self._parser.parse(stmt)[0]
+        return self._context.evaluate(stmt_model)
 
 
 def __create_no_subject():
@@ -264,15 +270,24 @@ class ExecutionContext:
         """
         return self._env.dice_tower.roll(sides)
 
-    def value_for(self, obj):
+    def evaluate(self, obj):
         """
         """
-        raise NotImplementedError()
+        if isinstance(obj, str):
+            return self[obj]
+        if isinstance(obj, (int, float)):
+            return obj
+        return self._evaluators[type(obj)](self, obj)
 
     def reduce(self, obj):
         """
         """
-        raise NotImplementedError()
+        if isinstance(obj, Reducable):
+            return obj.reduce(self)
+        # pylint: disable=unidiomatic-typecheck
+        if type(obj) in self._reducers:
+            return self._reducers[type(obj)](self, obj)
+        raise CannotReduceError(obj)
 
     def access_obj(self, name, accessors):
         """
@@ -296,10 +311,10 @@ def _(context, obj):
 @ExecutionContext.evaluator(model.Assignment)
 def _(context, obj):
     if isinstance(obj.target, str):
-        context[obj.target] = context.value_for(obj.value)
+        context[obj.target] = context.evaluate(obj.value)
     else:
         target = context.access_obj(obj.target.accessing, obj.target.accessors[:-1])
-        target[obj.target.accessors[-1]] = context.value_for(obj.value)
+        target[obj.target.accessors[-1]] = context.evaluate(obj.value)
 
 
 @ExecutionContext.evaluator(model.Access)
@@ -309,21 +324,21 @@ def _(context, obj):
 
 @ExecutionContext.evaluator(model.Enlarge)
 def _(context, obj):
-    return Roll([context.value_for(obj.value) for _ in range(obj.size)])
+    return Roll([context.evaluate(obj.value) for _ in range(obj.size)])
 
 
 @ExecutionContext.evaluator(model.Dice)
 @ExecutionContext.reducer(model.Dice)
 def _(context, obj):
-    number_of_dice = context.value_for(obj.number_of_dice)
-    sides = context.value_for(obj.sides)
-    return Roll([context.roll(sides) for _ in range(obj.number_of_dice)])
+    number_of_dice = context.evaluate(obj.number_of_dice)
+    sides = context.evaluate(obj.sides)
+    return Roll([context.roll(sides) for _ in range(number_of_dice)])
 
 
 @ExecutionContext.evaluator(model.Length)
 def _(context, obj):
     try:
-        return len(context.value_for(obj.value))
+        return len(context.evaluate(obj.value))
     except TypeError:
         if obj is None:
             raise NoneError()
@@ -332,52 +347,59 @@ def _(context, obj):
 
 @ExecutionContext.evaluator(model.Negation)
 def _(context, obj):
-    return not context.value_for(obj.value)
+    return not context.evaluate(obj.value)
 
 
 @ExecutionContext.evaluator(model.BinaryOp)
 def _(context, obj):
-    return _OPERATOR_MAP[obj.op](context.value_for(obj.left), context.value_for(obj.right))
+    return _OPERATOR_MAP[obj.op](context.evaluate(obj.left), context.evaluate(obj.right))
+
+
+@ExecutionContext.evaluator(model.CreateBag)
+def _(context, obj):
+    context[obj.value] = {}
+
+
+@ExecutionContext.evaluator(model.UseIf)
+def _(context, obj):
+    if context.evaluate(obj.predicate):
+        return context.evaluate(obj.use)
+    return context.evaluate(obj.otherwise)
+
+
+@ExecutionContext.evaluator(model.If)
+def _(context, obj):
+    if context.evaluate(obj.predicate):
+        context.evaluate(obj.then)
+    else:
+        context.evaluate(obj.otherwise)
+
+
+@ExecutionContext.evaluator(model.Modify)
+def _(context, obj):
+    raise NotImplementedError()
 
 
 @ExecutionContext.evaluator(model.Load)
 def _(context, obj):
-    #FIXME This is only for bag creation. I'll come up with an actual import system later.
-    if obj.to_load == model.SpecialReference.NONE:
-        obj = None
-    return
+    raise NotImplementedError()
 
 
-# @ExecutionContext.evaluator(model.)
-# def _(context, obj):
-#     return
-#
-#
-# @ExecutionContext.evaluator(model.)
-# def _(context, obj):
-#     return
-#
-#
-# @ExecutionContext.evaluator(model.)
-# def _(context, obj):
-#     return
-#
-#
-# @ExecutionContext.evaluator(model.)
-# def _(context, obj):
-#     return
-#
-#
-# @ExecutionContext.evaluator(model.)
-# def _(context, obj):
-#     return
-#
-#
-# @ExecutionContext.evaluator(model.)
-# def _(context, obj):
-#     return
-#
-#
-# @ExecutionContext.evaluator(model.)
-# def _(context, obj):
-#     return
+@ExecutionContext.evaluator(model.ForEvery)
+def _(context, obj):
+    raise NotImplementedError()
+
+
+@ExecutionContext.evaluator(model.ModifierDef)
+def _(context, obj):
+    raise NotImplementedError()
+
+
+@ExecutionContext.evaluator(model.Restart)
+def _(context, obj):
+    raise NotImplementedError()
+
+
+@ExecutionContext.evaluator(model.UntilDo)
+def _(context, obj):
+    raise NotImplementedError()

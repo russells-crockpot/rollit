@@ -7,7 +7,6 @@ from contextlib import suppress
 from functools import lru_cache
 
 from . import model
-from .exceptions import ParsingError, RollItSyntaxError
 
 __all__ = ['RollItSemantics']
 
@@ -37,7 +36,6 @@ class CreateTypeProperty(
             requires=requires,
         )
 
-    #@lru_cache
     def __call__(self, ast):
         if self.single_value:
             if ast is None:
@@ -55,6 +53,15 @@ class CreateTypeProperty(
         return self.model_cls(**ast)
 
 
+class LruCachedCreateTypeProperty(CreateTypeProperty):
+    """
+    """
+
+    @lru_cache
+    def __call__(self, ast):
+        return super().__call__(ast)
+
+
 # pylint: disable=missing-function-docstring
 class RollItSemantics:
     """
@@ -69,13 +76,13 @@ class RollItSemantics:
     math = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
     comparison = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
     dice = CreateTypeProperty(model.Dice, False, requires=('number_of_dice', 'sides'))
-    access = CreateTypeProperty(model.Access, False)
+    access = LruCachedCreateTypeProperty(model.Access, False)
     access_expr = CreateTypeProperty(model.Access, False, requires=('accessing', 'accessors'))
     modifier_def = CreateTypeProperty(model.ModifierDef,
                                       False,
                                       defaults=dict(parameters=(), definition=()))
-    int = CreateTypeProperty(int, True)
-    float = CreateTypeProperty(float, True)
+    int = LruCachedCreateTypeProperty(int, True)
+    float = LruCachedCreateTypeProperty(float, True)
 
     #@lru_cache
     def conditional(self, ast):
@@ -84,7 +91,7 @@ class RollItSemantics:
             return self._negate(ast[1])
         return ast
 
-    #@lru_cache
+    @lru_cache
     def name(self, ast):
         with suppress(ValueError):
             return model.SpecialReference(ast)
