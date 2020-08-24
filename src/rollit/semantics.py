@@ -76,11 +76,8 @@ class RollItSemantics:
     math = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
     comparison = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
     dice = CreateTypeProperty(model.Dice, False, requires=('number_of_dice', 'sides'))
-    access = LruCachedCreateTypeProperty(model.Access, False)
+    access = CreateTypeProperty(model.Access, False)
     access_expr = CreateTypeProperty(model.Access, False, requires=('accessing', 'accessors'))
-    modifier_def = CreateTypeProperty(model.ModifierDef,
-                                      False,
-                                      defaults=dict(parameters=(), definition=()))
     int = LruCachedCreateTypeProperty(int, True)
     float = LruCachedCreateTypeProperty(float, True)
 
@@ -213,6 +210,13 @@ class RollItSemantics:
             return getattr(model.Restart, f'{specifier._name_}_{target}')
         return model.Restart(location_specifier=specifier, target=target)
 
+    def _modifier_def(self, ast):
+        return model.ModifierDef(
+            target=ast['target'],
+            parameters=ast['parameters'] or (),
+            definition=ast['definition'] or (),
+        )
+
     #@lru_cache
     def basic_statement(self, ast):
         if ast == 'leave':
@@ -220,8 +224,9 @@ class RollItSemantics:
         if not isinstance(ast, model.ModelElement):
             if isinstance(ast, Mapping):
                 with suppress(TypeError, LookupError):
-                    if len(ast) == 3 and 'op' and ast['op'][-1] == '=' and ast['op'] != '==':
+                    if len(ast) == 3 and 'op' in ast and ast['op'][-1] == '=' and ast['op'] != '==':
                         return self.assignment(ast)
+                    return self._modifier_def(ast)
             elif isinstance(ast, (list, tuple)):
                 with suppress(IndexError):
                     if ast[0] == 'restart':

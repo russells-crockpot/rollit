@@ -41,11 +41,11 @@ int = /-?\d+/ ;
 
 number = float | int;
 
-unless = 'unless' predicate:conditional 'then' then:statement;
-
 if_body
-    = ~ predicate:conditional 'then' then:statement
-    unless:{&'unless' ~ unless} ['otherwise' otherwise:statement];
+    =
+    predicate:conditional 'then' then:statement
+    unless:{'unless' ~ predicate:conditional 'then' then:statement}
+    ['otherwise' otherwise:statement];
 
 # Loops
 until_do_body
@@ -69,18 +69,17 @@ access
     | accessing:(name | modify) accessors:{accessor}+
     | name
     ;
-#access = accessing:name accessor:accessor;
 
 access_list = ','.{access}+ ;
 
 
 load_body
     =
-    | to_load:'*' ~ 'from' ~ load_from:(>access_list) ['into' ~ into:access]
-    | to_load:'!' ~ 'into' ~ into:(>access_list)
-    | to_load:(','.{basic_name}+) 'from' ~ load_from:access ['into' ~ into:access]
-    | load_from:(','.{basic_name}+) ['into' ~ into:access] to_load:`''`
-    | to_load:(','.{basic_name}+)
+    | 'load' to_load:'*' ~ 'from' ~ load_from:(>access_list) ['into' ~ into:access]
+    | 'load' to_load:'!' ~ 'into' ~ into:(>access_list)
+    | 'load' to_load:(','.{basic_name}+) 'from' ~ load_from:access ['into' ~ into:access]
+    | 'load' load_from:(','.{basic_name}+) ['into' ~ into:access] to_load:`''`
+    | 'load' to_load:(','.{basic_name}+)
     ;
 
 modifier_args = '(' @:','.{ expression } [','] ')';
@@ -89,14 +88,11 @@ enlarge = size:[expression] '@' value:[expression];
 
 enlarge_reduce
     =
-    | '{' !'}' ~ @:(enlarge | expression | '*') '}'
-    | '{' &'}' ~ @:`''` '}'
+    | '{}' @:`''`
+    | '{'~ @:(enlarge | expression | '*') '}'
     ;
 
-expression
-    =
-    | '()' ~ !()
-    | use_if;
+expression = use_if;
 
 use_if
     =
@@ -163,7 +159,7 @@ enlarge_reduce_expr
 
 factor
     =
-    | '(' !')' ~ @:expression ')'
+    | '(' ~ @:expression ')'
     | atom
     ;
 
@@ -204,8 +200,8 @@ assignment = target:access op:(>assign_op) !'=' ~ value:expression;
 basic_statement
     =
     | 'if' ~ @:if_body
-    | 'load' ~ @:load_body
-    | &(access '<-') ~ @:modifier_def
+    | &'load' ~ @:load_body
+    | target:access '<-' ~ parameters:[modifier_params] definition:statement
     | 'until' ~ @:until_do_body
     | 'for' 'every' ~ @:for_every_body
     | >assignment
