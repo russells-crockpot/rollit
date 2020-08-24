@@ -6,19 +6,14 @@
 @@left_recursion:: True
 @@parseinfo:: False
 
-#start = load $;
-#statement_end = '\n' | '\r' | '|';
-
 start = {@:statement (STATEMENT_END | $)};
 
-STATEMENT_END = /[\n\r|]+/;
-#STATEMENT_END = {'\n' | '\r' | '|'}+;
+LINE_JOINING = '\\\\' [SPACES] /[\n\r\f]/;
+SPACES = /[ \t]+/;
+STATEMENT_END = /[\n\r\f|]+/;
 
-
-#statement
-#    =
-#      @:basic_statement &(statement_end)
-#    ;
+STRING_ESCAPE_SEQ = '\\\\' /\w+|\S+/ ;
+string = "'" @:{STRING_ESCAPE_SEQ | /[^\\\r\n\f']/} "'" ;
 
 @name
 basic_name = /[a-zA-Z_][a-zA-Z_0-9]*/;
@@ -144,6 +139,7 @@ atom
     =
     | number
     | name
+    | string
     ;
 
 modifier_params = '(' @:','.{ name } [','] ')';
@@ -176,7 +172,9 @@ assignment = target:access op:(>assign_op) !'=' ~ value:expression;
 
 statement
     =
-    | target:access '<-' ~ parameters:[modifier_params] definition:statement
+    | target:access '<-' ~
+      parameters:[modifier_params]
+      modifier_def_start definition:statement modifier_def_end
     | >assignment
     | expression
     | 'if' ~ @:if_body
@@ -187,3 +185,6 @@ statement
     | '[' ~ @:{statement} ']'
     | &'load' ~ @:load_body
     ;
+
+modifier_def_start = ();
+modifier_def_end = ();
