@@ -70,23 +70,27 @@ class RollItSemantics:
     _name_not_ref = False
 
     for_every_body = CreateTypeProperty(model.ForEvery, False, {'name': None})
-    use_if = CreateTypeProperty(model.UseIf, False, requires=('use', 'predicate', 'otherwise'))
     enlarge = CreateTypeProperty(model.Enlarge, False)
-    roll_math = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
-    math = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
-    comparison = CreateTypeProperty(model.BinaryOp, False, requires=('left', 'op', 'right'))
-    dice = CreateTypeProperty(model.Dice, False, requires=('number_of_dice', 'sides'))
-    access = CreateTypeProperty(model.Access, False)
-    access_expr = CreateTypeProperty(model.Access, False, requires=('accessing', 'accessors'))
     int = LruCachedCreateTypeProperty(int, True)
     float = LruCachedCreateTypeProperty(float, True)
 
-    #@lru_cache
-    def conditional(self, ast):
-        if not isinstance(ast, model.ModelElement) and isinstance(ast, tuple) \
-                and len(ast) > 1 and ast[0] == 'not':
+    def use_if(self, ast):
+        if isinstance(ast, (list, tuple))and not isinstance(ast, model.ModelElement) \
+                and ast[0] == 'not':
             return self._negate(ast[1])
+        with suppress(TypeError):
+            return model.UseIf(**ast)
         return ast
+
+    def math(self, ast):
+        if isinstance(ast, (list, tuple))and not isinstance(ast, model.ModelElement) \
+                and ast[0] == '#':
+            return model.Length(ast[1])
+        with suppress(TypeError):
+            return model.BinaryOp(**ast)
+        return ast
+
+    comparison = math
 
     @lru_cache
     def name(self, ast):
@@ -106,13 +110,19 @@ class RollItSemantics:
         )
 
     def modify(self, ast):
-        if not isinstance(ast, dict) or 'subject' not in ast or 'modifier' not in ast:
-            return ast
-        subject = ast['subject']
-        call = model.ModifierCall(modifier=ast['modifier'], args=ast.get('args', ()))
-        if isinstance(subject, model.Modify):
-            return model.Modify(subject=subject.subject, modifiers=subject.modifiers + (call,))
-        return model.Modify(subject=subject, modifiers=(call,))
+        if isinstance(ast, dict):
+            with suppress(TypeError):
+                return model.Access(**ast)
+            with suppress(TypeError):
+                return model.Dice(**ast)
+            with suppress(KeyError):
+                subject = ast['subject']
+                call = model.ModifierCall(modifier=ast['modifier'], args=ast.get('args', ()))
+                if isinstance(subject, model.Modify):
+                    return model.Modify(subject=subject.subject,
+                                        modifiers=subject.modifiers + (call,))
+                return model.Modify(subject=subject, modifiers=(call,))
+        return ast
 
     def load_body(self, ast):
         if ast['to_load'] == '!':
@@ -139,10 +149,10 @@ class RollItSemantics:
             ) for child in ast['to_load'])
 
     #@lru_cache
-    def statement(self, ast):
-        if isinstance(ast, str) and ast in _STATEMENT_ENDS:
-            return None
-        return ast
+    # def statement(self, ast):
+    # if isinstance(ast, str) and ast in _STATEMENT_ENDS:
+    # return None
+    # return ast
 
     #@lru_cache
     def if_body(self, ast):
@@ -218,7 +228,9 @@ class RollItSemantics:
         )
 
     #@lru_cache
-    def basic_statement(self, ast):
+    def statement(self, ast):
+        if isinstance(ast, str) and ast in _STATEMENT_ENDS:
+            return None
         if ast == 'leave':
             return model.SingleWordStatment.LEAVE
         if not isinstance(ast, model.ModelElement):

@@ -55,12 +55,6 @@ tests:
       left: 2
       op: '-'
       right: -1
-  - script: '2 -- 1'
-    result:
-      _class: BinaryOp
-      left: 2
-      op: '-'
-      right: -1
   - script: '2 * 3'
     result:
       _class: BinaryOp
@@ -113,7 +107,7 @@ tests:
 
 - name: roll_math
   categories:
-  - roll_math
+  - math
   tests:
   - script: 'test & 2'
     result:
@@ -150,13 +144,13 @@ tests:
   - script: '1 ^ test & 3'
     result:
       _class: BinaryOp
-      left: 1
-      op: '^'
-      right:
+      left:
         _class: BinaryOp
-        left: 'test'
-        op: '&'
-        right: 3
+        left: 1
+        op: '^'
+        right: 'test'
+      op: '&'
+      right: 3
   - script: '(test ^ 2) & 3'
     result:
       _class: BinaryOp

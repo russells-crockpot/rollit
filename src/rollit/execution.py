@@ -9,6 +9,8 @@ from . import model
 from .exceptions import InvalidNameError, RollItSyntaxError, NoSuchLoopError, RollItTypeError, \
         NoneError, CannotReduceError
 from .internal_objects import Reducable, Roll
+from .parser import Parser
+from .semantics import RollItSemantics
 from .towers import DefaultTower
 
 if sys.version_info.minor >= 8:
@@ -99,12 +101,12 @@ class ExecutionEnvironment:
     """
     """
 
-    def __init__(self, parser, *, dice_tower=DefaultTower):
+    def __init__(self, *, dice_tower=DefaultTower, parser_options=None):
         if inspect.isclass(dice_tower):
             dice_tower = dice_tower()
         self.dice_tower = dice_tower
         self._context = ExecutionContext(env=self)
-        self._parser = parser
+        self._parser = Parser(semantics=RollItSemantics, **(parser_options or {}))
 
     def evaluate(self, stmt):
         """

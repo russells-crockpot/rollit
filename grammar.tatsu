@@ -3,18 +3,22 @@
 @@keyword:: use if then for do until and or not load as from has leave
 @@keyword:: otherwise unless into except when for every that
 @@keyword:: at after restart before
+@@left_recursion:: True
+@@parseinfo:: False
 
 #start = load $;
+#statement_end = '\n' | '\r' | '|';
 
-start = {statement} $;
+start = {@:statement (STATEMENT_END | $)};
 
-statement_end = '\n' | '\r' | '|';
+STATEMENT_END = /[\n\r|]+/;
+#STATEMENT_END = {'\n' | '\r' | '|'}+;
 
-statement
-    =
-    | >statement_end
-    | @:basic_statement
-    ;
+
+#statement
+#    =
+#      @:basic_statement &(statement_end)
+#    ;
 
 @name
 basic_name = /[a-zA-Z_][a-zA-Z_0-9]*/;
@@ -43,14 +47,14 @@ number = float | int;
 
 if_body
     =
-    predicate:conditional 'then' then:statement
-    unless:{'unless' ~ predicate:conditional 'then' then:statement}
+    predicate:expression 'then' then:statement
+    unless:{'unless' ~ predicate:expression 'then' then:statement}
     ['otherwise' otherwise:statement];
 
 # Loops
 until_do_body
-    = [('@' name:basic_name)] until:conditional 'do' do:statement
-      except_when:{'except' ~ 'when'  conditional 'then' statement}
+    = [('@' name:basic_name)] until:expression 'do' do:statement
+      except_when:{'except' ~ 'when' expression 'then' statement}
       ['otherwise' ~ otherwise:statement]
     ;
 
@@ -96,58 +100,31 @@ expression = use_if;
 
 use_if
     =
-    | 'use' ~ use:expression 'if' predicate:conditional 'otherwise' otherwise:expression
-    | conditional
-    ;
-
-conditional
-    =
-    | 'not' ~ conditional
+    | 'use' ~ use:expression 'if' predicate:comparison 'otherwise' otherwise:expression
+    | 'not' ~ comparison
     | comparison
     ;
 
 comparison
     =
-    | left:comparison op:(>comp_op) ~ right:expression
+    | left:comparison op:(>comp_op) ~ right:comparison
+    | left:comparison op:('&' | '^') !'=' ~ right:math
     | math
     ;
 
 math
     =
-    | left:math op:('+'|'-') ~ right:math
-    | left:roll_math op:('*'|'//'|'/' | '%') ~ right:roll_math
-    | roll_math
-    ;
-
-# &: combine rolls
-# ^: remove x number of values
-roll_math
-    =
-    | left:roll_math op:('&' | '^') ~ right: expression
-    | length
-    ;
-
-length
-    =
-    | '#' ~ length
+    | left:math op:('+'|'-') !'=' ~ right:math
+    | left:math op:('*'|'//'|'/' | '%') !'=' ~ right:modify
+    | '#' ~ modify
     | modify
     ;
 
 modify
     =
     | subject:modify  '->' ~ modifier:(basic_name|enlarge_reduce) [args:modifier_args]
-    | access_expr
-    ;
-
-access_expr
-    =
-    | >access
-    | dice
-    ;
-
-dice
-    =
     | number_of_dice:[enlarge_reduce_expr] /d|D/ ~ sides:enlarge_reduce_expr
+    | >access
     | enlarge_reduce_expr
     ;
 
@@ -197,16 +174,16 @@ restart_body
 
 assignment = target:access op:(>assign_op) !'=' ~ value:expression;
 
-basic_statement
+statement
     =
-    | 'if' ~ @:if_body
-    | &'load' ~ @:load_body
     | target:access '<-' ~ parameters:[modifier_params] definition:statement
-    | 'until' ~ @:until_do_body
-    | 'for' 'every' ~ @:for_every_body
     | >assignment
-    | 'restart' ~ restart_body
-    | 'leave'
     | expression
+    | 'if' ~ @:if_body
+    | 'until' ~ @:until_do_body
+    | 'for' ~ 'every' @:for_every_body
+    | 'restart' ~ restart_body
+    | 'leave' ~
     | '[' ~ @:{statement} ']'
+    | &'load' ~ @:load_body
     ;
