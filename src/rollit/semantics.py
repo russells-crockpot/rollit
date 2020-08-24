@@ -12,6 +12,16 @@ __all__ = ['RollItSemantics']
 
 _STATEMENT_ENDS = frozenset(('\n', '\r', '|', ''))
 
+#FIXME Unicode escapes
+_ESCAPE_MAP = {
+    r'\n': '\n',
+    r'\r': '\r',
+    r'\f': '\f',
+    r"\'": "'",
+    r'\v': '\v',
+    r'\b': '\b',
+}
+
 
 class CreateTypeProperty(
         namedtuple('_CreateTypePropertyBase',
@@ -67,12 +77,16 @@ class RollItSemantics:
     """
     """
     _in_modifier_def = False
-    _name_not_ref = False
 
     for_every_body = CreateTypeProperty(model.ForEvery, False, {'name': None})
     enlarge = CreateTypeProperty(model.Enlarge, False)
+    access = CreateTypeProperty(model.Access, False)
     int = LruCachedCreateTypeProperty(int, True)
     float = LruCachedCreateTypeProperty(float, True)
+
+    # @lru_cache
+    def string(self, ast):
+        return model.StringLiteral(''.join(_ESCAPE_MAP.get(s, s) for s in ast))
 
     def use_if(self, ast):
         if isinstance(ast, (list, tuple))and not isinstance(ast, model.ModelElement) \
@@ -148,13 +162,14 @@ class RollItSemantics:
                 into=ast.get('into', child),
             ) for child in ast['to_load'])
 
-    #@lru_cache
-    # def statement(self, ast):
-    # if isinstance(ast, str) and ast in _STATEMENT_ENDS:
-    # return None
-    # return ast
+    #FIXME
+    def modifier_def_start(self, ast):
+        self._in_modifier_def = True
 
-    #@lru_cache
+    #FIXME
+    def modifier_def_end(self, ast):
+        self._in_modifier_def = False
+
     def if_body(self, ast):
         rval = model.If(predicate=ast['predicate'],
                         then=ast['then'],
@@ -187,11 +202,10 @@ class RollItSemantics:
         ast['do'] = do
         return model.UntilDo(**ast)
 
-    #@lru_cache
     def enlarge_reduce(self, ast):
         if isinstance(ast, model.Enlarge):
             return ast
-        if not ast:
+        if ast is None:
             ast = model.SpecialReference.NONE
         elif ast == '*':
             ast = model.SpecialReference.ALL
@@ -227,7 +241,6 @@ class RollItSemantics:
             definition=ast['definition'] or (),
         )
 
-    #@lru_cache
     def statement(self, ast):
         if isinstance(ast, str) and ast in _STATEMENT_ENDS:
             return None

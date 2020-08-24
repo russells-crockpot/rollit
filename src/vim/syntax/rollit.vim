@@ -25,8 +25,9 @@ syn match   rollitEscape	     "\%(\\u\x\{4}\|\\U\x\{8}\)" contained
 syn match   rollitNumber         "\(\(\h\w*\)\@<!\|d\)\@<=\d\+\(\(\w*\h\)\@!\|d\)\@=" display
 syn match   rollitFloat          "\(\h\w*\)\@<!\d\+\.\d\+\(\w*\h\)\@!" display
 syn match   rollitSpecialName    "[~\$?!]" skipwhite nextgroup=rollitModifierCall,rollitOperator
-syn match   rollitOperator       "[+=\-\*\^&]=\?" display
+syn match   rollitOperator       "[+=\-\*\^&%]=\?" display
 syn match   rollitOperator       "\(\h\w*\)\@<!d\(\w*\h\)\@!" display
+syn match   rollitOperator       "%/" display
 syn match   rollitModOperator    "->" display contained display
 syn match   rollitModOperator    "<-" display contained display
 syn match   rollitExpand         "[@]" display contained

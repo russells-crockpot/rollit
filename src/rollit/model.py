@@ -49,6 +49,7 @@ class SpecialReference(enum.Enum):
     ROOT = '~'
     ALL = '*'
     NONE = '!'
+    LOCAL = '$'
 
 
 ModelElement.register(SpecialReference)
@@ -93,6 +94,7 @@ Negation = type('Negation', (SingleValueElement,), {})
 Reduce = type('Reduce', (SingleValueElement,), {})
 Length = type('Length', (SingleValueElement,), {})
 CreateBag = type('CreateBag', (SingleValueElement,), {})
+StringLiteral = type('StringLiteral', (SingleValueElement,), {})
 
 If = namedtuple('If', ('predicate', 'then', 'otherwise'))
 UseIf = namedtuple('UseIf', ('use', 'predicate', 'otherwise'))

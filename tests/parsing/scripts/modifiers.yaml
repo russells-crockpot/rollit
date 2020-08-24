@@ -7,21 +7,6 @@ tests:
   categories:
   - modifier_defs
   tests:
-  - script: 'name<-|'
-    result:
-      _class: ModifierDef
-      target: name
-      parameters: []
-      definition: []
-  - script: 'name<-1d6'
-    result:
-      _class: ModifierDef
-      target: name
-      parameters: []
-      definition:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
   - script: 'name<-[]'
     result:
       _class: ModifierDef
@@ -40,6 +25,15 @@ tests:
       target: 'name'
       parameters: []
       definition: 1
+  - script: 'name<-1d6'
+    result:
+      _class: ModifierDef
+      target: name
+      parameters: []
+      definition:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
   - script: 'name<-(param)[]'
     result:
       _class: ModifierDef

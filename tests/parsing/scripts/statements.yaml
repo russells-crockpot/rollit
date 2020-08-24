@@ -173,14 +173,14 @@ tests:
         left: 'name'
         op: '/'
         right: 1
-  - script: 'name //= 1'
+  - script: 'name %/= 1'
     result:
       _class: Assignment
       target: 'name'
       value:
         _class: BinaryOp
         left: 'name'
-        op: '//'
+        op: '%/'
         right: 1
   - script: 'name %= 1'
     result:

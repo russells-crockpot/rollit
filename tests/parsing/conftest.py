@@ -15,7 +15,8 @@ try:
 except ImportError:
     import yaml
 
-__DEFAULT_GRAMMAR_FILE = pathlib.Path(__file__).parent.parent.parent / 'grammar.tatsu'
+__DEFAULT_GRAMMAR_FILE = pathlib.Path(__file__).parent.parent.parent / 'src' \
+        / 'rollit' / 'grammar.tatsu'
 
 
 def __load():

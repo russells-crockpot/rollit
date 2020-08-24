@@ -1,0 +1,3 @@
+1d6
+{1d6}  // Roll a d6 once
+{3@1d6}  //roll a d6 3 times

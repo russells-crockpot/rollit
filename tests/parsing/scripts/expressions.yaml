@@ -14,6 +14,22 @@ tests:
     result: 3.0
   - script: -4.5
     result: -4.5
+  - script: "'test'"
+    result:
+      _class: StringLiteral
+      value: 'test'
+  - script: "'test\\'s'"
+    result:
+      _class: StringLiteral
+      value: "test's"
+  - script: "'test\\ntest'"
+    result:
+      _class: StringLiteral
+      value: "test\ntest"
+  - script: "'test\ntest'"
+    result:
+      _class: StringLiteral
+      value: "test\ntest"
 
 - name: special_references
   categories:
@@ -73,11 +89,11 @@ tests:
       left: 2
       op: '/'
       right: 1
-  - script: '4 // 2'
+  - script: '4 %/ 2'
     result:
       _class: BinaryOp
       left: 4
-      op: '//'
+      op: '%/'
       right: 2
 
 - name: order_of_operations
@@ -333,12 +349,6 @@ tests:
   categories:
   - reduce
   tests:
-  - script: '{}'
-    result:
-      _class: Reduce
-      value:
-        _class: SpecialReference
-        value: 'NONE'
   - script: '{!}'
     result:
       _class: Reduce
@@ -556,7 +566,6 @@ tests:
 - name: access
   categories:
   - access
-  - reference
   tests:
   - script: 'test'
     result:

@@ -1,0 +1,4 @@
+is_dice <- use 1 if ?-> isa('dice') otherwise 0
+1d6 -> is_dice
+1d6 -> is_dice -> print
+{1d6} -> is_dice -> print
