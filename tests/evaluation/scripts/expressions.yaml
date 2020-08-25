@@ -1,0 +1,574 @@
+name: expressions
+categories:
+- expressions
+tests:
+- name: atoms
+  categories:
+  - atoms
+  tests:
+  - script: 1
+    result: 1
+  - script: -2
+    result: -2
+  - script: 3.0
+    result: 3.0
+  - script: -4.5
+    result: -4.5
+  - script: "'test'"
+    result:
+      _class: StringLiteral
+      value: 'test'
+  - script: "'test\\'s'"
+    result:
+      _class: StringLiteral
+      value: "test's"
+  - script: "'test\\ntest'"
+    result:
+      _class: StringLiteral
+      value: "test\ntest"
+  - script: "'test\ntest'"
+    result:
+      _class: StringLiteral
+      value: "test\ntest"
+
+- name: special_references
+  categories:
+  - special_references
+  - references
+  tests:
+  - script: '?'
+    result:
+      _class: SpecialReference
+      value: 'SUBJECT'
+  - script: '~'
+    result:
+      _class: SpecialReference
+      value: 'ROOT'
+  - script: '!'
+    result:
+      _class: SpecialReference
+      value: 'NONE'
+
+- name: math
+  categories:
+  - math
+  tests:
+  - script: '1 + 2'
+    result:
+      _class: BinaryOp
+      left: 1
+      op: '+'
+      right: 2
+  - script: '2 - 1'
+    result:
+      _class: BinaryOp
+      left: 2
+      op: '-'
+      right: 1
+  - script: '2 - -1'
+    result:
+      _class: BinaryOp
+      left: 2
+      op: '-'
+      right: -1
+  - script: '2 * 3'
+    result:
+      _class: BinaryOp
+      left: 2
+      op: '*'
+      right: 3
+  - script: '3 % 2'
+    result:
+      _class: BinaryOp
+      left: 3
+      op: '%'
+      right: 2
+  - script: '2 / 1'
+    result:
+      _class: BinaryOp
+      left: 2
+      op: '/'
+      right: 1
+  - script: '4 %/ 2'
+    result:
+      _class: BinaryOp
+      left: 4
+      op: '%/'
+      right: 2
+
+- name: order_of_operations
+  categories:
+  - math
+  tests:
+  - script: '1 + 2 * 3'
+    result:
+      _class: BinaryOp
+      left: 1
+      op: '+'
+      right:
+        _class: BinaryOp
+        left: 2
+        op: '*'
+        right: 3
+  - script: '4 * 5 + 6'
+    result:
+      _class: BinaryOp
+      left:
+        _class: BinaryOp
+        left: 4
+        op: '*'
+        right: 5
+      op: '+'
+      right: 6
+
+- name: roll_math
+  categories:
+  - math
+  tests:
+  - script: 'test & 2'
+    result:
+      _class: BinaryOp
+      left: 'test'
+      op: '&'
+      right: 2
+  - script: 'test ^ 2'
+    result:
+      _class: BinaryOp
+      left: 'test'
+      op: '^'
+      right: 2
+  - script: 'test ^ 2 + 3'
+    result:
+      _class: BinaryOp
+      left: 'test'
+      op: '^'
+      right:
+        _class: BinaryOp
+        left: 2
+        op: '+'
+        right: 3
+  - script: 'test ^ 2 * 3'
+    result:
+      _class: BinaryOp
+      left: 'test'
+      op: '^'
+      right:
+        _class: BinaryOp
+        left: 2
+        op: '*'
+        right: 3
+  - script: '1 ^ test & 3'
+    result:
+      _class: BinaryOp
+      left:
+        _class: BinaryOp
+        left: 1
+        op: '^'
+        right: 'test'
+      op: '&'
+      right: 3
+  - script: '(test ^ 2) & 3'
+    result:
+      _class: BinaryOp
+      left:
+        _class: BinaryOp
+        left: 'test'
+        op: '^'
+        right: 2
+      op: '&'
+      right: 3
+
+- name: dice
+  categories:
+  - dice
+  tests:
+  - script: '1d6'
+    result:
+      _class: Dice
+      number_of_dice: 1
+      sides: 6
+  - script: '1 + 2d3'
+    result:
+      _class: BinaryOp
+      left: 1
+      op: '+'
+      right:
+        _class: Dice
+        number_of_dice: 2
+        sides: 3
+  - script: '2d3 * 4'
+    result:
+      _class: BinaryOp
+      left:
+        _class: Dice
+        number_of_dice: 2
+        sides: 3
+      op: '*'
+      right: 4
+  - script: '(1+2)d3'
+    result:
+      _class: Dice
+      number_of_dice:
+        _class: BinaryOp
+        left: 1
+        op: '+'
+        right: 2
+      sides: 3
+  - script: '1d(2 *3)'
+    result:
+      _class: Dice
+      number_of_dice: 1
+      sides:
+        _class: BinaryOp
+        left: 2
+        op: '*'
+        right: 3
+  - script: '(1d6)d4'
+    result:
+      _class: Dice
+      number_of_dice:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      sides: 4
+  - script: '2d(3d4)'
+    result:
+      _class: Dice
+      number_of_dice: 2
+      sides:
+        _class: Dice
+        number_of_dice: 3
+        sides: 4
+  - script: '(7d3)d(2d5)'
+    result:
+      _class: Dice
+      number_of_dice:
+        _class: Dice
+        number_of_dice: 7
+        sides: 3
+      sides:
+        _class: Dice
+        number_of_dice: 2
+        sides: 5
+
+- name: length
+  categories:
+  - length
+  tests:
+  - script: '#1'
+    result:
+      _class: Length
+      value: 1
+  - script: '#1d6'
+    result:
+      _class: Length
+      value:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+  - script: '#1d6 + 3'
+    result:
+      _class: BinaryOp
+      left:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      op: '+'
+      right: 3
+  - script: '#(1d6 + 3)'
+    result:
+      _class: Length
+      value:
+        _class: BinaryOp
+        left:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        op: '+'
+        right: 3
+  - script: '3 + #1d6'
+    result:
+      _class: BinaryOp
+      left: 3
+      op: '+'
+      right:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+  - script: '#1d6->top(3)'
+    result:
+      _class: Length
+      value:
+        _class: Modify
+        subject:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        modifiers:
+        - modifier: 'top'
+          args: [3]
+          _class: ModifierCall
+  - script: '(#1d6)->top(3)'
+    result:
+      _class: Modify
+      subject:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      modifiers:
+      - modifier: 'top'
+        args: [3]
+        _class: ModifierCall
+  - script: '(#1d6)->top(3)'
+    result:
+      _class: Modify
+      subject:
+        _class: Length
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      modifiers:
+      - modifier: 'top'
+        args: [3]
+        _class: ModifierCall
+  - script: '#?'
+    result:
+      _class: Length
+      value:
+        _class: SpecialReference
+        value: 'SUBJECT'
+
+- name: reduce
+  categories:
+  - reduce
+  tests:
+  - script: '{!}'
+    result:
+      _class: Reduce
+      value:
+        _class: SpecialReference
+        value: 'NONE'
+  - script: '{*}'
+    result:
+      _class: Reduce
+      value:
+        _class: SpecialReference
+        value: 'ALL'
+  - script: '{?}'
+    result:
+      _class: Reduce
+      value:
+        _class: SpecialReference
+        value: 'SUBJECT'
+  - script: '{1d6}'
+    result:
+      _class: Reduce
+      value:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+  - script: '{1d6 +2}'
+    result:
+      _class: Reduce
+      value:
+        _class: BinaryOp
+        left:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+        op: '+'
+        right: 2
+  - script: '{1d6} +2'
+    result:
+      _class: BinaryOp
+      left:
+        _class: Reduce
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 6
+      op: '+'
+      right: 2
+  - script: '{test}.attr'
+    categories:
+    - access
+    result:
+      _class: Access
+      accessing:
+        _class: Reduce
+        value: 'test'
+      accessors:
+      - 'attr'
+  - script: '{1d{2d4}}'
+    result:
+      _class: Reduce
+      value:
+        _class: Dice
+        number_of_dice: 1
+        sides:
+          _class: Reduce
+          value:
+            _class: Dice
+            number_of_dice: 2
+            sides: 4
+  - script: '{1}->top'
+    result:
+      _class: Modify
+      subject:
+        _class: Reduce
+        value: 1
+      modifiers:
+      - modifier: 'top'
+        args: []
+        _class: ModifierCall
+  - script: '{1d4}->top'
+    result:
+      _class: Modify
+      subject:
+        _class: Reduce
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides: 4
+      modifiers:
+      - modifier: 'top'
+        args: []
+        _class: ModifierCall
+  - script: '{1d{2d4}}->top'
+    result:
+      _class: Modify
+      subject:
+        _class: Reduce
+        value:
+          _class: Dice
+          number_of_dice: 1
+          sides:
+            _class: Reduce
+            value:
+              _class: Dice
+              number_of_dice: 2
+              sides: 4
+      modifiers:
+      - modifier: 'top'
+        args: []
+        _class: ModifierCall
+  - script: '{1}'
+    result:
+      _class: Reduce
+      value: 1
+  - script: '{1 + 2}'
+    result:
+      _class: Reduce
+      value:
+        _class: BinaryOp
+        left: 1
+        op: '+'
+        right: 2
+  - script: '{3 * 2 - 4}'
+    result:
+      _class: Reduce
+      value:
+        _class: BinaryOp
+        left:
+          _class: BinaryOp
+          left: 3
+          op: '*'
+          right: 2
+        op: '-'
+        right: 4
+  - script: '{3 * (2 - 4)}'
+    result:
+      _class: Reduce
+      value:
+        _class: BinaryOp
+        left: 3
+        op: '*'
+        right:
+          _class: BinaryOp
+          left: 2
+          op: '-'
+          right: 4
+  - script: '{3 * {2 - 4}}'
+    result:
+      _class: Reduce
+      value:
+        _class: BinaryOp
+        left: 3
+        op: '*'
+        right:
+          _class: Reduce
+          value:
+            _class: BinaryOp
+            left: 2
+            op: '-'
+            right: 4
+
+- name: enlarge
+  categories:
+  - enlarge
+  tests:
+  - script: '{@}'
+    result:
+      _class: Enlarge
+      size: null
+      value: null
+  - script: '{1@}'
+    result:
+      _class: Enlarge
+      size: 1
+      value: null
+  - script: '{@2}'
+    result:
+      _class: Enlarge
+      size: null
+      value: 2
+  - script: '{1@2}'
+    result:
+      _class: Enlarge
+      size: 1
+      value: 2
+  - script: '{1d6@2d3}'
+    result:
+      _class: Enlarge
+      size:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      value:
+        _class: Dice
+        number_of_dice: 2
+        sides: 3
+  - script: '{1d6@{2d3}}'
+    result:
+      _class: Enlarge
+      size:
+        _class: Dice
+        number_of_dice: 1
+        sides: 6
+      value:
+        _class: Reduce
+        value:
+          _class: Dice
+          number_of_dice: 2
+          sides: 3
+#  - script: '{}'
+#    result:
+#      _class: Enlarge
+#      value:
+
+- name: access
+  categories:
+  - access
+  tests:
+  - script: 'test'
+    result:
+      accessing:
+      accessors:
+      - ''

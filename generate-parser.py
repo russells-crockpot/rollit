@@ -48,13 +48,13 @@ def alter_generated_code(src_code):
                 break
         if should_skip:
             continue
-        line = line.replace('RollItBuffer', '_Tokenizer')
+        line = line.replace('rollitBuffer', '_Tokenizer')
         if line == 'from tatsu.parsing import Parser':
             line = f'{line} as _Parser'
             parser_import_passed = True
         elif parser_import_passed and 'Parser' in line:
             line = re.sub(r'\bParser\b', '_Parser', line)
-            line = re.sub(r'RollItParser', 'Parser', line)
+            line = re.sub(r'rollitParser', 'Parser', line)
         lines.append(line)
     return lines
 
@@ -71,7 +71,7 @@ def main():
     ]
     print(f'Generating parser from grammar file {args.grammar}...')
     with open(args.grammar) as f:
-        src_code = tatsu.to_python_sourcecode(f.read())[3:]
+        src_code = tatsu.to_python_sourcecode(f.read(), parseinfo=True)[3:]
     lines += alter_generated_code(src_code)
     src_code = '\n'.join(lines).strip()
     with open(args.output, 'w') as f:

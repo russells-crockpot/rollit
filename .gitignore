@@ -139,7 +139,6 @@ _build/
 venv/
 t
 t[0-9]
-t.py
-t.rollit
+t.*
 sppf.png
 /prof/

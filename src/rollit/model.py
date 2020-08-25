@@ -41,9 +41,6 @@ class SequenceValueElement(ModelElement):
         return f'{type(self).__name__}{super().__repr__()}'
 
 
-# ModelElement.register(SingleValueElement)
-
-
 class SpecialReference(enum.Enum):
     SUBJECT = '?'
     ROOT = '~'
@@ -67,47 +64,44 @@ class SingleWordStatment(enum.Enum):
 
 ModelElement.register(SingleWordStatment)
 
+
+def create_model_element_type(name, attrs=()):
+    """
+    """
+    if not attrs:
+        bases = (SingleValueElement,)
+    else:
+        bases = (namedtuple(f'_{name}Base', attrs), ModelElement)
+    return type(name, bases, {})
+
+
 # Loops
-UntilDo = namedtuple('UntilDo', ('name', 'until', 'do', 'otherwise'))
-ModelElement.register(UntilDo)
-ForEvery = namedtuple('ForEvery', ('name', 'item_name', 'iterable', 'do'))
-ModelElement.register(ForEvery)
+UntilDo = create_model_element_type('UntilDo', ('name', 'until', 'do', 'otherwise'))
+ForEvery = create_model_element_type('ForEvery', ('name', 'item_name', 'iterable', 'do'))
 # Flow Control
-Restart = namedtuple('Restart', ('location_specifier', 'target'))
+Restart = create_model_element_type('Restart', ('location_specifier', 'target'))
 # pylint: disable=protected-access
 for spec in RestartLocationSpecifier:
+    # pylint: disable=too-many-function-args
     setattr(Restart, f'{spec._name_}_ROOT', Restart(spec, SpecialReference.ROOT))
+    # pylint: disable=too-many-function-args
     setattr(Restart, f'{spec._name_}_NONE', Restart(spec, SpecialReference.NONE))
 # pylint: disable=undefined-loop-variable
 del spec
-ModelElement.register(Restart)
 
-Assignment = namedtuple('Assignment', ('target', 'value'))
-Load = namedtuple('Load', ('to_load', 'load_from', 'into'))
-ModifierCall = namedtuple('ModifierCall', ('modifier', 'args'))
-Modify = namedtuple('Modify', ('subject', 'modifiers'))
-Access = namedtuple('Access', ('accessing', 'accessors'))
-Enlarge = namedtuple('Enlarge', ('size', 'value'))
-Dice = namedtuple('Dice', ('number_of_dice', 'sides'))
-BinaryOp = namedtuple('BinaryOp', ('left', 'op', 'right'))
-Negation = type('Negation', (SingleValueElement,), {})
-Reduce = type('Reduce', (SingleValueElement,), {})
-Length = type('Length', (SingleValueElement,), {})
-CreateBag = type('CreateBag', (SingleValueElement,), {})
-StringLiteral = type('StringLiteral', (SingleValueElement,), {})
-
-If = namedtuple('If', ('predicate', 'then', 'otherwise'))
-UseIf = namedtuple('UseIf', ('use', 'predicate', 'otherwise'))
-ModifierDef = namedtuple('ModifierDef', ('target', 'parameters', 'definition'))
-
-ModelElement.register(Assignment)
-ModelElement.register(Load)
-ModelElement.register(ModifierCall)
-ModelElement.register(Modify)
-ModelElement.register(Access)
-ModelElement.register(Enlarge)
-ModelElement.register(If)
-ModelElement.register(UseIf)
-ModelElement.register(ModifierDef)
-ModelElement.register(Dice)
-ModelElement.register(BinaryOp)
+Assignment = create_model_element_type('Assignment', ('target', 'value'))
+Load = create_model_element_type('Load', ('to_load', 'load_from', 'into'))
+ModifierCall = create_model_element_type('ModifierCall', ('modifier', 'args'))
+Modify = create_model_element_type('Modify', ('subject', 'modifiers'))
+Access = create_model_element_type('Access', ('accessing', 'accessors'))
+Enlarge = create_model_element_type('Enlarge', ('size', 'value'))
+Dice = create_model_element_type('Dice', ('number_of_dice', 'sides'))
+BinaryOp = create_model_element_type('BinaryOp', ('left', 'op', 'right'))
+Negation = create_model_element_type('Negation')
+Reduce = create_model_element_type('Reduce')
+Length = create_model_element_type('Length')
+CreateBag = create_model_element_type('CreateBag')
+StringLiteral = create_model_element_type('StringLiteral')
+If = create_model_element_type('If', ('predicate', 'then', 'otherwise'))
+UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'))
+ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 'definition'))

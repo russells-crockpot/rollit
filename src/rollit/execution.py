@@ -106,7 +106,7 @@ class ExecutionEnvironment:
             dice_tower = dice_tower()
         self.dice_tower = dice_tower
         self._context = ExecutionContext(env=self)
-        self._parser = Parser(semantics=RollItSemantics, **(parser_options or {}))
+        self._parser = Parser(semantics=RollItSemantics(), **(parser_options or {}))
 
     def evaluate(self, stmt):
         """
@@ -275,6 +275,8 @@ class ExecutionContext:
     def evaluate(self, obj):
         """
         """
+        if obj is None:
+            return None
         if isinstance(obj, str):
             return self[obj]
         if isinstance(obj, (int, float)):
@@ -307,7 +309,7 @@ class ExecutionContext:
 
 @ExecutionContext.evaluator(model.Reduce)
 def _(context, obj):
-    return context.reduce(obj)
+    return context.reduce(obj.value)
 
 
 @ExecutionContext.evaluator(model.Assignment)
@@ -330,6 +332,10 @@ def _(context, obj):
 
 
 @ExecutionContext.evaluator(model.Dice)
+def _(context, obj):
+    return obj
+
+
 @ExecutionContext.reducer(model.Dice)
 def _(context, obj):
     number_of_dice = context.evaluate(obj.number_of_dice)

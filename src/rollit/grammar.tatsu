@@ -178,10 +178,10 @@ assignment = target:access op:(>assign_op) !'=' ~ value:expression;
 
 statement
     =
-    | target:access '<-' ~
-      parameters:[modifier_params]
-      modifier_def_start definition:statement modifier_def_end
-    | >assignment
+    #| target:access '<-' ~
+      #parameters:[modifier_params]
+      #modifier_def_start definition:statement modifier_def_end
+    #| >assignment
     | expression
     | 'if' ~ @:if_body
     | 'until' ~ @:until_do_body
