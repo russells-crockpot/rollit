@@ -28,7 +28,6 @@ def pformat_model(elem):
         if isinstance(item, ModelElement):
             indent += 1
             lines = [preamble]
-            print()
             for name, value in item._asdict().items():
                 value_preamble = f'{"  "*indent}{name}'
                 value = _get_lines(value, indent=indent + 1)

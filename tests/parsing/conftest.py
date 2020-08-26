@@ -10,7 +10,7 @@ import pytest
 import tatsu
 
 from rollit import grammar
-from rollit.actions import Actions
+from rollit import actions
 
 try:
     from ruamel import yaml
@@ -79,7 +79,11 @@ except Exception:
 
 @pytest.fixture
 def parser():
-    return functools.partial(grammar.parse, actions=Actions())
+
+    def _parse(s):
+        return grammar.parse(f'{s}|', actions=actions)
+
+    return _parse
 
 
 def pytest_addoption(parser):

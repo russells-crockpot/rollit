@@ -14,22 +14,22 @@ tests:
     result: 3.0
   - script: '-4.5'
     result: -4.5
-#  - script: "'test'"
-#    result:
-#      _class: StringLiteral
-#      value: 'test'
-#  - script: "'test\\'s'"
-#    result:
-#      _class: StringLiteral
-#      value: "test's"
-#  - script: "'test\\ntest'"
-#    result:
-#      _class: StringLiteral
-#      value: "test\ntest"
-#  - script: "'test\ntest'"
-#    result:
-#      _class: StringLiteral
-#      value: "test\ntest"
+  - script: "'test'"
+    result:
+      _class: StringLiteral
+      value: 'test'
+  - script: "'test\\'s'"
+    result:
+      _class: StringLiteral
+      value: "test's"
+  - script: "'test\\ntest'"
+    result:
+      _class: StringLiteral
+      value: "test\ntest"
+  - script: "'test\ntest'"
+    result:
+      _class: StringLiteral
+      value: "test\ntest"
 
 - name: special_references
   categories:
