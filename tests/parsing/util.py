@@ -32,7 +32,7 @@ def create_scripttest_func(category):
         expected_results = scripttest.result
         if not isinstance(expected_results, (tuple, list, set)):
             expected_results = (expected_results,)
-        actual_results = get_element_value(parser.parse(scripttest.script))
+        actual_results = get_element_value(parser(scripttest.script))
         if not isinstance(actual_results, (tuple, list, set)) \
                 or isinstance(actual_results, model.ModelElement):
             actual_results = (actual_results,)

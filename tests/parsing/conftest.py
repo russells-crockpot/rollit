@@ -2,13 +2,15 @@
 from lacewing.install import basic as _
 import copy
 import itertools
+import functools
 import pathlib
 from collections import namedtuple
 
 import pytest
 import tatsu
 
-from rollit.semantics import RollItSemantics
+from rollit import grammar
+from rollit.actions import Actions
 
 try:
     from ruamel import yaml
@@ -75,11 +77,9 @@ except Exception:
     pass
 
 
-@pytest.fixture(scope='session')
-def parser(request):
-    with open(request.config.getoption('grammar_file')) as f:
-        grammar = f.read()
-    return tatsu.compile(grammar, semantics=RollItSemantics())
+@pytest.fixture
+def parser():
+    return functools.partial(grammar.parse, actions=Actions())
 
 
 def pytest_addoption(parser):

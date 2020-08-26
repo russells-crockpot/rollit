@@ -1,0 +1,81 @@
+grammar rollit
+start <- expression
+
+comment <- '#' .* [\n\r\f]          %ignore
+_ <- [ \t]*                         %ignore
+statement_end <- [\n\r\f|]+         %ignore
+line_joining <- '%>' _ [\n\r\f]+    %ignore
+
+
+float   <- '-'? [0-9]* '.' [0-9]+   %float
+int     <- '-'? [0-9]+              %int
+number  <- float / int
+
+#string <- "'" ~"\\[\\runftvb']" / ~"[^\\']+"} "'"
+basic_name  <- ([a-zA-Z_] [a-zA-Z_0-9]*)    %text
+name        <- '$'                          %special_ref
+             / '?'                          %special_ref
+             / '~'                          %special_ref
+             / '!'                          %special_ref
+             / basic_name
+
+
+enlarge <- size:expression ? _ '@' _ value:expression ? %enlarge
+reduce  <- '{' _ (enlarge / expression / '*') _ '}'     %reduce
+
+modifier_call   <- modifier:(basic_name/reduce) _ args:modifier_args?       %modifier_call
+modifier_args   <- '(' _ (expression _ ',' _ )* expression ? _  ')'        %modifier_args
+
+accessor    <- '.' basic_name                                   %accessor
+             / reduce
+access      <- accessing:reduce_expr _  accessors:accessor+     %access
+             / name
+
+mult_op     <- '*'          %text
+             / '%/'         %text
+             / '/'          %text
+             / '%' !'>'     %text
+add_op      <- '+'          %text
+             / '-'          %text
+comp_op     <- '=='         %text
+             / '!='         %text
+             / '<'          %text
+             / '>'          %text
+             / '<='         %text
+             / '>='         %text
+             / 'has' !'do'  %text
+             / 'and'        %text
+             / 'or'         %text
+roll_op     <- '&'          %text
+             / '^'          %text
+
+expression <- use_if
+
+use_if <- 'use' _ use:expression _ 'if' _ predicate:comparison
+           _ 'otherwise' _ otherwise:expression                     %use_if
+        / 'not' _ comparison                                        %negate
+        / comparison
+
+comparison <- left:roll_math _ op:comp_op _ right:comparison        %binary_op
+            / roll_math
+
+roll_math <- left:add_math _ op:roll_op !'=' _ right:roll_math      %binary_op
+           / add_math
+
+add_math <- left:mult_math _ op:add_op !'=' _ right:add_math        %binary_op
+          / mult_math
+
+mult_math <- left:modify _ op:mult_op !'=' _  right:mult_math       %binary_op
+           / '#' _ modify                                           %length
+           / modify
+
+modify <-   subject:dice _ '->' _ modifiers:modifier_call+          %modify
+          / dice
+
+dice <-     number_of_dice:reduce_expr? _ `d` _ sides:reduce_expr   %dice
+          / access
+          / reduce_expr
+
+reduce_expr <- reduce / '(' _ expression _ ')' %parens / atom
+
+atom <-     number / name

@@ -6,30 +6,30 @@ tests:
   categories:
   - atoms
   tests:
-  - script: 1
+  - script: '1'
     result: 1
-  - script: -2
+  - script: '-2'
     result: -2
-  - script: 3.0
+  - script: '3.0'
     result: 3.0
-  - script: -4.5
+  - script: '-4.5'
     result: -4.5
-  - script: "'test'"
-    result:
-      _class: StringLiteral
-      value: 'test'
-  - script: "'test\\'s'"
-    result:
-      _class: StringLiteral
-      value: "test's"
-  - script: "'test\\ntest'"
-    result:
-      _class: StringLiteral
-      value: "test\ntest"
-  - script: "'test\ntest'"
-    result:
-      _class: StringLiteral
-      value: "test\ntest"
+#  - script: "'test'"
+#    result:
+#      _class: StringLiteral
+#      value: 'test'
+#  - script: "'test\\'s'"
+#    result:
+#      _class: StringLiteral
+#      value: "test's"
+#  - script: "'test\\ntest'"
+#    result:
+#      _class: StringLiteral
+#      value: "test\ntest"
+#  - script: "'test\ntest'"
+#    result:
+#      _class: StringLiteral
+#      value: "test\ntest"
 
 - name: special_references
   categories:
@@ -160,13 +160,13 @@ tests:
   - script: '1 ^ test & 3'
     result:
       _class: BinaryOp
-      left:
+      left: 1
+      op: '^'
+      right:
         _class: BinaryOp
-        left: 1
-        op: '^'
-        right: 'test'
-      op: '&'
-      right: 3
+        left: 'test'
+        op: '&'
+        right: 3
   - script: '(test ^ 2) & 3'
     result:
       _class: BinaryOp
@@ -426,8 +426,8 @@ tests:
         value: 1
       modifiers:
       - modifier: 'top'
-        args: []
         _class: ModifierCall
+        args: []
   - script: '{1d4}->top'
     result:
       _class: Modify
