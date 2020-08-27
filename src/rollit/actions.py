@@ -302,7 +302,7 @@ def unless(text, start, end, values):
 
 @elements_to_values()
 def except_when(text, start, end, values):
-    return _PredicatedStatement(predicate=values[2], statement=values[-1])
+    return _PredicatedStatement(*values)
 
 
 @elements_to_values()
@@ -312,7 +312,6 @@ def create_bag(text, start, end, values):
 
 @elements_to_values()
 def load_from_into(text, start, end, values):
-    #plo(values)
     _, to_load, load_from, *into = values
     if into:
         into = into[0]
@@ -340,7 +339,6 @@ def load_from_into(text, start, end, values):
 
 @elements_to_values()
 def load_from(text, start, end, values):
-    #plo()
     items = []
     for item_to_load in _to_tuple(values[1]):
         items.append(
@@ -354,7 +352,6 @@ def load_from(text, start, end, values):
 
 @elements_to_values()
 def load_into(text, start, end, values):
-    #plo()
     items = []
     for load_from in _to_tuple(values[1]):
         items.append(
@@ -368,7 +365,6 @@ def load_into(text, start, end, values):
 
 @elements_to_values()
 def load(text, start, end, values):
-    #plo()
     items = []
     for item in _to_tuple(values[-1]):
         items.append(model.Load(
@@ -425,17 +421,32 @@ def if_stmt(text, start, end, values):
 
 @elements_to_values()
 def loop_name(text, start, end, values):
-    return _LoopName(values[1])
+    return _LoopName(values[0])
 
 
 @elements_to_values()
 def loop_body(text, start, end, values):
-    return _LoopBody(values[-1])
+    return _LoopBody(values[0])
 
 
 @elements_to_values()
 def until_do(text, start, end, values):
-    raise NotImplementedError()
+    name = until = do = otherwise = None
+    if isinstance(values[0], _LoopName):
+        name = values.pop(0)[0]
+    until = values.pop(0)
+    do = values.pop(0)[0]
+    if values and isinstance(values[-1], _Otherwise):
+        otherwise = values.pop(-1)[0]
+    if values:
+        for except_when in _to_tuple(values[0]):
+            do = model.If(predicate=except_when.predicate, then=except_when.statement, otherwise=do)
+    return model.UntilDo(
+        name=name,
+        until=until,
+        do=do,
+        otherwise=otherwise,
+    )
 
 
 @elements_to_values()

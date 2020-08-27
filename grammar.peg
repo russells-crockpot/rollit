@@ -2,12 +2,12 @@ grammar rollit
 start   <- ( _ statement _ )* stmt_or_expr? _ws  %statements
 
 comment         <- '//' [^\n\r\f]+      %ignore
-_               <- [ \t]*               %ignore
+_               <- [ \t]*              %ignore
 eol             <- comment+
                  / [\n\r\f]+            %ignore
 eos             <- eol
                  / '|'+                 %ignore
-_ws             <- [\n\r\f \t]*         %ignore
+_ws             <- [\n\r\f \t]*        %ignore
 line_joining    <- '%>' _ [\n\r\f]+     %ignore
 
 
@@ -88,7 +88,8 @@ mult_math <- left:modify _ op:mult_op !'=' _  right:mult_math       %binary_op
 modify  <- subject:dice _ modifiers:modifier_call+                  %modify
          / dice
 
-dice    <- number_of_dice:reduce_expr _ `d` _ sides:reduce_expr     %dice
+dice    <- !(name/string) reduce_expr _ `d` _
+           !(name/string) reduce_expr                               %dice
           / access
           / reduce_expr
 
@@ -101,15 +102,9 @@ atom        <- number / name / string
 
 modifier_params <- '(' _ws (basic_name _ ',' _ws )* basic_name? _ws ')'         %arg_list
 
-restart_position    <- 'before' _ target:name?                                  %restart
-                     / 'at' _ target:name?                                      %restart
-                     / 'after' _ target:name?                                   %restart
-
-except_when     <- 'except' _ 'when' _ condition:exprssion _
-                   'then' _ 'do' _ws statement eos*                             %except_when
 if_then         <- 'if' _ expression _ 'then' _ws statement _ eos*              %if_then
 unless          <- 'unless' _ expression _ 'then' _ws statement _ eos*          %unless
-otherwise       <- 'otherwise' _ws statement _ eos*                             %otherwise
+otherwise       <- 'otherwise' _ws stmt_or_expr                                 %otherwise
 
 basic_load_list     <- (basic_name _ ',' _ws )* basic_name?                     %items_with_ends
 access_load_list    <- (access _ ',' _ws )* access?                             %items_with_ends
@@ -122,23 +117,32 @@ load                <- 'load' _ '*' _ load_from _ load_into?                    
                      / 'load' _ basic_load_list _ load_into                     %load_into
                      / 'load' _ basic_load_list                                 %load
 
-loop_name       <- '@' _ basic_name             %loop_name
-loop_body       <- 'do' _ws stmt_or_expr        %loop_body
+
+
+restart_pos     <- 'before' _ target:name?                                      %restart
+                 / 'at' _ target:name?                                          %restart
+                 / 'after' _ target:name?                                       %restart
+
+except_when     <- @'except' _ @'when' _ expression _
+                   @'then' _ws stmt_or_expr                               %except_when
+
+loop_name       <- @'@' _ basic_name                %loop_name
+loop_body       <- @'do' @_ws stmt_or_expr          %loop_body
 
 stmt_or_expr    <- statement / expression
 block_stmt      <- (statement _ !']')* _ (expression _ &']' / statement)
 
 statement   <- eos
              / 'leave'                                                          %leave
-             / 'restart' _  restart_position
+             / 'restart' _  restart_pos
              / '[' _ws block_stmt _ws ']'                                       %block
              / '[' _ws ']'                                                      %empty_block
              / load
              / if_then (_ws unless)* (_ws otherwise)?                           %if_stmt
              / 'for' _ 'every' _ loop_name? _ basic_name _ 'that' _
                expression _ 'has' _ loop_body                                   %for_every
-             / 'until' _ loop_name? _ expression _ loop_body
-               except_when* otherwise?                                          %until_do
+             / @'until' _ loop_name? _ expression _ loop_body _ws
+               (except_when _ws)* otherwise?                                    %until_do
              / target:access _ op:assign_op _ws value:expression _              %assignment
              / target:access _ '<-' _
                params:modifier_params? _ ':' _ stmt_or_expr                     %modifier_def
