@@ -24,6 +24,13 @@ __DEFAULT_GRAMMAR_FILE = pathlib.Path(__file__).parent.parent.parent / 'src' \
 def __load():
     _script_tests_by_category = {}
 
+    def _convert_lists(entry):
+        if isinstance(entry, dict):
+            return {k: _convert_lists(v) for k, v in entry.items()}
+        elif isinstance(entry, list):
+            return tuple(_convert_lists(i) for i in entry)
+        return entry
+
     class _ScriptTest(namedtuple('_ScriptTestBase', ('script', 'result'))):
 
         def __new__(cls, entry, parent_categories=(), *, _copying=False):
@@ -32,7 +39,7 @@ def __load():
             categories = tuple(itertools.chain(entry.get('categories', ()), parent_categories))
             tests = tuple(cls(child, categories) for child in entry.get('tests', ()))
             script = entry.get('script')
-            result = entry.get('result', entry.get('results'))
+            result = _convert_lists(entry.get('result', entry.get('results')))
             self = super().__new__(
                 cls,
                 script=script,
@@ -81,7 +88,11 @@ except Exception:
 def parser():
 
     def _parse(s):
-        return grammar.parse(f'{s}|', actions=actions)
+        rval = grammar.parse(s, actions=actions)
+        # pylint: disable=protected-access
+        if actions._is_valid_iterable(rval) and len(rval) == 1:
+            return rval[0]
+        return rval
 
     return _parse
 

@@ -18,18 +18,19 @@ repos:
   - id: check-xml
   - id: check-yaml
   - id: debug-statements
-    exclude: '^src/rollit/_parser.py$'
+    exclude: '^src/rollit/grammar.g.py$'
   - id: detect-private-key
   - id: double-quote-string-fixer
-    exclude: '^src/rollit/_parser.py$'
+    exclude: '^src/rollit/grammar.g.py$'
   - id: pretty-format-json
     args: ['--autofix', '--no-sort-keys', '--indent', '4', '--no-ensure-ascii']
   - id: trailing-whitespace
-    exclude: '^src/rollit/_parser.py$'
+    exclude: '^src/rollit/grammar.py$'
 - repo: https://github.com/pre-commit/mirrors-yapf.git
   rev: v0.29.0
   hooks:
   - id: yapf
+    exclude: '^src/rollit/grammar.py$'
     args: ['-i', '-vv']
 - repo: https://github.com/adrienverge/yamllint.git
   rev: v1.21.0
@@ -51,9 +52,10 @@ repos:
   rev: 1.6.2
   hooks:
   - id: bandit
-    exclude: '^(tests/.*|src/rollit/_parser.py)$'
+    exclude: '^(tests/.*|src/rollit/grammar.g.py)$'
     args: ['-c', '.bandit']
 - repo: https://github.com/PyCQA/pylint.git
   rev: pylint-2.4.4
   hooks:
   - id: pylint
+    exclude: '^src/rollit/grammar.py$'

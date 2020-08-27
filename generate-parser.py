@@ -8,8 +8,6 @@ import os
 import pathlib
 import subprocess  # nosec
 
-import yapf
-
 default_out_file = pathlib.Path(__file__).parent / 'src' / 'rollit' / 'grammar.py'
 default_grammar_file = pathlib.Path(__file__).parent / 'grammar.peg'
 
@@ -29,27 +27,15 @@ def create_arg_parser():
     return argparser
 
 
-def generate(args):
+def main():
+    args = create_arg_parser().parse_args()
+    print(f'Generating parser from grammar file {args.grammar}...')
     subprocess.run(  # nosec
         ['canopy', '--lang', 'python', str(args.grammar)], stderr=subprocess.DEVNULL,
         text=True, check=True,
     )
-    with open(args.output, 'w') as out_file:
-        print('# pylint: skip-file', file=out_file)
-        with open(f'{args.grammar.stem}.py') as in_file:
-            out_file.write(in_file.read())
-    os.remove(f'{args.grammar.stem}.py')
-
-
-def main():
-    args = create_arg_parser().parse_args()
-    print(f'Generating parser from grammar file {args.grammar}...')
-    generate(args)
+    os.rename(f'{args.grammar.stem}.py', args.output)
     print(f'Saved parser to {args.output}.')
-    if not args.skip_yapf:
-        print(f'Running yapf on {args.output}...')
-        yapf.main(['yapf', '-i', str(args.output)])
-    print('Finished parser generation.')
 
 
 if __name__ == '__main__':

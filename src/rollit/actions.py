@@ -312,46 +312,71 @@ def create_bag(text, start, end, values):
 
 @elements_to_values()
 def load_from_into(text, start, end, values):
-    if values[1] == '*':
-        to_load = (model.SpecialReference.ALL,)
+    #plo(values)
+    _, to_load, load_from, *into = values
+    if into:
+        into = into[0]
     else:
-        to_load = _to_tuple(values[1])
-    return model.Load(
-        to_load=to_load,
-        load_from=values[1],
-        load_into=values[-1],
-    )
+        into = model.SpecialReference.ROOT
+    if to_load == '*':
+        to_load = model.SpecialReference.ALL
+    items = []
+    if _is_valid_iterable(load_from):
+        for item in _to_tuple(load_from):
+            items.append(model.Load(
+                to_load=to_load,
+                load_from=item,
+                into=into,
+            ))
+    else:
+        for item in _to_tuple(to_load):
+            items.append(model.Load(
+                to_load=item,
+                load_from=load_from,
+                into=into,
+            ))
+    return items[0] if len(items) == 1 else tuple(items)
 
 
 @elements_to_values()
 def load_from(text, start, end, values):
-    return model.Load(
-        to_load=_to_tuple(values[1]),
-        load_from=values[1],
-        load_into=model.SpecialReference.ROOT,
-    )
+    #plo()
+    items = []
+    for item_to_load in _to_tuple(values[1]):
+        items.append(
+            model.Load(
+                to_load=item_to_load,
+                load_from=values[-1],
+                into=model.SpecialReference.ROOT,
+            ))
+    return items[0] if len(items) == 1 else tuple(items)
 
 
 @elements_to_values()
 def load_into(text, start, end, values):
-    return model.Load(
-        to_load=(model.SpecialReference.ALL,),
-        load_from=values[1],
-        load_into=values[-1],
-    )
+    #plo()
+    items = []
+    for load_from in _to_tuple(values[1]):
+        items.append(
+            model.Load(
+                to_load=model.SpecialReference.ALL,
+                load_from=load_from,
+                into=values[-1],
+            ))
+    return items[0] if len(items) == 1 else tuple(items)
 
 
 @elements_to_values()
 def load(text, start, end, values):
+    #plo()
     items = []
     for item in _to_tuple(values[-1]):
-        items.append(
-            model.Load(
-                to_load=(model.SpecialReference.ALL,),
-                load_from=item,
-                load_into=item,
-            ))
-    return items
+        items.append(model.Load(
+            to_load=model.SpecialReference.ALL,
+            load_from=item,
+            into=item,
+        ))
+    return items[0] if len(items) == 1 else tuple(items)
 
 
 # pylint: disable=protected-access
@@ -448,7 +473,7 @@ def modifier_def(text, start, end, values):
 
 @elements_to_values()
 def block(text, start, end, values):
-    values = values[1:-1]
+    values = values[1:-1][0]
     if len(values) > 1 and _is_valid_iterable(values[0]):
         return tuple((*values[0], values[1]))
     return _to_tuple(values)

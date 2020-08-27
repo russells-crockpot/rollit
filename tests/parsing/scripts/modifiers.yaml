@@ -94,7 +94,7 @@ tests:
       - 'param1'
       - 'param2'
       definition:
-      - _class: Assignment
+        _class: Assignment
         target:
           _class: Access
           accessing:
@@ -104,10 +104,11 @@ tests:
           - _class: Reduce
             value: 1
         value: 3
-  - script: 'name<-(param1, param2):[
+  - script: |
+      name<-(param1, param2):[
             param1 + param2
             ?{1} = 3
-        ]'
+      ]
     result:
       _class: ModifierDef
       target: 'name'

@@ -1,5 +1,5 @@
 grammar rollit
-start   <- ( _ statement _ )+   %statements
+start   <- ( _ statement _ )* stmt_or_expr? _ws  %statements
 
 comment         <- '//' [^\n\r\f]+      %ignore
 _               <- [ \t]*               %ignore
@@ -117,21 +117,23 @@ load_into           <- 'into' _ access
 load_from           <- 'from' _ basic_load_list
 load                <- 'load' _ '*' _ load_from _ load_into?                    %load_from_into
                      / 'load' _ '!' _ 'into' _ access_load_list                 %create_bag
-                     / 'load' _ basic_load_list _ load_from load_into           %load_from_into
+                     / 'load' _ basic_load_list _ load_from _ load_into         %load_from_into
                      / 'load' _ basic_load_list _ load_from                     %load_from
                      / 'load' _ basic_load_list _ load_into                     %load_into
                      / 'load' _ basic_load_list                                 %load
 
 loop_name       <- '@' _ basic_name             %loop_name
-loop_body       <- 'do' _ws statement           %loop_body
+loop_body       <- 'do' _ws stmt_or_expr        %loop_body
 
 stmt_or_expr    <- statement / expression
+block_stmt      <- (statement _ !']')* _ (expression _ &']' / statement)
 
 statement   <- eos
              / 'leave'                                                          %leave
              / 'restart' _  restart_position
-             / '[' _ws (_ statement _)* _ stmt_or_expr _ws ']'                  %block
+             / '[' _ws block_stmt _ws ']'                                       %block
              / '[' _ws ']'                                                      %empty_block
+             / load
              / if_then (_ws unless)* (_ws otherwise)?                           %if_stmt
              / 'for' _ 'every' _ loop_name? _ basic_name _ 'that' _
                expression _ 'has' _ loop_body                                   %for_every
@@ -139,5 +141,5 @@ statement   <- eos
                except_when* otherwise?                                          %until_do
              / target:access _ op:assign_op _ws value:expression _              %assignment
              / target:access _ '<-' _
-               params:modifier_params? _ ':' _ stmt_or_expr                      %modifier_def
-             / expression _ eos _
+               params:modifier_params? _ ':' _ stmt_or_expr                     %modifier_def
+             / expression _ eos
