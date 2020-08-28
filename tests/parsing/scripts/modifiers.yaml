@@ -11,36 +11,48 @@ tests:
     result:
       _class: ModifierDef
       target: 'name'
-      parameters: null
+      parameters: []
       definition: null
-  - script: 'name<-():[]'
+  - script: 'name<-[]'
     result:
       _class: ModifierDef
       target: 'name'
-      parameters: null
+      parameters: []
       definition: null
-  - script: 'name <- (): 1'
+  - script: 'name<-:[]'
     result:
       _class: ModifierDef
       target: 'name'
-      parameters: null
+      parameters: []
+      definition: null
+  - script: 'name <- : 1'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: []
       definition: 1
   - script: 'name<-:1d6'
     result:
       _class: ModifierDef
       target: name
-      parameters: null
+      parameters: []
       definition:
         _class: Dice
         number_of_dice: 1
         sides: 6
-  - script: 'name<-(param):[]'
+  - script: 'name<-param[]'
     result:
       _class: ModifierDef
       target: 'name'
       parameters: ['param']
       definition: null
-  - script: 'name<-(param1): 1 + 2'
+  - script: 'name<-param:[]'
+    result:
+      _class: ModifierDef
+      target: 'name'
+      parameters: ['param']
+      definition: null
+  - script: 'name<-param1: 1 + 2'
     result:
       _class: ModifierDef
       target: 'name'
@@ -50,7 +62,7 @@ tests:
         left: 1
         op: '+'
         right: 2
-  - script: 'name<-(param1): ? + 2'
+  - script: 'name<-param1: ? + 2'
     result:
       _class: ModifierDef
       target: 'name'
@@ -62,7 +74,7 @@ tests:
           value: SUBJECT
         op: '+'
         right: 2
-  - script: 'name<-(param1, param2): param1 + param2'
+  - script: 'name<-param1, param2: param1 + param2'
     result:
       _class: ModifierDef
       target: 'name'
@@ -74,7 +86,7 @@ tests:
         left: 'param1'
         op: '+'
         right: 'param2'
-  - script: 'name<-(param1, param2): [param1 + param2]'
+  - script: 'name<-param1, param2 [param1 + param2]'
     result:
       _class: ModifierDef
       target: 'name'
@@ -86,7 +98,7 @@ tests:
         left: 'param1'
         op: '+'
         right: 'param2'
-  - script: 'name<-(param1, param2):[ ?{1} = 3 ]'
+  - script: 'name<-param1, param2 [ ?{1} = 3 ]'
     result:
       _class: ModifierDef
       target: 'name'
@@ -105,7 +117,7 @@ tests:
             value: 1
         value: 3
   - script: |
-      name<-(param1, param2):[
+      name <- param1, param2 [
             param1 + param2
             ?{1} = 3
       ]

@@ -2,11 +2,9 @@
 # pylint: disable=no-member,missing-function-docstring,redefined-outer-name
 """
 """
-import inspect
 import functools
 import re
 from collections import namedtuple
-from collections.abc import Mapping
 from contextlib import suppress
 
 from . import model
@@ -45,8 +43,9 @@ class _BaseInternalSingleValue(tuple):
 _Otherwise = type('_Otherwise', (_BaseInternalSingleValue,), {})
 _LoopName = type('_LoopName', (_BaseInternalSingleValue,), {})
 _LoopBody = type('_LoopBody', (_BaseInternalSingleValue,), {})
+_ItemList = type('_ItemList', (tuple,), {})
 
-_ELEMENT_TYPES = (model.ModelElement, _PredicatedStatement, _BaseInternalSingleValue)
+_ELEMENT_TYPES = (model.ModelElement, _PredicatedStatement, _BaseInternalSingleValue, _ItemList)
 
 
 def _is_valid_iterable(node):
@@ -105,50 +104,12 @@ def elements_to_values(*, text_only=False, elements_only=False, must_have_text=F
     return _decorator
 
 
-class CreateTypeFunc(
-        namedtuple('_CreateTypeFuncBase',
-                   ('model_cls', 'single_value', 'defaults', 'value_indexes'))):
-    """
-    """
-
-    def __new__(cls, model_cls, value_indexes=None, single_value=None, defaults=None):
-        if single_value is None:
-            single_value = True
-            if inspect.isclass(model_cls) \
-                    and issubclass(model_cls, (*_ELEMENT_TYPES, Mapping)) \
-                    and not issubclass(model_cls, model.SingleValueElement):
-                single_value = False
-        if single_value and defaults:
-            defaults = model_cls(defaults)
-        if isinstance(value_indexes, dict):
-            value_indexes = tuple(value_indexes.items())
-        return super().__new__(
-            cls,
-            model_cls=model_cls,
-            single_value=single_value,
-            defaults=defaults,
-            value_indexes=value_indexes,
-        )
-
-    @elements_to_values()
-    def __call__(self, text, start, end, values):
-        if self.single_value:
-            if not values:
-                return self.defaults
-            if self.value_indexes is not None:
-                return self.model_cls(values[self.value_indexes])
-            return self.model_cls(values[0])
-        if self.value_indexes:
-            # TODO add defaults
-            mapped_values = {name: values[idx] for name, idx in self.value_indexes}
-            return self.model_cls(**mapped_values)
-        return self.model_cls(*values)
-
-
-binary_op = CreateTypeFunc(model.BinaryOp)
-use_if = CreateTypeFunc(model.UseIf, (('use', 1), ('predicate', 3), ('otherwise', 5)))
-length = CreateTypeFunc(model.Length, -1, single_value=True)
-dice = CreateTypeFunc(model.Dice, (('number_of_dice', 0), ('sides', -1)))
+def _flatten_tuple(item):
+    if not _is_valid_iterable(item):
+        return _to_tuple(item)
+    if item and _is_valid_iterable(item[0]):
+        item = (*item[0], item[1])
+    return tuple(item)
 
 
 def _to_tuple(item):
@@ -166,6 +127,26 @@ def _negate(element):
 
 
 # The Actions
+
+
+@elements_to_values()
+def length(text, start, end, values):
+    return model.Length(values[0])
+
+
+@elements_to_values()
+def dice(text, start, end, values):
+    return model.Dice(*values)
+
+
+@elements_to_values()
+def binary_op(text, start, end, values):
+    return model.BinaryOp(*values)
+
+
+@elements_to_values()
+def use_if(text, start, end, values):
+    return model.UseIf(*values)
 
 
 def keyword(text, start, end, values):
@@ -188,18 +169,6 @@ def string(text, start, end, values):
         _ESCAPE_STR_PAT.sub(lambda m: _ESCAPE_MAP[m.group(1)], text[start + 1:end - 1]))
 
 
-@elements_to_values()
-def items_with_ends(text, start, end, values):
-    return _to_tuple(values)
-
-
-@elements_to_values()
-def items_no_ends(text, start, end, values):
-    if len(values) == 2:
-        return ()
-    return tuple(values[1:-1])
-
-
 def text(text, start, end, values):
     return text[start:end]
 
@@ -208,28 +177,17 @@ def special_ref(text, start, end, values):
     return model.SpecialReference(text[start:end])
 
 
-@elements_to_values()
-def accessor(text, start, end, values):
-    return values[-1]
-
-
 def ignore(*args):
     return None
 
 
 @elements_to_values()
-def parens(text, start, end, values):
-    return values[1]
-
-
-@elements_to_values()
 def negate(text, start, end, values):
-    return _negate(values[-1])
+    return _negate(values[0])
 
 
 @elements_to_values()
 def modifier_call(text, start, end, values):
-    values = values[1:]
     if len(values) == 1:
         return model.ModifierCall(modifier=values[0], args=())
     return model.ModifierCall(modifier=values[0], args=_to_tuple(values[-1]))
@@ -242,10 +200,7 @@ def modify(text, start, end, values):
 
 @elements_to_values()
 def arg_list(text, start, end, values):
-    values = values[1:-1]
-    if len(values) == 2 and isinstance(values[0], list):
-        values = (*values[0], values[1])
-    return tuple(values)
+    return _flatten_tuple(values)
 
 
 @elements_to_values()
@@ -255,7 +210,7 @@ def access(text, start, end, values):
 
 @elements_to_values()
 def reduce(text, start, end, values):
-    value = values[1]
+    value = values[0]
     if value == '*':
         value = model.SpecialReference.ALL
     return model.Reduce(value)
@@ -263,7 +218,6 @@ def reduce(text, start, end, values):
 
 @elements_to_values()
 def enlarge(text, start, end, values):
-    values = values[1:-1]
     size = value = None
     sep_idx = values.index('@')
     with suppress(IndexError):
@@ -286,23 +240,13 @@ def leave(*args):
 
 
 @elements_to_values()
-def if_then(text, start, end, values):
-    return _PredicatedStatement(predicate=values[1], statement=values[-1])
+def predicated_statement(text, start, end, values):
+    return _PredicatedStatement(*values)
 
 
 @elements_to_values()
 def otherwise(text, start, end, values):
     return _Otherwise(values[-1])
-
-
-@elements_to_values()
-def unless(text, start, end, values):
-    return _PredicatedStatement(predicate=values[1], statement=values[-1])
-
-
-@elements_to_values()
-def except_when(text, start, end, values):
-    return _PredicatedStatement(*values)
 
 
 @elements_to_values()
@@ -312,7 +256,7 @@ def create_bag(text, start, end, values):
 
 @elements_to_values()
 def load_from_into(text, start, end, values):
-    _, to_load, load_from, *into = values
+    to_load, load_from, *into = values
     if into:
         into = into[0]
     else:
@@ -321,14 +265,14 @@ def load_from_into(text, start, end, values):
         to_load = model.SpecialReference.ALL
     items = []
     if _is_valid_iterable(load_from):
-        for item in _to_tuple(load_from):
+        for item in _flatten_tuple(load_from):
             items.append(model.Load(
                 to_load=to_load,
                 load_from=item,
                 into=into,
             ))
     else:
-        for item in _to_tuple(to_load):
+        for item in _flatten_tuple(to_load):
             items.append(model.Load(
                 to_load=item,
                 load_from=load_from,
@@ -339,12 +283,17 @@ def load_from_into(text, start, end, values):
 
 @elements_to_values()
 def load_from(text, start, end, values):
+    to_load, load_from = values
+    if _is_valid_iterable(to_load):
+        to_load = _flatten_tuple(to_load)
+    else:
+        to_load = (to_load,)
     items = []
-    for item_to_load in _to_tuple(values[1]):
+    for item_to_load in to_load:
         items.append(
             model.Load(
                 to_load=item_to_load,
-                load_from=values[-1],
+                load_from=load_from,
                 into=model.SpecialReference.ROOT,
             ))
     return items[0] if len(items) == 1 else tuple(items)
@@ -352,21 +301,23 @@ def load_from(text, start, end, values):
 
 @elements_to_values()
 def load_into(text, start, end, values):
+    to_load, into = values
     items = []
-    for load_from in _to_tuple(values[1]):
-        items.append(
-            model.Load(
-                to_load=model.SpecialReference.ALL,
-                load_from=load_from,
-                into=values[-1],
-            ))
+    for load_from in _flatten_tuple(to_load):
+        items.append(model.Load(
+            to_load=model.SpecialReference.ALL,
+            load_from=load_from,
+            into=into,
+        ))
     return items[0] if len(items) == 1 else tuple(items)
 
 
 @elements_to_values()
 def load(text, start, end, values):
+    if _is_valid_iterable(values[0]):
+        values = _flatten_tuple(values[0])
     items = []
-    for item in _to_tuple(values[-1]):
+    for item in values:
         items.append(model.Load(
             to_load=model.SpecialReference.ALL,
             load_from=item,
@@ -451,43 +402,44 @@ def until_do(text, start, end, values):
 
 @elements_to_values()
 def for_every(text, start, end, values):
-    # get rid of 'for' and 'every'
-    values = values[2:]
     loop_name = None
     if isinstance(values[0], _LoopName):
         loop_name = values.pop(0)[0]
     return model.ForEvery(
         name=loop_name,
         item_name=values[0],
-        iterable=values[2],
+        iterable=values[1],
         do=values[-1][0],
     )
 
 
 @elements_to_values()
 def modifier_def(text, start, end, values):
-    target = values[0]
-    values = values[2:]
-    idx = values.index(':')
-    params = values[:idx] or None
-    if params:
-        params = params[0]
-        if not _is_valid_iterable(params):
-            params = (params,)
-    body = values[idx + 1:] or (None,)
+    target, params, *definition = values
+    params = _flatten_tuple(params)
+    seen = set()
+    for param in params:
+        if param in seen:
+            #TODO pretty print target
+            raise InvalidNameError(f'Parameter {param} of modifier {target} is '
+                                   'defined more than once!')
+        seen.add(param)
+    if definition:
+        definition = definition[0]
+    else:
+        definition = None
     return model.ModifierDef(
         target=target,
         parameters=params,
-        definition=body[0],
+        definition=definition,
     )
 
 
 @elements_to_values()
 def block(text, start, end, values):
-    values = values[1:-1][0]
-    if len(values) > 1 and _is_valid_iterable(values[0]):
-        return tuple((*values[0], values[1]))
-    return _to_tuple(values)
+    if _is_valid_iterable(values[0]):
+        return _flatten_tuple(values[0])
+    return values[0]
 
 
 def empty_block(*args):
