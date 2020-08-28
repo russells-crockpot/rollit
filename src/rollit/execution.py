@@ -1,7 +1,6 @@
 """
 """
 import inspect
-import operator
 import sys
 from collections import ChainMap
 
@@ -19,31 +18,6 @@ else:
     cached_property = property
 
 __all__ = ['ExecutionEnvironment', 'ExecutionContext', 'NoSubject', 'Scope']
-
-
-def _raise_not_implemented(*args):
-    raise NotImplementedError
-
-
-_OPERATOR_MAP = {
-    '+': operator.add,
-    '-': operator.sub,
-    '*': operator.mul,
-    '/': operator.floordiv,
-    '//': operator.truediv,
-    '%': operator.mod,
-    '&': _raise_not_implemented,
-    '^': _raise_not_implemented,
-    '>': operator.gt,
-    '<': operator.lt,
-    '==': operator.eq,
-    '!=': operator.ne,
-    '>=': operator.ge,
-    '<=': operator.le,
-    'has': lambda x, y: y in x,
-    'and': operator.and_,
-    'or': operator.or_,
-}
 
 
 class Scope:
@@ -343,16 +317,6 @@ def _(context, obj):
     return Roll([context.roll(sides) for _ in range(number_of_dice)])
 
 
-@ExecutionContext.evaluator(model.Length)
-def _(context, obj):
-    try:
-        return len(context.evaluate(obj.value))
-    except TypeError:
-        if obj is None:
-            raise NoneError()
-        raise RollItTypeError()
-
-
 @ExecutionContext.evaluator(model.Negation)
 def _(context, obj):
     return not context.evaluate(obj.value)
@@ -360,7 +324,7 @@ def _(context, obj):
 
 @ExecutionContext.evaluator(model.BinaryOp)
 def _(context, obj):
-    return _OPERATOR_MAP[obj.op](context.evaluate(obj.left), context.evaluate(obj.right))
+    return model.OPERATOR_MAP[obj.op](context.evaluate(obj.left), context.evaluate(obj.right))
 
 
 @ExecutionContext.evaluator(model.CreateBag)
@@ -375,7 +339,7 @@ def _(context, obj):
     return context.evaluate(obj.otherwise)
 
 
-@ExecutionContext.evaluator(model.If)
+@ExecutionContext.evaluator(model.IfThen)
 def _(context, obj):
     if context.evaluate(obj.predicate):
         context.evaluate(obj.then)

@@ -1,5 +1,6 @@
 # pylint: disable=unexpected-keyword-arg,no-value-for-parameter,too-many-public-methods
-# pylint: disable=no-member,missing-function-docstring,redefined-outer-name
+# pylint: disable=no-member,missing-function-docstring,redefined-outer-name,unsubscriptable-object
+# pylint: disable=too-many-function-args
 """
 """
 import functools
@@ -43,9 +44,15 @@ class _BaseInternalSingleValue(tuple):
 _Otherwise = type('_Otherwise', (_BaseInternalSingleValue,), {})
 _LoopName = type('_LoopName', (_BaseInternalSingleValue,), {})
 _LoopBody = type('_LoopBody', (_BaseInternalSingleValue,), {})
+_Always = type('_Always', (_BaseInternalSingleValue,), {})
 _ItemList = type('_ItemList', (tuple,), {})
 
 _ELEMENT_TYPES = (model.ModelElement, _PredicatedStatement, _BaseInternalSingleValue, _ItemList)
+
+
+def _was_evaluated(item):
+    return (item is None or item == model.SpecialReference.NONE
+            or isinstance(item, (int, bool, float, model.StringLiteral)))
 
 
 def _is_valid_iterable(node):
@@ -123,15 +130,12 @@ def _to_tuple(item):
 def _negate(element):
     if isinstance(element, model.Negation):
         return element.value
+    if isinstance(element, model.BinaryOp) and element.op == '!=':
+        return model.BinaryOp(element.left, '==', element.right)
     return model.Negation(element)
 
 
 # The Actions
-
-
-@elements_to_values()
-def length(text, start, end, values):
-    return model.Length(values[0])
 
 
 @elements_to_values()
@@ -141,7 +145,13 @@ def dice(text, start, end, values):
 
 @elements_to_values()
 def binary_op(text, start, end, values):
-    return model.BinaryOp(*values)
+    left, op, right = values
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        return model.OPERATOR_MAP[op](left, right)
+    if isinstance(left, model.StringLiteral) and isinstance(right, model.StringLiteral):
+        #TODO they maybe chained
+        return model.StringLiteral((left, right))
+    return model.BinaryOp(left, op, right)
 
 
 @elements_to_values()
@@ -149,8 +159,11 @@ def use_if(text, start, end, values):
     return model.UseIf(*values)
 
 
-def keyword(text, start, end, values):
-    raise InvalidNameError(f'{text[start:end]} is a keyword and cannot be used  .')
+def basic_name(text, start, end, values):
+    name = text[start:end]
+    if name in model.KEYWORDS:
+        raise InvalidNameError(f'{name} is a keyword and cannot be used.')
+    return name
 
 
 @elements_to_values(text_only=True)
@@ -232,11 +245,13 @@ def assignment(text, start, end, values):
     target, op, value = values
     if len(op) > 1:
         value = model.BinaryOp(left=target, op=op[:-1], right=value)
+    if target == value:
+        return None
     return model.Assignment(target=target, value=value)
 
 
 def leave(*args):
-    return model.SingleWordStatment.LEAVE
+    return model.Leave()
 
 
 @elements_to_values()
@@ -250,8 +265,8 @@ def otherwise(text, start, end, values):
 
 
 @elements_to_values()
-def create_bag(text, start, end, values):
-    return tuple(model.CreateBag(item) for item in _to_tuple(values[-1]))
+def new_bag(text, start, end, values):
+    return model.NewBag()
 
 
 @elements_to_values()
@@ -338,6 +353,19 @@ def restart(text, start, end, values):
     return model.Restart(location_specifier=location_specifier, target=target)
 
 
+def _process_if_stmt(predicate, then, otherwise):
+    rval = model.IfThen(
+        predicate=predicate,
+        then=then,
+        otherwise=otherwise,
+    )
+    if rval == then:
+        return rval
+    if rval == otherwise:
+        return _Otherwise(rval)
+    return rval
+
+
 @elements_to_values()
 def if_stmt(text, start, end, values):
     if_ = values.pop(0)
@@ -351,21 +379,23 @@ def if_stmt(text, start, end, values):
         else:
             unlesses = _to_tuple(otherwise)
             otherwise = None
-    rval = model.If(
-        predicate=if_.predicate,
-        then=if_.statement,
-        otherwise=otherwise,
-    )
+    rval = _process_if_stmt(if_.predicate, if_.statement, otherwise)
+    if rval == if_.statement:
+        return rval
     if unlesses:
         previous = otherwise
         for unless in unlesses:
-            previous = model.If(predicate=unless.predicate,
-                                then=unless.statement,
-                                otherwise=previous)
-        rval = model.If(
-            predicate=_negate(rval.predicate),
+            previous = _process_if_stmt(unless.predicate, unless.statement, previous)
+            if previous == unless.statement:
+                return previous
+            if isinstance(previous, _Otherwise):
+                previous = previous[0]
+        if not rval or isinstance(rval, _Otherwise):
+            return previous
+        rval = model.IfThen(
+            predicate=_negate(if_.predicate),
             then=previous,
-            otherwise=rval.then,
+            otherwise=if_.statement,
         )
     return rval
 
@@ -391,7 +421,9 @@ def until_do(text, start, end, values):
         otherwise = values.pop(-1)[0]
     if values:
         for except_when in _to_tuple(values[0]):
-            do = model.If(predicate=except_when.predicate, then=except_when.statement, otherwise=do)
+            do = model.IfThen(predicate=except_when.predicate,
+                              then=except_when.statement,
+                              otherwise=do)
     return model.UntilDo(
         name=name,
         until=until,
@@ -416,6 +448,8 @@ def for_every(text, start, end, values):
 @elements_to_values()
 def modifier_def(text, start, end, values):
     target, params, *definition = values
+    if target == '!':
+        target = model.SpecialReference.NONE
     params = _flatten_tuple(params)
     seen = set()
     for param in params:
@@ -444,6 +478,43 @@ def block(text, start, end, values):
 
 def empty_block(*args):
     return ()
+
+
+@elements_to_values()
+def but_if(text, start, end, values):
+    return model.ButIf(*values)
+
+
+@elements_to_values()
+def always(text, start, end, values):
+    return _Always(values[0])
+
+
+@elements_to_values()
+def attempt(text, start, end, values):
+    attempt, *buts, always = values
+    if not isinstance(always, _Always):
+        buts = tuple((*buts, always))
+        always = None
+    else:
+        always = always[0]
+    if buts and _is_valid_iterable(buts[0]):
+        buts = buts[0]
+    return model.Attempt(
+        attempt=attempt,
+        buts=buts,
+        always=always,
+    )
+
+
+@elements_to_values()
+def oops(text, start, end, values):
+    return model.Oops(values[0])
+
+
+@elements_to_values()
+def special_accessor(text, start, end, values):
+    return model.SpecialAccessor(values[0])
 
 
 @elements_to_values()

@@ -28,29 +28,29 @@ tests:
       until: 1
       do: 2
       otherwise: 3
-  - script: 'until 1 do 2 except when 3 then 4'
+  - script: 'until 1 do 2 except when a then 4'
     result:
       _class: UntilDo
       name: null
       until: 1
       do:
-        _class: If
-        predicate: 3
+        _class: IfThen
+        predicate: a
         then: 4
         otherwise: 2
       otherwise: null
-  - script: 'until 1 do 2 except when 3 then 4 otherwise 5'
+  - script: 'until 1 do 2 except when a then 4 otherwise 5'
     result:
       _class: UntilDo
       name: null
       until: 1
       do:
-        _class: If
-        predicate: 3
+        _class: IfThen
+        predicate: a
         then: 4
         otherwise: 2
       otherwise: 5
-  - script: 'until 1 + 2 do 3'
+  - script: 'until 1 + g do 3'
     result:
       _class: UntilDo
       name: null
@@ -58,21 +58,21 @@ tests:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: 2
+        right: g
       do: 3
       otherwise: null
-  - script: 'until 1 do 2 > 3'
+  - script: 'until 1 do g > 3'
     result:
       _class: UntilDo
       name: null
       until: 1
       do:
         _class: BinaryOp
-        left: 2
+        left: g
         op: '>'
         right: 3
       otherwise: null
-  - script: 'until 1 + 2 do 3 >= 4'
+  - script: 'until 1 + g do s >= 4'
     result:
       _class: UntilDo
       name: null
@@ -80,10 +80,10 @@ tests:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: 2
+        right: g
       do:
         _class: BinaryOp
-        left: 3
+        left: s
         op: '>='
         right: 4
       otherwise: null
@@ -366,5 +366,4 @@ tests:
           number_of_dice: 1
           sides: 6
       do:
-        _class: SingleWordStatment
-        value: 'LEAVE'
+        _class: Leave

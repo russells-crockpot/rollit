@@ -4,3 +4,4 @@ from .util import create_scripttest_func
 test_negation = create_scripttest_func('negation')
 test_comparisons = create_scripttest_func('comparisons')
 test_use_if = create_scripttest_func('use_if')
+test_if_then = create_scripttest_func('if_then')

@@ -8,10 +8,6 @@ tests:
   - negation
   - expressions
   tests:
-  - script: 'not 1'
-    result:
-      _class: Negation
-      value: 1
   - script: 'not test'
     result:
       _class: Negation
@@ -30,60 +26,60 @@ tests:
   - comparison_operators
   - expressions
   tests:
-  - script: '1 == 2'
+  - script: '1 == a'
     result:
       _class: BinaryOp
       left: 1
       op: '=='
-      right: 2
-  - script: '1 >= 2'
+      right: a
+  - script: '1 >= a'
     result:
       _class: BinaryOp
       left: 1
       op: '>='
-      right: 2
-  - script: '1 <= 2'
+      right: a
+  - script: '1 <= a'
     result:
       _class: BinaryOp
       left: 1
       op: '<='
-      right: 2
-  - script: '1 != 2'
+      right: a
+  - script: '1 != a'
     result:
       _class: BinaryOp
       left: 1
       op: '!='
-      right: 2
-  - script: '1 > 2'
+      right: a
+  - script: '1 > a'
     result:
       _class: BinaryOp
       left: 1
       op: '>'
-      right: 2
-  - script: '1 < 2'
+      right: a
+  - script: '1 < a'
     result:
       _class: BinaryOp
       left: 1
       op: '<'
-      right: 2
-  - script: '1 has 2'
+      right: a
+  - script: '1 has a'
     result:
       _class: BinaryOp
       left: 1
       op: 'has'
-      right: 2
+      right: a
 
 - name: comparisons
   categories:
   - comparisons
   - expressions
   tests:
-  - script: '1 > 2'
+  - script: '1 > a'
     result:
       _class: BinaryOp
       left: 1
       op: '>'
-      right: 2
+      right: a
   - script: '1d6 has 2'
     result:
       _class: BinaryOp
@@ -93,7 +89,7 @@ tests:
         sides: 6
       op: 'has'
       right: 2
-  - script: '1d6 has 2 - 3'
+  - script: '1d6 has 2 - b'
     result:
       _class: BinaryOp
       left:
@@ -105,8 +101,8 @@ tests:
         _class: BinaryOp
         left: 2
         op: '-'
-        right: 3
-  - script: '1d6 < 2 !=  3'
+        right: b
+  - script: '1d6 < 2 !=  z'
     result:
       _class: BinaryOp
       left:
@@ -118,7 +114,7 @@ tests:
         _class: BinaryOp
         left: 2
         op: '!='
-        right: 3
+        right: z
   - script: '(1d6 < 2) !=  3'
     result:
       _class: BinaryOp
@@ -138,11 +134,11 @@ tests:
   - expressions
   - use_if
   tests:
-  - script: 'use 1 if 1 otherwise 0'
+  - script: 'use 1 if a otherwise 0'
     result:
       _class: UseIf
       use: 1
-      predicate: 1
+      predicate: 'a'
       otherwise: 0
   - script: 'use 1d6 if use_d6 otherwise 2d4'
     result:
@@ -175,3 +171,65 @@ tests:
           _class: Dice
           number_of_dice: 3
           sides: 3
+
+- name: if_then
+  categories:
+  - statements
+  - if_then
+  tests:
+  - script: 'if a then 2'
+    result:
+      _class: IfThen
+      predicate: 'a'
+      then: 2
+      otherwise: null
+  - script: 'if a then 2 otherwise 3'
+    result:
+      _class: IfThen
+      predicate: 'a'
+      then: 2
+      otherwise: 3
+  - script: 'if a then 2 otherwise if b then 4'
+    result:
+      _class: IfThen
+      predicate: 'a'
+      then: 2
+      otherwise:
+        _class: IfThen
+        predicate: 'b'
+        then: 4
+        otherwise: null
+  - script: 'if a then 2 otherwise if b then 4 otherwise 5'
+    result:
+      _class: IfThen
+      predicate: 'a'
+      then: 2
+      otherwise:
+        _class: IfThen
+        predicate: 'b'
+        then: 4
+        otherwise: 5
+  - script: 'if a then 2 unless b then 4'
+    result:
+      _class: IfThen
+      predicate:
+        _class: Negation
+        value: 'a'
+      then:
+        _class: IfThen
+        predicate: 'b'
+        then: 4
+        otherwise: null
+      otherwise: 2
+  - script: 'if a then 2 unless b then 4 otherwise 3'
+    result:
+      _class: IfThen
+      predicate:
+        _class: Negation
+        value: 'a'
+      then:
+        _class: IfThen
+        predicate: 'b'
+        then: 4
+        otherwise: 3
+      otherwise: 2

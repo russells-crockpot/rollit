@@ -14,6 +14,12 @@ tests:
     result: 3.0
   - script: '-4.5'
     result: -4.5
+  - script: '{.}'
+    result:
+      _class: NewBag
+  - script: '{ . }'
+    result:
+      _class: NewBag
   - script: "'test'"
     result:
       _class: StringLiteral
@@ -53,71 +59,73 @@ tests:
   categories:
   - math
   tests:
-  - script: '1 + 2'
+  - script: '1 + 1'
+    result: 2
+  - script: '1 + a'
     result:
       _class: BinaryOp
       left: 1
       op: '+'
-      right: 2
-  - script: '2 - 1'
+      right: a
+  - script: 'a - 1'
     result:
       _class: BinaryOp
-      left: 2
+      left: a
       op: '-'
       right: 1
-  - script: '2 - -1'
+  - script: 'a - -1'
     result:
       _class: BinaryOp
-      left: 2
+      left: a
       op: '-'
       right: -1
-  - script: '2 * 3'
+  - script: 'a * 3'
     result:
       _class: BinaryOp
-      left: 2
+      left: a
       op: '*'
       right: 3
-  - script: '3 % 2'
+  - script: '3 % a'
     result:
       _class: BinaryOp
       left: 3
       op: '%'
-      right: 2
-  - script: '2 / 1'
+      right: a
+  - script: 'a / 1'
     result:
       _class: BinaryOp
-      left: 2
+      left: a
       op: '/'
       right: 1
-  - script: '4 %/ 2'
+  - script: '4 %/ a'
     result:
       _class: BinaryOp
       left: 4
       op: '%/'
-      right: 2
+      right: a
 
 - name: order_of_operations
   categories:
   - math
   tests:
-  - script: '1 + 2 * 3'
+  - script: '1 + a * 3'
     result:
       _class: BinaryOp
       left: 1
       op: '+'
       right:
         _class: BinaryOp
-        left: 2
+        left: a
         op: '*'
         right: 3
-  - script: '4 * 5 + 6'
+  - script: '4 * b + 6'
     result:
       _class: BinaryOp
       left:
         _class: BinaryOp
         left: 4
         op: '*'
-        right: 5
+        right: b
       op: '+'
       right: 6
 
@@ -137,7 +145,7 @@ tests:
       left: 'test'
       op: '^'
       right: 2
-  - script: 'test ^ 2 + 3'
+  - script: 'test ^ 2 + c'
     result:
       _class: BinaryOp
       left: 'test'
@@ -146,8 +154,8 @@ tests:
         _class: BinaryOp
         left: 2
         op: '+'
-        right: 3
-  - script: 'test ^ 2 * 3'
+        right: c
+  - script: 'test ^ 2 * c'
     result:
       _class: BinaryOp
       left: 'test'
@@ -156,8 +164,8 @@ tests:
         _class: BinaryOp
         left: 2
         op: '*'
-        right: 3
-  - script: '1 ^ test & 3'
+        right: c
+  - script: '1 ^ test & c'
     result:
       _class: BinaryOp
       left: 1
@@ -166,8 +174,8 @@ tests:
         _class: BinaryOp
         left: 'test'
         op: '&'
-        right: 3
-  - script: '(test ^ 2) & 3'
+        right: c
+  - script: '(test ^ 2) & c'
     result:
       _class: BinaryOp
       left:
@@ -176,7 +184,7 @@ tests:
         op: '^'
         right: 2
       op: '&'
-      right: 3
+      right: c
 
 - name: dice
   categories:
@@ -205,22 +213,22 @@ tests:
         sides: 3
       op: '*'
       right: 4
-  - script: '(1+2)d3'
+  - script: '(1+a)d3'
     result:
       _class: Dice
       number_of_dice:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: 2
+        right: a
       sides: 3
-  - script: '1d(2 *3)'
+  - script: '1d(a *3)'
     result:
       _class: Dice
       number_of_dice: 1
       sides:
         _class: BinaryOp
-        left: 2
+        left: a
         op: '*'
         right: 3
   - script: '(1d6)d4'
@@ -251,116 +259,10 @@ tests:
         number_of_dice: 2
         sides: 5
 
-- name: length
-  categories:
-  - length
-  tests:
-  - script: '#1'
-    result:
-      _class: Length
-      value: 1
-  - script: '#1d6'
-    result:
-      _class: Length
-      value:
-        _class: Dice
-        number_of_dice: 1
-        sides: 6
-  - script: '#1d6 + 3'
-    result:
-      _class: BinaryOp
-      left:
-        _class: Length
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-      op: '+'
-      right: 3
-  - script: '#(1d6 + 3)'
-    result:
-      _class: Length
-      value:
-        _class: BinaryOp
-        left:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-        op: '+'
-        right: 3
-  - script: '3 + #1d6'
-    result:
-      _class: BinaryOp
-      left: 3
-      op: '+'
-      right:
-        _class: Length
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-  - script: '#1d6->top(3)'
-    result:
-      _class: Length
-      value:
-        _class: Modify
-        subject:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-        modifiers:
-        - modifier: 'top'
-          args: [3]
-          _class: ModifierCall
-  - script: '(#1d6)->top(3)'
-    result:
-      _class: Modify
-      subject:
-        _class: Length
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-      modifiers:
-      - modifier: 'top'
-        args: [3]
-        _class: ModifierCall
-  - script: '(#1d6)->top(3)'
-    result:
-      _class: Modify
-      subject:
-        _class: Length
-        value:
-          _class: Dice
-          number_of_dice: 1
-          sides: 6
-      modifiers:
-      - modifier: 'top'
-        args: [3]
-        _class: ModifierCall
-  - script: '#?'
-    result:
-      _class: Length
-      value:
-        _class: SpecialReference
-        value: 'SUBJECT'
-
 - name: reduce
   categories:
   - reduce
   tests:
-  - script: '{!}'
-    result:
-      _class: Reduce
-      value:
-        _class: SpecialReference
-        value: 'NONE'
-  - script: '{*}'
-    result:
-      _class: Reduce
-      value:
-        _class: SpecialReference
-        value: 'ALL'
   - script: '{?}'
     result:
       _class: Reduce
@@ -463,15 +365,15 @@ tests:
     result:
       _class: Reduce
       value: 1
-  - script: '{1 + 2}'
+  - script: '{1 + a}'
     result:
       _class: Reduce
       value:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: 2
-  - script: '{3 * 2 - 4}'
+        right: a
+  - script: '{3 * a - 4}'
     result:
       _class: Reduce
       value:
@@ -480,10 +382,10 @@ tests:
           _class: BinaryOp
           left: 3
           op: '*'
-          right: 2
+          right: a
         op: '-'
         right: 4
-  - script: '{3 * (2 - 4)}'
+  - script: '{3 * (a - 4)}'
     result:
       _class: Reduce
       value:
@@ -492,10 +394,10 @@ tests:
         op: '*'
         right:
           _class: BinaryOp
-          left: 2
+          left: a
           op: '-'
           right: 4
-  - script: '{3 * {2 - 4}}'
+  - script: '{3 * {a - 4}}'
     result:
       _class: Reduce
       value:
@@ -506,7 +408,7 @@ tests:
           _class: Reduce
           value:
             _class: BinaryOp
-            left: 2
+            left: a
             op: '-'
             right: 4
 
@@ -567,8 +469,59 @@ tests:
   categories:
   - access
   tests:
-  - script: 'test'
+  - script: 'test.test2'
     result:
-      accessing:
+      accessing: 'test'
       accessors:
-      - ''
+      - 'test2'
+  - script: 'test.test2.test3'
+    result:
+      accessing: 'test'
+      accessors:
+      - 'test2'
+      - 'test3'
+  - script: 'test.{name}'
+    result:
+      accessing: 'test'
+      accessors:
+      - _class: Reduce
+        value: 'name'
+  - script: 'test.{3}'
+    result:
+      accessing: 'test'
+      accessors:
+      - _class: Reduce
+        value: 3
+  - script: 'test.{1}.name.{test}'
+    result:
+      accessing: 'test'
+      accessors:
+      - _class: Reduce
+        value: 1
+      - 'name'
+      - _class: Reduce
+        value: 'test'
+  - script: 'test.{#}'
+    result:
+      accessing: 'test'
+      accessors:
+      - _class: SpecialAccessor
+        value: LENGTH
+  - script: 'test.{+}'
+    result:
+      accessing: 'test'
+      accessors:
+      - _class: SpecialAccessor
+        value: TOTAL
+  - script: 'test.{=}'
+    result:
+      accessing: 'test'
+      accessors:
+      - _class: SpecialAccessor
+        value: VALUE
+  - script: 'test.{*}'
+    result:
+      accessing: 'test'
+      accessors:
+      - _class: SpecialAccessor
+        value: EVERY

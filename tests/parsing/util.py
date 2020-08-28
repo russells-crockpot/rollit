@@ -18,6 +18,8 @@ def get_element_value(elem):
         rval = {'value': elem._name_}
     elif isinstance(elem, model.SingleValueElement):
         rval = {'value': elem.value}
+    elif isinstance(elem, model.ConstantElement):
+        rval = {}
     else:
         rval = elem._asdict()
     for k, v in rval.items():

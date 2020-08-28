@@ -52,7 +52,7 @@ tests:
       target: 'name'
       parameters: ['param']
       definition: null
-  - script: 'name<-param1: 1 + 2'
+  - script: 'name<-param1: 1 + a'
     result:
       _class: ModifierDef
       target: 'name'
@@ -61,7 +61,7 @@ tests:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: 2
+        right: a
   - script: 'name<-param1: ? + 2'
     result:
       _class: ModifierDef
@@ -98,7 +98,7 @@ tests:
         left: 'param1'
         op: '+'
         right: 'param2'
-  - script: 'name<-param1, param2 [ ?{1} = 3 ]'
+  - script: 'name<-param1, param2 [ ?.{1} = 3 ]'
     result:
       _class: ModifierDef
       target: 'name'
@@ -119,7 +119,7 @@ tests:
   - script: |
       name <- param1, param2 [
             param1 + param2
-            ?{1} = 3
+            ?.{1} = 3
       ]
     result:
       _class: ModifierDef
@@ -255,5 +255,4 @@ tests:
   tests:
   - script: 'leave'
     result:
-      _class: SingleWordStatment
-      value: 'LEAVE'
+      _class: Leave

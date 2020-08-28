@@ -2,10 +2,98 @@
 """
 """
 import enum
+import operator
 from abc import ABCMeta
 from collections import namedtuple
 
+
+def _raise_not_implemented(*args):
+    raise NotImplementedError
+
+
+KEYWORDS = frozenset({
+    'after',
+    'always',
+    'at',
+    'attempt',
+    'before',
+    'but',
+    'do',
+    'every',
+    'except',
+    'for',
+    'from',
+    'has',
+    'if',
+    'into',
+    'leave',
+    'load',
+    'not',
+    'occurs',
+    'oops',
+    'otherwise',
+    'restart',
+    'that',
+    'then',
+    'unless',
+    'until',
+    'use',
+    'when',
+})
+
+OPERATOR_MAP = {
+    '+': operator.add,
+    '-': operator.sub,
+    '*': operator.mul,
+    '/': operator.floordiv,
+    '//': operator.truediv,
+    '%': operator.mod,
+    '&': _raise_not_implemented,
+    '^': _raise_not_implemented,
+    '>': operator.gt,
+    '<': operator.lt,
+    '==': operator.eq,
+    '!=': operator.ne,
+    '>=': operator.ge,
+    '<=': operator.le,
+    'has': lambda x, y: y in x,
+    'and': operator.and_,
+    'or': operator.or_,
+}
+
+DEFER_EVALUATION = object()
+
+
+def evaluate_predicate(predicate):
+    if isinstance(predicate, StringLiteral):
+        return bool(predicate.value)
+    if isinstance(predicate, (int, float)):
+        return bool(predicate)
+    if predicate == SpecialReference.NONE:
+        return False
+    return DEFER_EVALUATION
+
+
 ModelElement = ABCMeta('ModelElement', (tuple,), {})
+
+
+class _PredicatedElementMixIn:
+    """
+    """
+    _predicate_info = ()
+
+    def __new__(cls, *args, _suppress_evaluation=False, **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
+        if _suppress_evaluation:
+            return self
+        resp = evaluate_predicate(getattr(self, cls._predicate_info[0]))
+        if resp == DEFER_EVALUATION:
+            return self
+        if resp:
+            return getattr(self, cls._predicate_info[1])
+        if len(cls._predicate_info) >= 3:
+            return getattr(self, cls._predicate_info[2])
+        return None
 
 
 class SingleValueElement(ModelElement):
@@ -41,12 +129,23 @@ class SequenceValueElement(ModelElement):
         return f'{type(self).__name__}{super().__repr__()}'
 
 
+class SpecialAccessor(enum.Enum):
+    LENGTH = '#'
+    TOTAL = '+'
+    VALUE = '='
+    EVERY = '*'
+
+
+ModelElement.register(SpecialAccessor)
+
+
 class SpecialReference(enum.Enum):
     SUBJECT = '?'
     ROOT = '~'
     ALL = '*'
     NONE = '!'
     LOCAL = '$'
+    ERROR = '#'
 
 
 ModelElement.register(SpecialReference)
@@ -58,21 +157,50 @@ class RestartLocationSpecifier(enum.Enum):
     AFTER = 'after'
 
 
-class SingleWordStatment(enum.Enum):
-    LEAVE = 'leave'
-
-
-ModelElement.register(SingleWordStatment)
-
-
-def create_model_element_type(name, attrs=()):
+class ConstantElement(ModelElement):
     """
     """
-    if not attrs:
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._THE_OBJECT = None
+
+    def __new__(cls):
+        if cls._THE_OBJECT is None:
+            cls._THE_OBJECT = super().__new__(cls)
+        return cls._THE_OBJECT
+
+    def __str__(self):
+        return type(self).__name__
+
+    def __repr__(self):
+        return f'{self}()'
+
+    def __bool__(self):
+        return True
+
+
+def create_model_element_type(name,
+                              attrs=(),
+                              predicated=False,
+                              constant=False,
+                              *,
+                              predicate_info=()):
+    """
+    """
+    class_attrs = {}
+    if predicated and not predicate_info:
+        predicate_info = tuple(attrs[:3])
+    if constant:
+        bases = (ConstantElement,)
+    elif not attrs:
         bases = (SingleValueElement,)
+    elif predicate_info:
+        bases = (_PredicatedElementMixIn, namedtuple(f'_{name}Base', attrs), ModelElement)
+        class_attrs = {'_predicate_info': predicate_info}
     else:
         bases = (namedtuple(f'_{name}Base', attrs), ModelElement)
-    return type(name, bases, {})
+    return type(name, bases, class_attrs)
 
 
 # Loops
@@ -89,6 +217,11 @@ for spec in RestartLocationSpecifier:
 # pylint: disable=undefined-loop-variable
 del spec
 
+# Error Handling
+Attempt = create_model_element_type('Attempt', ('attempt', 'buts', 'always'))
+ButIf = create_model_element_type('ButIf', ('predicate', 'statement'), True)
+Oops = create_model_element_type('Oops')
+
 Assignment = create_model_element_type('Assignment', ('target', 'value'))
 Load = create_model_element_type('Load', ('to_load', 'load_from', 'into'))
 ModifierCall = create_model_element_type('ModifierCall', ('modifier', 'args'))
@@ -99,9 +232,12 @@ Dice = create_model_element_type('Dice', ('number_of_dice', 'sides'))
 BinaryOp = create_model_element_type('BinaryOp', ('left', 'op', 'right'))
 Negation = create_model_element_type('Negation')
 Reduce = create_model_element_type('Reduce')
-Length = create_model_element_type('Length')
+ClearValue = create_model_element_type('ClearValue')
 CreateBag = create_model_element_type('CreateBag')
 StringLiteral = create_model_element_type('StringLiteral')
-If = create_model_element_type('If', ('predicate', 'then', 'otherwise'))
-UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'))
+IfThen = create_model_element_type('IfThen', ('predicate', 'then', 'otherwise'), True)
+UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'),
+                                  predicate_info=('predicate', 'use', 'otherwise'))
 ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 'definition'))
+Leave = create_model_element_type('Leave', constant=True)
+NewBag = create_model_element_type('NewBag', constant=True)

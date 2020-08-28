@@ -8,16 +8,6 @@ tests:
   - load
   - bags
   tests:
-  - script: 'load ! into test'
-    result:
-      _class: CreateBag
-      value: 'test'
-  - script: 'load ! into test, test2'
-    result:
-    - _class: CreateBag
-      value: 'test'
-    - _class: CreateBag
-      value: 'test2'
   - script: 'load test'
     result:
       _class: Load
@@ -215,7 +205,7 @@ tests:
         left: name
         op: '^'
         right: 1
-  - script: '?{1} = 3'
+  - script: '?.{1} = 3'
     result:
       _class: Assignment
       target:
@@ -317,24 +307,24 @@ tests:
   tests:
   - script: '[]'
     result: []
-  - script: '[1 + 2]'
+  - script: '[1 + z]'
     result:
       _class: BinaryOp
       left: 1
       op: '+'
-      right: 2
-  - script: '[1 + 2  ]'
+      right: z
+  - script: '[1 + z  ]'
     result:
       _class: BinaryOp
       left: 1
       op: '+'
-      right: 2
-  - script: '[ 1 + 2|]'
+      right: z
+  - script: '[ 1 + z|]'
     result:
     - _class: BinaryOp
       left: 1
       op: '+'
-      right: 2
+      right: z
   - script: '[ a = 1]'
     result:
     - _class: Assignment
@@ -348,16 +338,16 @@ tests:
     - _class: Assignment
       target: 'b'
       value: 3
-  - script: '[1 + 2 | b = 3]'
+  - script: '[1 + z | b = 3]'
     result:
     - _class: BinaryOp
       left: 1
       op: '+'
-      right: 2
+      right: z
     - _class: Assignment
       target: 'b'
       value: 3
-  - script: '[a = 1 | 3 * 4]'
+  - script: '[a = 1 | 3 * y]'
     result:
     - _class: Assignment
       target: 'a'
@@ -365,29 +355,83 @@ tests:
     - _class: BinaryOp
       left: 3
       op: '*'
-      right: 4
-  - script: '[1 + 2 | 3 * 4]'
+      right: y
+  - script: '[1 + z | 3 * y]'
     result:
     - _class: BinaryOp
       left: 1
       op: '+'
-      right: 2
+      right: z
     - _class: BinaryOp
       left: 3
       op: '*'
-      right: 4
+      right: y
   - script: "
     [
-      1 + 2
+      1 + z
 
-      3 * 4
+      3 * y
     ]"
     result:
     - _class: BinaryOp
       left: 1
       op: '+'
-      right: 2
+      right: z
     - _class: BinaryOp
       left: 3
       op: '*'
-      right: 4
+      right: y
+
+- name: attempt
+  categories:
+  - attempt
+  - error_handling
+  tests:
+  - script: 'attempt a but always b'
+    result:
+      _class: Attempt
+      attempt: 'a'
+      buts: []
+      always: 'b'
+  - script: "attempt a but if #.message == 'test' occurs then b"
+    result:
+      _class: Attempt
+      attempt: 'a'
+      buts:
+      - _class: ButIf
+        predicate:
+          _class: BinaryOp
+          left:
+            _class: Access
+            accessing:
+              _class: SpecialReference
+              value: ERROR
+            accessors:
+            - 'message'
+          op: '=='
+          right:
+            _class: StringLiteral
+            value: 'test'
+        statement: 'b'
+      always: null
+  - script: "attempt a but if #.message == 'test' occurs then b but always c"
+    result:
+      _class: Attempt
+      attempt: 'a'
+      buts:
+      - _class: ButIf
+        predicate:
+          _class: BinaryOp
+          left:
+            _class: Access
+            accessing:
+              _class: SpecialReference
+              value: ERROR
+            accessors:
+            - 'message'
+          op: '=='
+          right:
+            _class: StringLiteral
+            value: 'test'
+        statement: 'b'
+      always: 'c'
