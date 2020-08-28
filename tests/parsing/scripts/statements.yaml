@@ -81,7 +81,9 @@ tests:
     - _class: Load
       to_load: 'test'
       load_from: 'bag'
-      into: 'test'
+      into:
+        _class: SpecialReference
+        value: ROOT
   - script: 'load test1 from bag into other_bag'
     result:
     - _class: Load
@@ -101,11 +103,15 @@ tests:
     - _class: Load
       to_load: 'test'
       load_from: 'bag'
-      into: 'test'
+      into:
+        _class: SpecialReference
+        value: ROOT
     - _class: Load
       to_load: 'test2'
       load_from: 'bag'
-      into: 'test2'
+      into:
+        _class: SpecialReference
+        value: ROOT
   - script: 'load test from bag into alias'
     result:
       _class: Load
@@ -304,3 +310,84 @@ tests:
           - modifier: 'top'
             args: [3]
             _class: ModifierCall
+
+- name: blocks
+  categories:
+  - blocks
+  tests:
+  - script: '[]'
+    result: []
+  - script: '[1 + 2]'
+    result:
+      _class: BinaryOp
+      left: 1
+      op: '+'
+      right: 2
+  - script: '[1 + 2  ]'
+    result:
+      _class: BinaryOp
+      left: 1
+      op: '+'
+      right: 2
+  - script: '[ 1 + 2|]'
+    result:
+    - _class: BinaryOp
+      left: 1
+      op: '+'
+      right: 2
+  - script: '[ a = 1]'
+    result:
+    - _class: Assignment
+      target: 'a'
+      value: 1
+  - script: '[a = 1 | b = 3]'
+    result:
+    - _class: Assignment
+      target: 'a'
+      value: 1
+    - _class: Assignment
+      target: 'b'
+      value: 3
+  - script: '[1 + 2 | b = 3]'
+    result:
+    - _class: BinaryOp
+      left: 1
+      op: '+'
+      right: 2
+    - _class: Assignment
+      target: 'b'
+      value: 3
+  - script: '[a = 1 | 3 * 4]'
+    result:
+    - _class: Assignment
+      target: 'a'
+      value: 1
+    - _class: BinaryOp
+      left: 3
+      op: '*'
+      right: 4
+  - script: '[1 + 2 | 3 * 4]'
+    result:
+    - _class: BinaryOp
+      left: 1
+      op: '+'
+      right: 2
+    - _class: BinaryOp
+      left: 3
+      op: '*'
+      right: 4
+  - script: "
+    [
+      1 + 2
+
+      3 * 4
+    ]"
+    result:
+    - _class: BinaryOp
+      left: 1
+      op: '+'
+      right: 2
+    - _class: BinaryOp
+      left: 3
+      op: '*'
+      right: 4

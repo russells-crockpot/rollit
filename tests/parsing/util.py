@@ -11,7 +11,7 @@ from .conftest import script_tests
 def get_element_value(elem):
     if not isinstance(elem, model.ModelElement) and not isinstance(elem, enum.Enum):
         if isinstance(elem, (tuple, list, set)):
-            return type(elem)(get_element_value(item) for item in elem)
+            return tuple(get_element_value(item) for item in elem)
         return elem
     if isinstance(elem, enum.Enum):
         # pylint: disable=protected-access
@@ -32,12 +32,14 @@ def create_scripttest_func(category):
         expected_results = scripttest.result
         if not isinstance(expected_results, (tuple, list, set)):
             expected_results = (expected_results,)
-        actual_results = get_element_value(parser.parse(scripttest.script))
+        actual_results = get_element_value(parser(scripttest.script))
         if not isinstance(actual_results, (tuple, list, set)) \
                 or isinstance(actual_results, model.ModelElement):
             actual_results = (actual_results,)
         for expected, actual in itertools.zip_longest(expected_results, actual_results):
             actual = reorder_keys(expected, actual)
+            if isinstance(expected, (list, set)):
+                expected = tuple(expected)
             assert expected == actual
 
     _func.__name__ = f'test_{category}'
@@ -54,7 +56,7 @@ def reorder_keys(expected, actual):
             actual_value = reorder_keys(expected_value, actual_value)
         elif isinstance(expected_value, (list, set, tuple)):
             assert len(expected_value) == len(actual_value)
-            actual_value = type(expected_value)(
+            actual_value = tuple(
                 reorder_keys(*z) for z in itertools.zip_longest(expected_value, actual_value))
         result[k] = actual_value
     return result
