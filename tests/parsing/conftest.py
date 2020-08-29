@@ -1,24 +1,20 @@
 # pylint: disable=missing-docstring
-from lacewing.install import basic as _
 import copy
 import itertools
 import functools
 import pathlib
 from collections import namedtuple
+from contextlib import suppress
 
 import pytest
-import tatsu
 
 from rollit import grammar
-from rollit import actions
+from rollit.ast import actions, is_valid_iterable
 
 try:
     from ruamel import yaml
 except ImportError:
     import yaml
-
-__DEFAULT_GRAMMAR_FILE = pathlib.Path(__file__).parent.parent.parent / 'src' \
-        / 'rollit' / 'grammar.tatsu'
 
 
 def __load():
@@ -78,10 +74,8 @@ def __load():
 
 script_tests = __load()
 
-try:
+with suppress(Exception):
     del __load
-except Exception:
-    pass
 
 
 @pytest.fixture
@@ -89,17 +83,8 @@ def parser():
 
     def _parse(s):
         rval = grammar.parse(s, actions=actions)
-        # pylint: disable=protected-access
-        if actions._is_valid_iterable(rval) and len(rval) == 1:
+        if is_valid_iterable(rval) and len(rval) == 1:
             return rval[0]
         return rval
 
     return _parse
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        '--grammar-file',
-        default=str(__DEFAULT_GRAMMAR_FILE),
-        help='The grammar file to use.',
-    )

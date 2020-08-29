@@ -12,32 +12,32 @@ tests:
       _class: ModifierDef
       target: 'name'
       parameters: []
-      definition: null
+      definition: []
   - script: 'name<-[]'
     result:
       _class: ModifierDef
       target: 'name'
       parameters: []
-      definition: null
+      definition: []
   - script: 'name<-:[]'
     result:
       _class: ModifierDef
       target: 'name'
       parameters: []
-      definition: null
+      definition: []
   - script: 'name <- : 1'
     result:
       _class: ModifierDef
       target: 'name'
       parameters: []
-      definition: 1
+      definition: [1]
   - script: 'name<-:1d6'
     result:
       _class: ModifierDef
       target: name
       parameters: []
       definition:
-        _class: Dice
+      - _class: Dice
         number_of_dice: 1
         sides: 6
   - script: 'name<-param[]'
@@ -45,20 +45,20 @@ tests:
       _class: ModifierDef
       target: 'name'
       parameters: ['param']
-      definition: null
+      definition: []
   - script: 'name<-param:[]'
     result:
       _class: ModifierDef
       target: 'name'
       parameters: ['param']
-      definition: null
+      definition: []
   - script: 'name<-param1: 1 + a'
     result:
       _class: ModifierDef
       target: 'name'
       parameters: ['param1']
       definition:
-        _class: BinaryOp
+      - _class: BinaryOp
         left: 1
         op: '+'
         right: a
@@ -68,7 +68,7 @@ tests:
       target: 'name'
       parameters: ['param1']
       definition:
-        _class: BinaryOp
+      - _class: BinaryOp
         left:
           _class: SpecialReference
           value: SUBJECT
@@ -82,7 +82,7 @@ tests:
       - 'param1'
       - 'param2'
       definition:
-        _class: BinaryOp
+      - _class: BinaryOp
         left: 'param1'
         op: '+'
         right: 'param2'
@@ -94,7 +94,7 @@ tests:
       - 'param1'
       - 'param2'
       definition:
-        _class: BinaryOp
+      - _class: BinaryOp
         left: 'param1'
         op: '+'
         right: 'param2'
@@ -106,7 +106,7 @@ tests:
       - 'param1'
       - 'param2'
       definition:
-        _class: Assignment
+      - _class: Assignment
         target:
           _class: Access
           accessing:

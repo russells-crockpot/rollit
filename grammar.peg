@@ -108,7 +108,7 @@ reduce_expr <- enlarge
 
 atom        <- number / name / string
 
-modifier_params <- (basic_name _ @',' _ws )* basic_name?
+modifier_params <- (basic_name _ @',' _ws )* basic_name?                    %item_list
 modifier_def    <- (access / '!') _ @'<-' _ modifier_params _ws
                    @(':'/ ':'? &'[') _ stmt_or_expr                         %modifier_def
 

@@ -1,7 +1,7 @@
 """
 """
 from enum import Enum
-from rollit.model import SingleValueElement, ModelElement
+from rollit.ast import SingleValueElement, ModelElement
 
 __all__ = [
     'pformat_model',
@@ -29,6 +29,8 @@ def pformat_model(elem):
             indent += 1
             lines = [preamble]
             for name, value in item._asdict().items():
+                if name == 'codeinfo':
+                    continue
                 value_preamble = f'{"  "*indent}{name}'
                 value = _get_lines(value, indent=indent + 1)
                 if isinstance(value, str):
@@ -52,6 +54,7 @@ def pformat_model(elem):
         return str(item)
 
     return '\n'.join(_get_lines(elem))
+    # return '\n'.join(l for l in _get_lines(elem) if l.strip().strip('-'))
 
 
 def pprint_model(elem):

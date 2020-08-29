@@ -1,31 +1,10 @@
 # pylint: disable=missing-docstring
-import enum
 import itertools
 
 import pytest
-from rollit import model
+from rollit.ast import ModelElement
 
 from .conftest import script_tests
-
-
-def get_element_value(elem):
-    if not isinstance(elem, model.ModelElement) and not isinstance(elem, enum.Enum):
-        if isinstance(elem, (tuple, list, set)):
-            return tuple(get_element_value(item) for item in elem)
-        return elem
-    if isinstance(elem, enum.Enum):
-        # pylint: disable=protected-access
-        rval = {'value': elem._name_}
-    elif isinstance(elem, model.SingleValueElement):
-        rval = {'value': elem.value}
-    elif isinstance(elem, model.ConstantElement):
-        rval = {}
-    else:
-        rval = elem._asdict()
-    for k, v in rval.items():
-        rval[k] = get_element_value(v)
-    rval['_class'] = type(elem).__name__
-    return rval
 
 
 def create_scripttest_func(category):
@@ -34,11 +13,16 @@ def create_scripttest_func(category):
         expected_results = scripttest.result
         if not isinstance(expected_results, (tuple, list, set)):
             expected_results = (expected_results,)
-        actual_results = get_element_value(parser(scripttest.script))
-        if not isinstance(actual_results, (tuple, list, set)) \
-                or isinstance(actual_results, model.ModelElement):
+        actual_results = parser(scripttest.script)
+        if isinstance(actual_results, ModelElement):
+            # pylint: disable=protected-access
+            actual_results = (actual_results._to_test_dict(),)
+        if not isinstance(actual_results, (tuple, list, set)):
             actual_results = (actual_results,)
         for expected, actual in itertools.zip_longest(expected_results, actual_results):
+            if isinstance(actual, ModelElement):
+                # pylint: disable=protected-access
+                actual = actual._to_test_dict()
             actual = reorder_keys(expected, actual)
             if isinstance(expected, (list, set)):
                 expected = tuple(expected)

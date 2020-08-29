@@ -1,0 +1,8 @@
+1d6     // This defines a dice, but doesn't roll it
+{1d6}   // This defines a dice and rolls it
+
+{3@1d6}     //This defines a ROLL with three
+{3@{1d6}}   //This is similar to the above statement, but the dice is roll
+            //FIRST, so the number of sides remains constant
+
+{3@}

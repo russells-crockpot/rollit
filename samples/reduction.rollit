@@ -1,0 +1,12 @@
+// 2 can't be reduced, so this stays a one
+{2}
+
+// A dice can be reduced. So this rolls the dice and reduces to a roll
+{1d6}
+
+// This uses enlargement to create a roll (2 values, each value is 3), and then
+// reduces that roll to it's value (in this case the total, which is 6)
+{{2@3}}
+
+// This gets the first result. Remember, rolls are NOT 0 indexed!
+roll{1}
