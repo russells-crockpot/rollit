@@ -1,34 +1,40 @@
 """
 """
-from abc import ABCMeta, abstractmethod
-from collections import namedtuple
 
 __all__ = []
 
 
-class Reducable(metaclass=ABCMeta):
+class LeaveException(BaseException):
     """
     """
-    __slots__ = ()
+    __THE_EXCEPTION = None
 
-    @abstractmethod
-    def reduce(self, context):
-        """
-        """
+    def __new__(cls):
+        if not cls.__THE_EXCEPTION:
+            cls.__THE_EXCEPTION = object.__new__(cls)
+        return cls.__THE_EXCEPTION
 
 
-class Runnable(metaclass=ABCMeta):
+class RestartException(BaseException):
     """
     """
-    __slots__ = ()
+    location_specifier = name = None
 
-    @abstractmethod
-    def run(self, context):
-        """
-        """
+    #pylint: disable=super-init-not-called
+    def __init__(self, restart_obj):
+        self.location_specifier, self.name = restart_obj
 
 
-class Roll(list, Reducable):
+class OopsException(BaseException):
+    """
+    """
+
+    #pylint: disable=super-init-not-called
+    def __init__(self, value):
+        self.value = value
+
+
+class Roll(list):
     """
     """
 
@@ -40,7 +46,7 @@ class Roll(list, Reducable):
     def total(self):
         """
         """
-        return sum(self)
+        return sum(int(i) for i in self)
 
     @property
     def value(self):
@@ -54,5 +60,11 @@ class Roll(list, Reducable):
     def value(self, value):
         self._value = value
 
-    def reduce(self, context):
+    def __int__(self):
         return self.value
+
+    def __str__(self):
+        return f'{type(self).__name__}{super().__str__()}'
+
+    def __repr__(self):
+        return f'{type(self).__name__}{super().__repr__()}'

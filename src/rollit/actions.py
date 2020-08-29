@@ -111,7 +111,9 @@ def elements_to_values(*, text_only=False, elements_only=False, must_have_text=F
     return _decorator
 
 
-def _flatten_tuple(item):
+def flatten_tuple(item):
+    """
+    """
     if not _is_valid_iterable(item):
         return _to_tuple(item)
     if item and _is_valid_iterable(item[0]):
@@ -213,7 +215,7 @@ def modify(text, start, end, values):
 
 @elements_to_values()
 def arg_list(text, start, end, values):
-    return _flatten_tuple(values)
+    return flatten_tuple(values)
 
 
 @elements_to_values()
@@ -270,6 +272,11 @@ def new_bag(text, start, end, values):
 
 
 @elements_to_values()
+def clear(text, start, end, values):
+    return model.ClearValue(values[0])
+
+
+@elements_to_values()
 def load_from_into(text, start, end, values):
     to_load, load_from, *into = values
     if into:
@@ -280,14 +287,14 @@ def load_from_into(text, start, end, values):
         to_load = model.SpecialReference.ALL
     items = []
     if _is_valid_iterable(load_from):
-        for item in _flatten_tuple(load_from):
+        for item in flatten_tuple(load_from):
             items.append(model.Load(
                 to_load=to_load,
                 load_from=item,
                 into=into,
             ))
     else:
-        for item in _flatten_tuple(to_load):
+        for item in flatten_tuple(to_load):
             items.append(model.Load(
                 to_load=item,
                 load_from=load_from,
@@ -300,7 +307,7 @@ def load_from_into(text, start, end, values):
 def load_from(text, start, end, values):
     to_load, load_from = values
     if _is_valid_iterable(to_load):
-        to_load = _flatten_tuple(to_load)
+        to_load = flatten_tuple(to_load)
     else:
         to_load = (to_load,)
     items = []
@@ -318,7 +325,7 @@ def load_from(text, start, end, values):
 def load_into(text, start, end, values):
     to_load, into = values
     items = []
-    for load_from in _flatten_tuple(to_load):
+    for load_from in flatten_tuple(to_load):
         items.append(model.Load(
             to_load=model.SpecialReference.ALL,
             load_from=load_from,
@@ -330,7 +337,7 @@ def load_into(text, start, end, values):
 @elements_to_values()
 def load(text, start, end, values):
     if _is_valid_iterable(values[0]):
-        values = _flatten_tuple(values[0])
+        values = flatten_tuple(values[0])
     items = []
     for item in values:
         items.append(model.Load(
@@ -450,7 +457,7 @@ def modifier_def(text, start, end, values):
     target, params, *definition = values
     if target == '!':
         target = model.SpecialReference.NONE
-    params = _flatten_tuple(params)
+    params = flatten_tuple(params)
     seen = set()
     for param in params:
         if param in seen:
@@ -472,7 +479,7 @@ def modifier_def(text, start, end, values):
 @elements_to_values()
 def block(text, start, end, values):
     if _is_valid_iterable(values[0]):
-        return _flatten_tuple(values[0])
+        return flatten_tuple(values[0])
     return values[0]
 
 

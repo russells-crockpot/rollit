@@ -32,6 +32,11 @@ class RollItSyntaxError(ParsingError):
     """
 
 
+class RollitReferenceError(RollItException, LookupError):
+    """
+    """
+
+
 class InvalidNameError(RollItException, LookupError):
     """
     """
@@ -53,6 +58,11 @@ class CannotReduceError(RollItRuntimeError):
 
 
 class RollItTypeError(RollItRuntimeError):
+    """
+    """
+
+
+class RollitIndexError(RollItRuntimeError):
     """
     """
 

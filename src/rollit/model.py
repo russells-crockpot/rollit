@@ -4,7 +4,7 @@
 import enum
 import operator
 from abc import ABCMeta
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 
 def _raise_not_implemented(*args):
@@ -18,6 +18,7 @@ KEYWORDS = frozenset({
     'attempt',
     'before',
     'but',
+    'Clear',
     'do',
     'every',
     'except',
@@ -26,6 +27,7 @@ KEYWORDS = frozenset({
     'has',
     'if',
     'into',
+    'isa',
     'leave',
     'load',
     'not',
@@ -46,10 +48,8 @@ OPERATOR_MAP = {
     '-': operator.sub,
     '*': operator.mul,
     '/': operator.floordiv,
-    '//': operator.truediv,
+    '%/': operator.truediv,
     '%': operator.mod,
-    '&': _raise_not_implemented,
-    '^': _raise_not_implemented,
     '>': operator.gt,
     '<': operator.lt,
     '==': operator.eq,
@@ -59,9 +59,19 @@ OPERATOR_MAP = {
     'has': lambda x, y: y in x,
     'and': operator.and_,
     'or': operator.or_,
+    'isa': _raise_not_implemented,
+    '&': _raise_not_implemented,
+    '^': _raise_not_implemented,
 }
 
+MATH_OPERATORS = frozenset({'+', '-', '*', '/', '%/', '%'})
+
 DEFER_EVALUATION = object()
+
+
+#TODO
+class _ObjectCache(OrderedDict):
+    pass
 
 
 def evaluate_predicate(predicate):
@@ -233,7 +243,6 @@ BinaryOp = create_model_element_type('BinaryOp', ('left', 'op', 'right'))
 Negation = create_model_element_type('Negation')
 Reduce = create_model_element_type('Reduce')
 ClearValue = create_model_element_type('ClearValue')
-CreateBag = create_model_element_type('CreateBag')
 StringLiteral = create_model_element_type('StringLiteral')
 IfThen = create_model_element_type('IfThen', ('predicate', 'then', 'otherwise'), True)
 UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'),

@@ -58,6 +58,7 @@ comp_op         <- '=='                         %text
                  / 'has' !(_ 'do')              %text
                  / 'and' !(_ 'always')          %text
                  / 'or'                         %text
+                 / 'isa'                        %text
 roll_op         <- '&'                          %text
                  / '^'                          %text
 assign_op       <- '+='                         %text
@@ -77,6 +78,7 @@ use_if <- @'use' _ expression _ @'if' _ comparison _
           @'otherwise' _ expression                     %use_if
         / @'not' _ comparison                           %negate
         / comparison
+
 
 comparison  <- roll_math _ comp_op _ comparison         %binary_op
              / roll_math
@@ -151,6 +153,7 @@ statement   <- eos
              / 'leave'                                                          %leave
              / attempt
              / @'oops' _ expression                                             %oops
+             / @'clear' _ access                                                %clear
              / @'restart' _  restart_pos
              / @'[' _ws block_stmt _ws @']' _                                   %block
              / @'[' _ws @']' _                                                  %empty_block

@@ -1,15 +1,15 @@
+#pylint: disable=too-many-function-args
 """
 """
 import inspect
 import sys
 from collections import ChainMap
+from contextlib import suppress
 
-from . import model
+from . import model, grammar, actions
 from .exceptions import InvalidNameError, RollItSyntaxError, NoSuchLoopError, RollItTypeError, \
-        NoneError, CannotReduceError
-from .internal_objects import Reducable, Roll
-from .parser import Parser
-from .semantics import RollItSemantics
+        NoneError, CannotReduceError, RollitIndexError, RollitReferenceError
+from .internal_objects import Roll, OopsException
 from .towers import DefaultTower
 
 if sys.version_info.minor >= 8:
@@ -70,23 +70,42 @@ class Scope:
             self._parent[name] = value
         self._variables[name] = value
 
+    #TODO protect parent scope?
+    def __delitem__(self, name):
+        if self._parent and not self._isolated and name in self._parent:
+            del self._parent[name]
+        del self._variables[name]
+
+
+_DEFAULT_SEARCH_PATH = ('.',)
+
 
 class ExecutionEnvironment:
     """
     """
 
-    def __init__(self, *, dice_tower=DefaultTower, parser_options=None):
+    def __init__(self,
+                 search_path=_DEFAULT_SEARCH_PATH,
+                 *,
+                 dice_tower=DefaultTower,
+                 parser_options=None):
         if inspect.isclass(dice_tower):
             dice_tower = dice_tower()
         self.dice_tower = dice_tower
         self._context = ExecutionContext(env=self)
-        self._parser = Parser(semantics=RollItSemantics(), **(parser_options or {}))
+        self._search_path = search_path
 
-    def evaluate(self, stmt):
+    def run(self, script):
         """
         """
-        stmt_model = self._parser.parse(stmt)[0]
-        return self._context.evaluate(stmt_model)
+        script_model = grammar.parse(script, actions=actions)
+        if not isinstance(script_model, model.ModelElement) \
+                and isinstance(script_model, (tuple, list)) and len(script_model) == 1:
+            script_model = script_model[0]
+        if not isinstance(script_model, model.ModelElement) \
+                and isinstance(script_model, (tuple, list)):
+            return tuple(self._context(item) for item in actions.flatten_tuple(script_model))
+        return self._context(script_model)
 
 
 def __create_no_subject():
@@ -126,19 +145,20 @@ class ExecutionContext:
                 cls._reducers = b._reducers.new_child()
                 break
 
-    def __init__(self, *, subject=NoSubject, loop=None, env=None, _parent=None):
+    def __init__(self, *, subject=NoSubject, loop=None, env=None, error=None, _parent=None):
         self._parent = _parent
         self._env = env or self._parent._env
         self._loop = loop
         self.__subject = subject
         if not self._parent:
             self._scope = Scope()
-        #TODO Consider scopes and modifier calls and defs
-        elif self.in_modifier and not self._parent.in_modifier:
+        #CONSIDER scopes and modifier calls and defs
+        elif (self.in_modifier and not self._parent.in_modifier) or error:
             self._parent = self._scope = Scope(self._parent.root, isolate=True)
             self._parent = self._parent.root
         else:
             self._scope = Scope(self._parent._scope)
+        self._error = error
 
     @classmethod
     def reducer(cls, obj_type):
@@ -152,7 +172,7 @@ class ExecutionContext:
         return _decorator
 
     @classmethod
-    def evaluator(cls, obj_type):
+    def evaluator(cls, obj_type, *, evaluate_children=False):
         """
         """
 
@@ -197,6 +217,14 @@ class ExecutionContext:
         return self.__subject is not NoSubject
 
     @cached_property
+    def current_error(self):
+        """
+        """
+        if self._parent and not self._error:
+            return self._parent.current_error
+        return self._error
+
+    @cached_property
     def root(self):
         """
         """
@@ -204,10 +232,10 @@ class ExecutionContext:
             return self._parent.root
         return self
 
-    def create_child(self, subject=None, loop=None):
+    def create_child(self, subject=None, loop=None, error=None):
         """
         """
-        return type(self)(subject=subject, loop=loop, _parent=self)
+        return type(self)(subject=subject, loop=loop, error=error, _parent=self)
 
     def get_loop(self, name):
         """
@@ -218,6 +246,9 @@ class ExecutionContext:
             return self.root_loop
         return self._scope.get_loop(name)
 
+    def __contains__(self, name):
+        return name in self._scope
+
     def __getitem__(self, name):
         if name == model.SpecialReference.SUBJECT:
             if not self.in_modifier:
@@ -225,15 +256,17 @@ class ExecutionContext:
             return self.subject
         if name == model.SpecialReference.ROOT:
             return self.root
+        if name == model.SpecialReference.ERROR:
+            return self.current_error
         if name == model.SpecialReference.NONE:
             return None
         return self._scope[name]
 
-    def __contains__(self, name):
-        return name in self._scope
-
     def __setitem__(self, name, value):
         self._scope[name] = value
+
+    def __delitem__(self, name):
+        del self._scope[name]
 
     def __enter__(self):
         return self
@@ -246,26 +279,41 @@ class ExecutionContext:
         """
         return self._env.dice_tower.roll(sides)
 
+    def __call__(self, obj):
+        return self.evaluate(obj)
+
     def evaluate(self, obj):
         """
         """
-        if obj is None:
-            return None
-        if isinstance(obj, str):
-            return self[obj]
-        if isinstance(obj, (int, float)):
+        if isinstance(obj, (int, float)) or obj is None:
             return obj
+        if isinstance(obj, (str, model.SpecialReference)):
+            return self[obj]
+        if isinstance(obj, model.StringLiteral):
+            return ''.join(obj)
         return self._evaluators[type(obj)](self, obj)
 
     def reduce(self, obj):
         """
         """
-        if isinstance(obj, Reducable):
-            return obj.reduce(self)
+        if isinstance(obj, (int, float, str)) or obj is None:
+            return obj
         # pylint: disable=unidiomatic-typecheck
         if type(obj) in self._reducers:
             return self._reducers[type(obj)](self, obj)
         raise CannotReduceError(obj)
+
+    def full_reduce(self, obj):
+        """
+        """
+        seen = []
+        seen.append(self.reduce(obj))
+        while seen[-1] is not None and not isinstance(seen[-1], (str, int, float)):
+            reduced_value = self.reduce(seen[-1])
+            if reduced_value in seen:
+                raise RuntimeError()
+            seen.append(reduced_value)
+        return seen[-1]
 
     def access_obj(self, name, accessors):
         """
@@ -280,29 +328,88 @@ class ExecutionContext:
                 raise RollItTypeError()
         return obj
 
+    def evaluate_children(self, obj):
+        """Evaluates all of the children of a :class:`~rollit.model.ModelElement` and returns an
+        object that is exactly the same, but each attribute has been evaluated.
+
+        .. warning::
+
+            If the element is a :class:`~rollit.model.SingleValueElement`, then that element's
+            evaluated value is returned instead of a copy of the element itself.
+        """
+        if isinstance(obj, (model.ConstantElement, int, float)) or obj is None:
+            return obj
+        if not isinstance(obj, model.ModelElement):
+            if isinstance(obj, (set, tuple, list)):
+                return type(obj)(self.evaluate_children(o) for o in obj)
+            return self.evaluate(obj)
+        if isinstance(obj, (str, model.SpecialReference)):
+            return self.evaluate
+        if isinstance(obj, model.SingleValueElement):
+            return self.evaluate(obj.value)
+        return type(obj)(self.evaluate_children(attr) for attr in obj)
+
+    #pylint: disable = too-complex
+    def _access(self, accessing, accessor):
+        if accessing in (None, model.SpecialReference.NONE):
+            raise NoneError()
+        try:
+            if isinstance(accessor, model.SpecialAccessor):
+                if accessor == model.SpecialAccessor.LENGTH:
+                    return len(accessing)
+                if accessor == model.SpecialAccessor.VALUE:
+                    return accessing.value
+                if accessor == model.SpecialAccessor.TOTAL:
+                    return accessing.total
+                raise NotImplementedError()
+            if isinstance(accessor, (str, int)):
+                return accessing[accessor]
+            if isinstance(accessor, model.Reduce):
+                return self.access(accessing, self.reduce(accessor))
+            return accessing[accessor]
+        except TypeError:
+            raise RollItTypeError()
+        except (AttributeError, KeyError):
+            raise RollitReferenceError()
+        except IndexError:
+            raise RollitIndexError()
+
+    def access(self, accessing, *accessors):
+        """
+        """
+        if not accessors:
+            return accessing
+        for accessor in accessors:
+            accessing = self._access(accessing, accessor)
+        return accessing
+
 
 @ExecutionContext.evaluator(model.Reduce)
 def _(context, obj):
-    return context.reduce(obj.value)
+    return context.reduce(context(obj.value))
 
 
 @ExecutionContext.evaluator(model.Assignment)
 def _(context, obj):
     if isinstance(obj.target, str):
-        context[obj.target] = context.evaluate(obj.value)
+        context[obj.target] = context(obj.value)
     else:
         target = context.access_obj(obj.target.accessing, obj.target.accessors[:-1])
-        target[obj.target.accessors[-1]] = context.evaluate(obj.value)
+        target[obj.target.accessors[-1]] = context(obj.value)
 
 
 @ExecutionContext.evaluator(model.Access)
 def _(context, obj):
-    return context.access_obj(*obj)
+    if isinstance(obj.accessing, str):
+        current_item = context[obj.accessing]
+    else:
+        current_item = context(obj.accessing)
+    return context.access(current_item, *obj.accessors)
 
 
 @ExecutionContext.evaluator(model.Enlarge)
 def _(context, obj):
-    return Roll([context.evaluate(obj.value) for _ in range(obj.size)])
+    return Roll(context(obj.value) for _ in range(context(obj.size)))
 
 
 @ExecutionContext.evaluator(model.Dice)
@@ -310,41 +417,63 @@ def _(context, obj):
     return obj
 
 
-@ExecutionContext.reducer(model.Dice)
-def _(context, obj):
-    number_of_dice = context.evaluate(obj.number_of_dice)
-    sides = context.evaluate(obj.sides)
-    return Roll([context.roll(sides) for _ in range(number_of_dice)])
-
-
 @ExecutionContext.evaluator(model.Negation)
 def _(context, obj):
-    return not context.evaluate(obj.value)
+    return not context(obj.value)
 
 
 @ExecutionContext.evaluator(model.BinaryOp)
 def _(context, obj):
-    return model.OPERATOR_MAP[obj.op](context.evaluate(obj.left), context.evaluate(obj.right))
+    left = context(obj.left)
+    right = context(obj.right)
+    #FIXME handle string concatination and other operators
+    if obj.op in model.MATH_OPERATORS:
+        left = context.full_reduce(left)
+        right = context.full_reduce(right)
+    return model.OPERATOR_MAP[obj.op](left, right)
 
 
-@ExecutionContext.evaluator(model.CreateBag)
+@ExecutionContext.evaluator(model.NewBag)
 def _(context, obj):
-    context[obj.value] = {}
+    return {}
 
 
+# Because these objects are predicated, we can just have their children be evaluated
+@ExecutionContext.evaluator(model.ButIf)
 @ExecutionContext.evaluator(model.UseIf)
-def _(context, obj):
-    if context.evaluate(obj.predicate):
-        return context.evaluate(obj.use)
-    return context.evaluate(obj.otherwise)
-
-
 @ExecutionContext.evaluator(model.IfThen)
 def _(context, obj):
-    if context.evaluate(obj.predicate):
-        context.evaluate(obj.then)
+    return context.evaluate_children(obj)
+
+
+@ExecutionContext.evaluator(model.ClearValue)
+def _(context, obj):
+    to_clear = obj.value
+    if isinstance(to_clear, model.Access):
+        base = context(model.Access(to_clear.accessing, to_clear.accessors[:-1]))
+        last = context.get_accessor_value(to_clear.accessors[-1])
+        with suppress(LookupError):
+            try:
+                del base[last]
+            except TypeError:
+                raise RollItTypeError()
     else:
-        context.evaluate(obj.otherwise)
+        del context[to_clear]
+
+
+@ExecutionContext.evaluator(model.Oops)
+def _(context, obj):
+    raise OopsException(context(obj.value))
+
+
+@ExecutionContext.evaluator(model.Attempt)
+def _(context, obj):
+    raise NotImplementedError()
+
+
+@ExecutionContext.evaluator(model.Leave)
+def _(context, obj):
+    raise NotImplementedError()
 
 
 @ExecutionContext.evaluator(model.Modify)
@@ -375,3 +504,26 @@ def _(context, obj):
 @ExecutionContext.evaluator(model.UntilDo)
 def _(context, obj):
     raise NotImplementedError()
+
+
+@ExecutionContext.reducer(Roll)
+def _(context, obj):
+    value_reduced = False
+    new_values = []
+    for result in obj:
+        if not isinstance(result, (int, float)):
+            result = context.reduce(result)
+            value_reduced = True
+        new_values.append(result)
+    if not value_reduced:
+        return obj.value
+    roll = Roll(new_values)
+    # pylint: disable=protected-access
+    roll._value = obj._value
+    return roll
+
+
+@ExecutionContext.reducer(model.Dice)
+def _(context, obj):
+    number_of_dice = context(obj.number_of_dice)
+    return Roll([context.roll(context(obj.sides)) for _ in range(number_of_dice)])
