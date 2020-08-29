@@ -7,7 +7,8 @@ from collections import ChainMap
 from contextlib import suppress
 
 from . import grammar
-from .ast import actions, constants, elements, flatten_tuple, ModelElement, SingleValueElement
+from .ast import actions, constants, elements, flatten_tuple, is_valid_iterable, \
+        ModelElement, SingleValueElement
 from .exceptions import InvalidNameError, RollItSyntaxError, NoSuchLoopError, RollItTypeError, \
         NoneError, CannotReduceError, RollitIndexError, RollitReferenceError
 from .internal_objects import Roll, OopsException
@@ -77,6 +78,16 @@ class Scope:
             del self._parent[name]
         del self._variables[name]
 
+    def variable_names(self):
+        """
+        """
+        return tuple(self._variables.keys())
+
+    def loop_names(self):
+        """
+        """
+        return tuple(self._loops.keys())
+
 
 _DEFAULT_SEARCH_PATH = ('.',)
 
@@ -107,6 +118,18 @@ class ExecutionEnvironment:
                 and isinstance(script_model, (tuple, list)):
             return tuple(self._context(item) for item in flatten_tuple(script_model))
         return self._context(script_model)
+
+    def current_variable_names(self):
+        """
+        """
+        # pylint: disable=protected-access
+        self._context._scope.variable_names()
+
+    def current_loop_names(self):
+        """
+        """
+        # pylint: disable=protected-access
+        self._context._scope.loop_names()
 
 
 def __create_no_subject():
@@ -348,15 +371,16 @@ class ExecutionContext:
         """
         if isinstance(obj, (int, float)) or obj is None:
             return obj
+        if is_valid_iterable(obj):
+            return type(obj)(self.evaluate_children(o) for o in obj)
         if not isinstance(obj, ModelElement):
-            if isinstance(obj, (set, tuple, list)):
-                return type(obj)(self.evaluate_children(o) for o in obj)
             return self.evaluate(obj)
-        if isinstance(obj, (str, elements.SpecialReference)):
-            return self.evaluate
         if isinstance(obj, SingleValueElement):
             return self.evaluate(obj.value)
-        return type(obj)(self.evaluate_children(attr) for attr in obj)
+        return type(obj)(**{
+            k: self.evaluate(v) for k, v in obj._asdict().items() if k != 'codeinfo'
+        },
+                         codeinfo=obj.codeinfo)
 
     #pylint: disable = too-complex
     def _access(self, accessing, accessor):

@@ -64,7 +64,4 @@ class Roll(list):
         return self.value
 
     def __str__(self):
-        return f'{type(self).__name__}{super().__str__()}'
-
-    def __repr__(self):
-        return f'{type(self).__name__}{super().__repr__()}'
+        return f'[{", ".join(str(r) for r in self)}]'

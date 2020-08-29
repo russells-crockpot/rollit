@@ -1,6 +1,8 @@
 """
 """
-from .base import create_model_element_type, ElementSpecs, ModelEnumElement
+from collections import namedtuple
+
+from .base import create_model_element_type, ElementSpecs, ModelEnumElement, ModelElement
 
 __all__ = [
     'Access',
@@ -115,8 +117,6 @@ Access = create_model_element_type('Access', ('accessing', 'accessors'))
 """ """
 Enlarge = create_model_element_type('Enlarge', ('size', 'value'))
 """ """
-Dice = create_model_element_type('Dice', ('number_of_dice', 'sides'))
-""" """
 Reduce = create_model_element_type('Reduce')
 """ """
 
@@ -135,3 +135,17 @@ UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'),
                                       predicate_info=('predicate', 'use', 'otherwise'),
                                   ))
 """ """
+
+
+class Dice(namedtuple('_DiceBase', ('number_of_dice', 'sides', 'codeinfo')), ModelElement):
+    """
+    """
+
+    def __str__(self):
+        numdice = self.number_of_dice
+        if isinstance(numdice, str):
+            numdice = f'{{{numdice}}}'
+        sides = self.sides
+        if isinstance(sides, str):
+            sides = f'{{{sides}}}'
+        return f'{numdice}d{sides}'
