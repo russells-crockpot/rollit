@@ -66,7 +66,7 @@ class RestartLocationSpecifier(ModelEnumElement):
     AFTER = 'after'
 
 
-StringLiteral = create_model_element_type('StringLiteral')
+StringLiteral = create_model_element_type('StringLiteral', specs=ElementSpecs(intern_strings=False))
 """ """
 
 

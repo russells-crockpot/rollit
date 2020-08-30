@@ -1,6 +1,7 @@
 """
 """
 import enum
+import sys
 from abc import ABCMeta
 from collections import namedtuple
 
@@ -41,7 +42,9 @@ DeferEvaluation = __create_defer_evaluation()
 """ """
 del __create_defer_evaluation
 
-ElementSpecs = namedtuple('ElementSpecs', ('predicate_info'), defaults=((),))
+ElementSpecs = namedtuple('ElementSpecs',
+                          ('predicate_info', 'intern_strings', 'new_scope', 'isolate_scope'),
+                          defaults=((), True, False, False))
 """ """
 
 
@@ -56,16 +59,39 @@ class CodeInfo(namedtuple('_CodeInfoBase', ('script', 'start_pos', 'end_pos'))):
         return self.script[self.start_pos:self.end_pos]
 
 
-class ModelElement(namedtuple('_ModelElementBase', ('codeinfo',)), metaclass=ABCMeta):
+class ModelElementMeta(ABCMeta):
     """
     """
-    __specs__ = ElementSpecs(predicate_info=None)
+    _evaluator = _reducer = None
+
+    def evaluator(cls, func):
+        """
+        """
+        cls._evaluator = func
+        return func
+
+    def reducer(cls, func):
+        """
+        """
+        cls._reducer = func
+        return func
+
+
+class ModelElement(namedtuple('_ModelElementBase', ('codeinfo',)), metaclass=ModelElementMeta):
+    """
+    """
+    __specs__ = ElementSpecs()
 
     def __new__(cls, *args, codeinfo, **kwargs):
         if isinstance(codeinfo, dict):
             codeinfo = CodeInfo(**codeinfo)
         elif not isinstance(codeinfo, CodeInfo) and codeinfo is not None:
             codeinfo = CodeInfo(*codeinfo)
+        if cls.__specs__.intern_strings:
+            args = (sys.intern(a) if isinstance(a, str) else a for a in args)
+            for k, v in kwargs.items():
+                if isinstance(v, str):
+                    kwargs[k] = v
         return super().__new__(cls, *args, codeinfo=codeinfo, **kwargs)
 
     @classmethod
