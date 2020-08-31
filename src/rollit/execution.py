@@ -322,7 +322,7 @@ class ExecutionContext:
         if isinstance(obj, (str, elements.SpecialReference)):
             return self[obj]
         if isinstance(obj, elements.StringLiteral):
-            return ''.join(obj)
+            return obj.value
         return self._evaluators[type(obj)](self, obj)
 
     def reduce(self, obj):

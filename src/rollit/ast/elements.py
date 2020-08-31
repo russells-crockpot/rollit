@@ -2,7 +2,8 @@
 """
 from collections import namedtuple
 
-from .base import create_model_element_type, ElementSpecs, ModelEnumElement, ModelElement
+from .base import create_model_element_type, ElementSpecs, ModelEnumElement, ModelElement, \
+        SingleValueElement
 
 __all__ = [
     'Access',
@@ -66,8 +67,26 @@ class RestartLocationSpecifier(ModelEnumElement):
     AFTER = 'after'
 
 
-StringLiteral = create_model_element_type('StringLiteral', specs=ElementSpecs(intern_strings=False))
-""" """
+class StringLiteral(namedtuple('_StringLiteralBase', ('parts', 'codeinfo')), ModelElement):
+    """
+    """
+    __specs__ = ElementSpecs(intern_strings=False)
+
+    def __new__(cls, *parts, codeinfo):
+        return super().__new__(cls, parts, codeinfo=codeinfo)
+
+    @property
+    def value(self):
+        """
+        """
+        if isinstance(self.parts, str):
+            return self.parts
+        if len(self.parts) == 1:
+            return self.parts[0]
+        return ''.join(self.parts)
+
+
+SingleValueElement.register(StringLiteral)
 
 
 def _string_literal_preeval(obj):
