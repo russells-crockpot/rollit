@@ -60,8 +60,64 @@ class Roll(list):
     def value(self, value):
         self._value = value
 
+    def __float__(self):
+        return float(self.value)
+
     def __int__(self):
-        return self.value
+        return int(self.value)
 
     def __str__(self):
         return f'[{", ".join(str(r) for r in self)}]'
+
+    def map_to(self, *args):
+        """
+        """
+        raise NotImplementedError()
+
+    def __add__(self, other):
+        return self.value + other
+
+    def __sub__(self, other):
+        return self.value - other
+
+    def __mul__(self, other):
+        return self.value * other
+
+    def __truediv__(self, other):
+        return self.value / other
+
+    def __floordiv__(self, other):
+        return self.value // other
+
+    def __mod__(self, other):
+        return self.value % other
+
+    def __radd__(self, other):
+        return other + self.value
+
+    def __rsub__(self, other):
+        return other - self.value
+
+    def __rmul__(self, other):
+        return other * self.value
+
+    def __rtruediv__(self, other):
+        return other / self.value
+
+    def __rfloordiv__(self, other):
+        return other // self.value
+
+    def __rmod__(self, other):
+        return other % self.value
+
+
+class Bag(dict):
+    """
+    """
+    #TODO
+
+
+class Modifier:
+    """
+    """
+    __slots__ = ()

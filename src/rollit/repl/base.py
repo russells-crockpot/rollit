@@ -24,8 +24,9 @@ class BaseRepl(metaclass=ABCMeta):
 
     prompt_text = '>>> '
 
-    def __init__(self, execution_env):
+    def __init__(self, execution_env, options=None):
         self.execution_env = execution_env
+        self.options = options
         self.indent_level = 0
         self.line_tokens = deque()
         self.input_buffer = deque()

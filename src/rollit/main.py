@@ -5,15 +5,13 @@ import argparse
 import sys
 
 from .execution import ExecutionEnvironment
-
-
-# pylint: disable=import-outside-toplevel
-def _get_repl(env):
-    try:
-        from .repl.pretty import PrettyRepl as Repl
-    except ImportError:
-        from .repl.base import Repl
-    return Repl(env)
+from .repl.base import Repl
+has_pretty = False
+try:
+    from .repl.pretty import PrettyRepl
+    has_pretty = True
+except ImportError:
+    pass
 
 
 def create_argparser():
@@ -29,6 +27,33 @@ def create_argparser():
         help='Executes the provided command.',
         default=None,
     )
+    if has_pretty:
+        argparser.add_argument(
+            '--ugly',
+            help="Don't use the pretty REPL.",
+            default=False,
+            action='store_true',
+        )
+        argparser.add_argument(
+            '-e',
+            '--edit-mode',
+            help='Edit more to use.',
+            choices=['vi', 'emacs'],
+            default='vi',
+        )
+        argparser.add_argument(
+            '-s',
+            '--style',
+            help='The pygments style to use.',
+            default='vim',
+        )
+        argparser.add_argument(
+            '-m',
+            '--multiline',
+            help='Use multiline mode.',
+            default=False,
+            action='store_true',
+        )
     argparser.add_argument('script_file', help='rollit script to run.', nargs=argparse.REMAINDER)
     return argparser
 
@@ -49,5 +74,8 @@ def main():
                 print(result)
             return
     if args.interactive or not (args.command or args.script_file):
-        repl = _get_repl(env)
+        if has_pretty and not args.ugly:
+            repl = PrettyRepl(env, options=args)
+        else:
+            repl = Repl(env, options=args)
         repl.run()

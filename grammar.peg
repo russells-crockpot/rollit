@@ -1,7 +1,9 @@
 grammar rollit
-start   <- ( _ statement _ )* stmt_or_expr? _ws  %statements
+start           <- @shebang?  ( _ statement _ )* stmt_or_expr? _ws  %statements
 
-comment         <- '//' [^\n\r\f]+      %ignore
+shebang         <- '#!'  [^\n\r\f]*     %ignore
+
+comment         <- '//' [^\n\r\f]*      %ignore
 _               <- [ \t]*               %ignore
 eol             <- comment+
                  / [\n\r\f]+            %ignore
