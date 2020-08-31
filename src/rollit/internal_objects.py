@@ -60,6 +60,23 @@ class Roll(list):
     def value(self, value):
         self._value = value
 
+    def reduce(self, context):
+        """
+        """
+        value_reduced = False
+        new_values = []
+        for result in self:
+            if not isinstance(result, (int, float)):
+                result = context.reduce(result)
+                value_reduced = True
+            new_values.append(result)
+        if not value_reduced:
+            return self.value
+        roll = Roll(new_values)
+        # pylint: disable=protected-access
+        roll._value = self._value
+        return roll
+
     def __float__(self):
         return float(self.value)
 
