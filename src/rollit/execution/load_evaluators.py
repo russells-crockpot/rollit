@@ -3,14 +3,15 @@
 """
 from contextlib import suppress
 
-from ..ast import elements, constants
+from ..ast import elements, constants, is_valid_iterable
 from ..exceptions import RollItTypeError
-from ..internal_objects import Roll, Bag, OopsException
+from ..internal_objects import Roll, Bag, OopsException, RestartException
 from ..language_ref import OPERATORS
 
 __all__ = ()
 
 
+@elements.Reduce.reducer
 @elements.Reduce.evaluator
 def _(self, context):
     return context.reduce(context(self.value))
@@ -22,7 +23,8 @@ def _(self, context):
         context[self.target] = context(self.value)
     else:
         target = context.access_obj(self.target.accessing, self.target.accessors[:-1])
-        target[self.target.accessors[-1]] = context(self.value)
+        final_accessor = context.full_reduce(self.target.accessors[-1])
+        target[final_accessor] = context(self.value)
 
 
 @elements.Access.evaluator
@@ -36,7 +38,8 @@ def _(self, context):
 
 @elements.Enlarge.evaluator
 def _(self, context):
-    return Roll(context(self.value) for _ in range(context(self.size)))
+    size = 1 if self.size is None else self.size
+    return Roll(context(self.value) for _ in range(context(size)))
 
 
 @elements.Dice.evaluator
@@ -133,7 +136,35 @@ def _(self, context):
 
 @elements.UntilDo.evaluator
 def _(self, context):
-    raise NotImplementedError()
+
+    def _before():
+        if not context(self.until):
+            if self.otherwise:
+                context(self.otherwise)
+            return True
+        return False
+
+    if _before():
+        return
+    do = self.do
+    if not is_valid_iterable(do):
+        do = (do,)
+    ignore_predicate = True
+    while ignore_predicate or not context(self.until):
+        ignore_predicate = False
+        try:
+            for stmt in do:
+                context(stmt)
+        except RestartException as e:
+            if e.name and e.name not in (elements.SpecialReference.NONE, self.name):
+                raise
+            if e.location_specifier == elements.RestartLocationSpecifier.AT:
+                ignore_predicate = True
+            elif e.location_specifier == elements.RestartLocationSpecifier.BEFORE:
+                if _before():
+                    return
+            elif e.location_specifier == elements.RestartLocationSpecifier.AFTER:
+                return
 
 
 @elements.Dice.reducer

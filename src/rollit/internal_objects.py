@@ -4,7 +4,12 @@
 __all__ = []
 
 
-class LeaveException(BaseException):
+class RollitNonErrorException(BaseException):
+    """
+    """
+
+
+class LeaveException(RollitNonErrorException):
     """
     """
     __THE_EXCEPTION = None
@@ -15,7 +20,7 @@ class LeaveException(BaseException):
         return cls.__THE_EXCEPTION
 
 
-class RestartException(BaseException):
+class RestartException(RollitNonErrorException):
     """
     """
     location_specifier = name = None
@@ -25,7 +30,7 @@ class RestartException(BaseException):
         self.location_specifier, self.name = restart_obj
 
 
-class OopsException(BaseException):
+class OopsException(RollitNonErrorException):
     """
     """
 

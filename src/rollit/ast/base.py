@@ -42,9 +42,10 @@ DeferEvaluation = __create_defer_evaluation()
 """ """
 del __create_defer_evaluation
 
-ElementSpecs = namedtuple('ElementSpecs',
-                          ('predicate_info', 'intern_strings', 'new_scope', 'isolate_scope'),
-                          defaults=((), True, False, False))
+ElementSpecs = namedtuple(
+    'ElementSpecs',
+    ('predicate_info', 'intern_strings', 'new_scope', 'isolate_scope', 'retain_scope'),
+    defaults=((), True, False, False, False))
 """ """
 
 
@@ -99,6 +100,18 @@ class ModelElement(namedtuple('_ModelElementBase', ('codeinfo',)), metaclass=Mod
         """
         """
         return DeferEvaluation
+
+    def reduce(self, context):
+        """
+        """
+        # pylint: disable=no-member
+        return self._reducer(context)
+
+    def evaluate(self, context):
+        """
+        """
+        # pylint: disable=no-member
+        return self._evaluator(context)
 
     @staticmethod
     # pylint: disable=protected-access

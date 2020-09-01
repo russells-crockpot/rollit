@@ -201,6 +201,14 @@ def assignment(text, start, end, values, codeinfo):
     return elements.Assignment(target=target, value=value, codeinfo=codeinfo)
 
 
+@elements_to_values
+@add_codeinfo
+def reduce_and_assign(text, start, end, values, codeinfo):
+    return elements.Assignment(target=values[0],
+                               value=elements.Reduce(values[0], codeinfo=codeinfo),
+                               codeinfo=codeinfo)
+
+
 def leave(text, start, end, values):
     return elements.Leave(codeinfo=(text, start, end))
 

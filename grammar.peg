@@ -159,6 +159,7 @@ statement   <- eos
              / @'restart' _  restart_pos
              / @'[' _ws block_stmt _ws @']' _                                   %block
              / @'[' _ws @']' _                                                  %empty_block
+             / @'={' access @'}' _                                              %reduce_and_assign
              / load
              / modifier_def
              / if_then (_ws unless)* (_ws otherwise)?                           %if_stmt

@@ -5,11 +5,14 @@ import inspect
 from .. import grammar
 from ..ast import actions, elements, flatten_tuple, is_valid_iterable, \
         ModelElement, SingleValueElement
+from ..ast.elements import StringLiteral
 from ..exceptions import RollItTypeError, NoneError, CannotReduceError, RollitIndexError, \
         RollitReferenceError
 from .base import DEFAULT_SEARCH_PATH
 from .scope import Scope
 from .towers import DefaultTower
+from ..internal_objects import LeaveException, RestartException, OopsException
+from . import load_evaluators as _  # pylint: disable=unused-import
 
 __all__ = ['ExecutionEnvironment', 'ExecutionContext']
 
@@ -94,6 +97,7 @@ class ExecutionContext:
     def __call__(self, obj):
         return self.evaluate(obj)
 
+    # pylint: disable=too-complex
     def evaluate(self, obj):
         """
         """
@@ -103,7 +107,24 @@ class ExecutionContext:
             return self[obj]
         if isinstance(obj, elements.StringLiteral):
             return obj.value
-        return obj.evaluate(self)
+        if obj.__specs__.new_scope:
+            self._scope = Scope(parent=self._scope, isolate=obj.__specs__.isolate_scope)
+        rval = None
+        try:
+            rval = obj.evaluate(self)
+        except LeaveException:
+            pass
+        except OopsException:
+            raise NotImplementedError()
+        except RestartException:
+            raise NotImplementedError()
+        if obj.__specs__.new_scope:
+            old_scope = self._scope
+            self._scope = self._scope.parent
+            if not obj.__specs__.retain_scope:
+                old_scope.destroy()
+                del old_scope
+        return rval
 
     def reduce(self, obj):
         """
@@ -193,5 +214,9 @@ class ExecutionContext:
         if not accessors:
             return accessing
         for accessor in accessors:
+            if isinstance(accessor, ModelElement):
+                accessor = self.full_reduce(accessor)
+            if isinstance(accessor, StringLiteral):
+                accessor = accessor.value
             accessing = self._access(accessing, accessor)
         return accessing
