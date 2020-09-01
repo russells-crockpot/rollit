@@ -2,17 +2,17 @@
 """
 
 
-class RollItException(Exception):
+class RollitException(Exception):
     """
     """
 
 
-class RollItRuntimeError(RollItException):
+class RollitRuntimeError(RollitException):
     """
     """
 
 
-class ParsingError(RollItException, ValueError):
+class ParsingError(RollitException, ValueError):
     """
     """
 
@@ -27,22 +27,22 @@ class TooManyItemsError(ParsingError):
     """
 
 
-class RollItSyntaxError(ParsingError):
+class RollitSyntaxError(ParsingError):
     """
     """
 
 
-class RollitReferenceError(RollItException, LookupError):
+class RollitReferenceError(RollitException, LookupError):
     """
     """
 
 
-class InvalidNameError(RollItException, LookupError):
+class InvalidNameError(RollitException, LookupError):
     """
     """
 
 
-class NoSuchLoopError(RollItException, LookupError):
+class NoSuchLoopError(RollitException, LookupError):
     """
     """
 
@@ -52,21 +52,21 @@ class NoSuchLoopError(RollItException, LookupError):
                          **kwargs)
 
 
-class CannotReduceError(RollItRuntimeError):
+class CannotReduceError(RollitRuntimeError):
     """
     """
 
 
-class RollItTypeError(RollItRuntimeError):
+class RollitTypeError(RollitRuntimeError):
     """
     """
 
 
-class RollitIndexError(RollItRuntimeError):
+class RollitIndexError(RollitRuntimeError):
     """
     """
 
 
-class NoneError(RollItRuntimeError):
+class NoneError(RollitRuntimeError):
     """
     """

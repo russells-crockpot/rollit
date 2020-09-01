@@ -4,8 +4,8 @@
 from contextlib import suppress
 
 from ..ast import elements, constants, is_valid_iterable
-from ..exceptions import RollItTypeError
-from ..internal_objects import Roll, Bag, OopsException, RestartException
+from ..exceptions import RollitTypeError
+from ..internal_objects import Roll, Bag, OopsException, RestartException, LeaveException
 from ..language_ref import OPERATORS
 
 __all__ = ()
@@ -89,7 +89,7 @@ def _(self, context):
             try:
                 del base[last]
             except TypeError:
-                raise RollItTypeError()
+                raise RollitTypeError()
     else:
         del context[to_clear]
 
@@ -106,12 +106,21 @@ def _(self, context):
 
 @elements.Leave.evaluator
 def _(self, context):
-    raise NotImplementedError()
+    raise LeaveException()
 
 
 @elements.Modify.evaluator
 def _(self, context):
-    raise NotImplementedError()
+    context.scope.subject = context(self.subject)
+    for name, args, _ in self.modifiers:
+        modifier = context(name)
+        try:
+            modifier.modify(*(context(a) for a in args),
+                            subject=context.scope.subject,
+                            context=context)
+        except LeaveException:
+            continue
+    return context.scope.subject
 
 
 @elements.Load.evaluator

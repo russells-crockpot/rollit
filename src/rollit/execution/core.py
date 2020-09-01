@@ -6,13 +6,13 @@ from .. import grammar
 from ..ast import actions, elements, flatten_tuple, is_valid_iterable, \
         ModelElement, SingleValueElement
 from ..ast.elements import StringLiteral
-from ..exceptions import RollItTypeError, NoneError, CannotReduceError, RollitIndexError, \
+from ..exceptions import RollitTypeError, NoneError, CannotReduceError, RollitIndexError, \
         RollitReferenceError
 from .base import DEFAULT_SEARCH_PATH
 from .scope import Scope
 from .towers import DefaultTower
 from ..internal_objects import LeaveException, RestartException, OopsException
-from . import load_evaluators as _  # pylint: disable=unused-import
+from . import stdlib, load_evaluators as _  # pylint: disable=unused-import
 
 __all__ = ['ExecutionEnvironment', 'ExecutionContext']
 
@@ -65,11 +65,19 @@ class ExecutionContext:
     def __init__(self, env):
         self._env = env
         self._root_scope = self._scope = Scope()
+        self._root_scope.load(stdlib.the_library)
 
     def new_scope(self, **kwargs):
         """
         """
-        return Scope(self._scope, **kwargs)
+        self._scope = self._scope.child(**kwargs)
+        return self._scope
+
+    @property
+    def scope(self):
+        """
+        """
+        return self._scope
 
     def __contains__(self, name):
         return name in self._scope
@@ -158,7 +166,7 @@ class ExecutionContext:
                     raise NoneError()
                 obj = obj[item]
             except TypeError:
-                raise RollItTypeError()
+                raise RollitTypeError()
         return obj
 
     def evaluate_children(self, obj):
@@ -202,7 +210,7 @@ class ExecutionContext:
                 return self.access(accessing, self.reduce(accessor))
             return accessing[accessor]
         except TypeError:
-            raise RollItTypeError()
+            raise RollitTypeError()
         except (AttributeError, KeyError):
             raise RollitReferenceError()
         except IndexError:

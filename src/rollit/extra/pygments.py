@@ -18,7 +18,7 @@ class RollitLexer(RegexLexer):
     """
 
     name = 'rollit'
-    aliases = ['RollIt']
+    aliases = ['Rollit']
     filenames = ['*.rollit', '*.ri']
     mimetypes = ['application/x-rollit']
     flags = re.MULTILINE | re.UNICODE

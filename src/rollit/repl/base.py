@@ -6,7 +6,7 @@ from collections import deque
 from abc import ABCMeta, abstractmethod
 
 from ..ast import is_valid_iterable
-from ..exceptions import RollItException
+from ..exceptions import RollitException
 from ..grammar import ParseError
 from ..internal_objects import Roll
 
@@ -78,24 +78,25 @@ class BaseRepl(metaclass=ABCMeta):
     def run(self):
         """
         """
-        try:
-            while True:
-                try:
-                    self.input_buffer.clear()
-                    user_input = self.next_statement()
-                    if not user_input.strip().strip('|'):
-                        continue
-                    results = self.execution_env.run(user_input)
-                    if not is_valid_iterable(results) or isinstance(results, Roll):
-                        results = (results,)
-                    for result in results:
-                        if isinstance(result, str):
-                            result = f"'{result}'"
-                        self.print_result(result)
-                except (RollItException, ParseError) as e:
-                    self.print_error(e)
-        except (KeyboardInterrupt, EOFError):
-            return
+        while True:
+            try:
+                self.input_buffer.clear()
+                user_input = self.next_statement()
+                if not user_input.strip().strip('|'):
+                    continue
+                results = self.execution_env.run(user_input)
+                if not is_valid_iterable(results) or isinstance(results, Roll):
+                    results = (results,)
+                for result in results:
+                    if isinstance(result, str):
+                        result = f"'{result}'"
+                    self.print_result(result)
+            except (RollitException, ParseError) as e:
+                self.print_error(e)
+            except (KeyboardInterrupt, EOFError):
+                return
+            except Exception:
+                traceback.print_exc()
 
 
 class Repl(BaseRepl):

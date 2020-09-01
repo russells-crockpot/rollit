@@ -98,9 +98,11 @@ def _string_literal_preeval(obj):
 StringLiteral.preevaluate = _string_literal_preeval
 
 # Loops
-UntilDo = create_model_element_type('UntilDo', ('name', 'until', 'do', 'otherwise'))
+UntilDo = create_model_element_type('UntilDo', ('name', 'until', 'do', 'otherwise'),
+                                    specs=ElementSpecs(new_scope=True, isolate_scope=True))
 """ """
-ForEvery = create_model_element_type('ForEvery', ('name', 'item_name', 'iterable', 'do'))
+ForEvery = create_model_element_type('ForEvery', ('name', 'item_name', 'iterable', 'do'),
+                                     specs=ElementSpecs(new_scope=True, isolate_scope=True))
 """ """
 Restart = create_model_element_type('Restart', ('location_specifier', 'target'))
 """ """
@@ -114,11 +116,15 @@ Oops = create_model_element_type('Oops')
 """ """
 
 # Modifiers
-Modify = create_model_element_type('Modify', ('subject', 'modifiers'))
+Modify = create_model_element_type('Modify', ('subject', 'modifiers'),
+                                   specs=ElementSpecs(new_scope=True, isolate_scope=True))
 """ """
 ModifierCall = create_model_element_type('ModifierCall', ('modifier', 'args'))
 """ """
-ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 'definition'))
+ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 'definition'),
+                                        specs=ElementSpecs(new_scope=True,
+                                                           isolate_scope=True,
+                                                           retain_scope=True))
 """ """
 Leave = create_model_element_type('Leave', constant=True)
 """ """

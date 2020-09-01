@@ -4,7 +4,8 @@ import sys
 from collections import ChainMap
 
 from ..ast import elements
-from ..exceptions import InvalidNameError, NoSuchLoopError, RollItSyntaxError
+from ..exceptions import InvalidNameError, NoSuchLoopError, RollitSyntaxError
+from ..internal_objects import Bag
 from .base import NoSubject
 
 if sys.version_info.minor >= 8:
@@ -33,11 +34,11 @@ class Scope:
         self.subject = subject
         self._loop = loop
         if not self.parent:
-            self._loops = ChainMap()
-            self._variables = ChainMap()
+            self._loops = ChainMap(Bag())
+            self._variables = ChainMap(Bag())
         else:
-            self._loops = self.parent._loops.new_child()
-            self._variables = self.parent._variables.new_child()
+            self._loops = ChainMap(Bag(), *self.parent._loops.maps)
+            self._variables = ChainMap(Bag(), *self.parent._variables.maps)
             self.subject = subject if subject is not NoSubject else self.parent.subject
             self.error = error if error is not None else self.parent.error
             self._loop = loop if loop is not None else self.parent._loop
@@ -59,16 +60,21 @@ class Scope:
         except KeyError:
             raise NoSuchLoopError(name) from None
 
+    def load(self, bag):
+        """
+        """
+        self._variables.update(bag)
+
     def __contains__(self, key):
         return key in self._variables
 
     def __getitem__(self, name):
         if name in (elements.SpecialReference.SUBJECT, '?'):
             if not self.in_modifier:
-                raise RollItSyntaxError('Cannot refer to the subject outside of a modifier!')
+                raise RollitSyntaxError('Cannot refer to the subject outside of a modifier!')
             return self.subject
         if name in (elements.SpecialReference.ROOT, '~'):
-            return self.root
+            return self._variables.maps[-1]
         if name in (elements.SpecialReference.ERROR, '#'):
             return self.error
         if name in (elements.SpecialReference.NONE, '!'):
@@ -163,3 +169,8 @@ class Scope:
             del self._loops[k]
         for a in self.__slots__:
             delattr(self, a)
+
+    def child(self, **kwargs):
+        """
+        """
+        return type(self)(self, **kwargs)

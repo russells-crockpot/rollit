@@ -1,5 +1,6 @@
 """
 """
+from abc import ABCMeta, abstractmethod
 
 __all__ = []
 
@@ -139,7 +140,25 @@ class Bag(dict):
     #TODO
 
 
-class Modifier:
+class Modifier(metaclass=ABCMeta):
     """
     """
-    __slots__ = ()
+
+    @abstractmethod
+    def modify(self, *args, scope, context):
+        """
+        """
+
+
+class PythonBasedModifier(Modifier):
+    """
+    """
+    __slots__ = ('func',)
+
+    def __init__(self, func):
+        self.func = func
+
+    def modify(self, *args, subject, context):
+        val = self.func(*args, subject=subject, context=context)
+        if val is not None:
+            context['?'] = val
