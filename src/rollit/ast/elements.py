@@ -43,6 +43,10 @@ class SpecialAccessor(ModelEnumElement):
     VALUE = '='
     EVERY = '*'
 
+    # pylint: disable=no-member, missing-function-docstring
+    def evaluate(self, context):
+        return context[self]
+
 
 class SpecialReference(ModelEnumElement):
     """
@@ -57,6 +61,17 @@ class SpecialReference(ModelEnumElement):
     # pylint: disable=no-member
     def __nonzero__(self):
         return self._name_ != 'NONE'
+
+    # pylint: disable=no-member, missing-function-docstring
+    def evaluate(self, context):
+        if self._name_ == 'NONE':
+            return None
+        return context[self._value_]
+
+    # pylint: disable=no-member, missing-function-docstring
+    @property
+    def value(self):
+        return self._value_
 
 
 class RestartLocationSpecifier(ModelEnumElement):
@@ -117,14 +132,22 @@ Oops = create_model_element_type('Oops')
 
 # Modifiers
 Modify = create_model_element_type('Modify', ('subject', 'modifiers'),
-                                   specs=ElementSpecs(new_scope=True, isolate_scope=True))
+                                   specs=ElementSpecs(
+                                       new_scope=True,
+                                       isolate_scope=True,
+                                       always_use_scope=True,
+                                   ))
 """ """
-ModifierCall = create_model_element_type('ModifierCall', ('modifier', 'args'))
+ModifierCall = create_model_element_type('ModifierCall', ('modifier', 'args'),
+                                         specs=ElementSpecs(always_use_scope=True))
 """ """
 ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 'definition'),
-                                        specs=ElementSpecs(new_scope=True,
-                                                           isolate_scope=True,
-                                                           retain_scope=True))
+                                        specs=ElementSpecs(
+                                            new_scope=True,
+                                            isolate_scope=True,
+                                            retain_scope=True,
+                                            always_use_scope=True,
+                                        ))
 """ """
 Leave = create_model_element_type('Leave', constant=True)
 """ """
@@ -142,11 +165,15 @@ Access = create_model_element_type('Access', ('accessing', 'accessors'))
 """ """
 Enlarge = create_model_element_type('Enlarge', ('size', 'value'))
 """ """
-Reduce = create_model_element_type('Reduce')
+Reduce = create_model_element_type('Reduce', specs=ElementSpecs(always_use_scope=True))
 """ """
 
 NewBag = create_model_element_type('NewBag', constant=True)
 """ """
+
+Reference = create_model_element_type('Reference')
+""" """
+Reference.register(SpecialReference)
 
 ClearValue = create_model_element_type('ClearValue')
 """ """

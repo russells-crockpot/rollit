@@ -6,7 +6,7 @@ from pygments.lexer import RegexLexer, words, bygroups, include
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
     Number, Punctuation, Whitespace
 
-from ..language_ref import KEYWORDS, OPERATORS, SPECIAL_REFERENCES, SPECIAL_ACCESSORS
+from ..langref import KEYWORDS, OPERATORS, SPECIAL_REFERENCES, SPECIAL_ACCESSORS
 
 __all__ = ['RollitLexer']
 

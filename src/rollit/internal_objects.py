@@ -2,6 +2,9 @@
 """
 from abc import ABCMeta, abstractmethod
 
+from .ast import elements
+from .exceptions import RollitTypeError
+
 __all__ = []
 
 
@@ -83,6 +86,52 @@ class Roll(list):
         roll._value = self._value
         return roll
 
+    def __getitem__(self, key):
+        if key == elements.SpecialAccessor.LENGTH:
+            return len(self)
+        if key in (elements.SpecialAccessor.VALUE, 0):
+            return self.value
+        if key == elements.SpecialAccessor.TOTAL:
+            return self.total
+        if key == elements.SpecialAccessor.EVERY:
+            raise NotImplementedError()
+        try:
+            if key >= 1:
+                key -= 1
+            return super().__getitem__(key)
+        except TypeError:
+            raise RollitTypeError() from None
+
+    def __setitem__(self, key, value):
+        if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.TOTAL):
+            raise RuntimeError()
+        if key in (elements.SpecialAccessor.VALUE, 0):
+            self.value = value
+        elif key == elements.SpecialAccessor.EVERY:
+            raise NotImplementedError()
+        else:
+            try:
+                if key >= 1:
+                    key -= 1
+                super().__setitem__(key, value)
+            except TypeError:
+                raise RollitTypeError() from None
+
+    def __delitem__(self, key):
+        if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.TOTAL):
+            raise RuntimeError()
+        if key in (elements.SpecialAccessor.VALUE, 0):
+            self.value = None
+        if key == elements.SpecialAccessor.EVERY:
+            self.clear()
+        else:
+            try:
+                if key >= 1:
+                    key -= 1
+                super().__delitem__(key)
+            except TypeError:
+                raise RollitTypeError() from None
+
     def __float__(self):
         return float(self.value)
 
@@ -137,7 +186,6 @@ class Roll(list):
 class Bag(dict):
     """
     """
-    #TODO
 
 
 class Modifier(metaclass=ABCMeta):

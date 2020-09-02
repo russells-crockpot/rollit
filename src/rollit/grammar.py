@@ -91,7 +91,7 @@ class TreeNode11(TreeNode):
         super(TreeNode11, self).__init__(text, offset, elements)
         self._ws = elements[0]
         self._ = elements[4]
-        self.special_accessors = elements[2]
+        self.special_accessor = elements[2]
 
 
 class TreeNode12(TreeNode):
@@ -1366,7 +1366,7 @@ class Grammar(object):
         if elements0 is None:
             address0 = FAILURE
         else:
-            address0 = self._actions.text(self._input, index1, self._offset, elements0)
+            address0 = self._actions.reference(self._input, index1, self._offset, elements0)
             self._offset = self._offset
         self._cache['basic_name'][index0] = (address0, self._offset)
         return address0
@@ -1720,7 +1720,7 @@ class Grammar(object):
                         self._expected.append('\'.\'')
                 if address3 is FAILURE:
                     self._offset = index3
-                    address3 = self._read_special_accessors()
+                    address3 = self._read_special_accessor()
                     if address3 is FAILURE:
                         self._offset = index3
                 self._offset = index2
@@ -1997,9 +1997,9 @@ class Grammar(object):
         self._cache['modifier_args'][index0] = (address0, self._offset)
         return address0
 
-    def _read_special_accessors(self):
+    def _read_special_accessor(self):
         address0, index0 = FAILURE, self._offset
-        cached = self._cache['special_accessors'].get(index0)
+        cached = self._cache['special_accessor'].get(index0)
         if cached:
             self._offset = cached[1]
             return cached[0]
@@ -2064,7 +2064,7 @@ class Grammar(object):
                             self._expected.append('\'=\'')
                     if address0 is FAILURE:
                         self._offset = index1
-        self._cache['special_accessors'][index0] = (address0, self._offset)
+        self._cache['special_accessor'][index0] = (address0, self._offset)
         return address0
 
     def _read_accessor(self):
@@ -2168,7 +2168,7 @@ class Grammar(object):
                         if address9 is not FAILURE:
                             elements1.append(address9)
                             address10 = FAILURE
-                            address10 = self._read_special_accessors()
+                            address10 = self._read_special_accessor()
                             if address10 is not FAILURE:
                                 elements1.append(address10)
                                 address11 = FAILURE

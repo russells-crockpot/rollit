@@ -5,14 +5,12 @@ import inspect
 from .. import grammar
 from ..ast import actions, elements, flatten_tuple, is_valid_iterable, \
         ModelElement, SingleValueElement
-from ..ast.elements import StringLiteral
 from ..exceptions import RollitTypeError, NoneError, CannotReduceError, RollitIndexError, \
         RollitReferenceError
-from .base import DEFAULT_SEARCH_PATH
+from . import stdlib
+from .base import DEFAULT_SEARCH_PATH, adjust_accessing, now_access
 from .scope import Scope
 from .towers import DefaultTower
-from ..internal_objects import LeaveException, RestartException, OopsException
-from . import stdlib, load_evaluators as _  # pylint: disable=unused-import
 
 __all__ = ['ExecutionEnvironment', 'ExecutionContext']
 
@@ -64,7 +62,7 @@ class ExecutionContext:
 
     def __init__(self, env):
         self._env = env
-        self._root_scope = self._scope = Scope()
+        self._accessing = self._root_scope = self._scope = Scope()
         self._root_scope.load(stdlib.the_library)
 
     def new_scope(self, **kwargs):
@@ -83,13 +81,13 @@ class ExecutionContext:
         return name in self._scope
 
     def __getitem__(self, name):
-        return self._scope[name]
+        return self._accessing[name]
 
     def __setitem__(self, name, value):
-        self._scope[name] = value
+        self._accessing[name] = value
 
     def __delitem__(self, name):
-        del self._scope[name]
+        del self._accessing[name]
 
     def __enter__(self):
         return self
@@ -109,30 +107,10 @@ class ExecutionContext:
     def evaluate(self, obj):
         """
         """
-        if isinstance(obj, (int, float)) or obj is None:
+        if isinstance(obj, (int, float, str)) or obj is None:
             return obj
-        if isinstance(obj, (str, elements.SpecialReference)):
-            return self[obj]
-        if isinstance(obj, elements.StringLiteral):
-            return obj.value
-        if obj.__specs__.new_scope:
-            self._scope = Scope(parent=self._scope, isolate=obj.__specs__.isolate_scope)
-        rval = None
-        try:
-            rval = obj.evaluate(self)
-        except LeaveException:
-            pass
-        except OopsException:
-            raise NotImplementedError()
-        except RestartException:
-            raise NotImplementedError()
-        if obj.__specs__.new_scope:
-            old_scope = self._scope
-            self._scope = self._scope.parent
-            if not obj.__specs__.retain_scope:
-                old_scope.destroy()
-                del old_scope
-        return rval
+        with adjust_accessing(self, obj):
+            return obj.evaluate(self)
 
     def reduce(self, obj):
         """
@@ -155,19 +133,6 @@ class ExecutionContext:
                 raise RuntimeError()
             seen.append(reduced_value)
         return seen[-1]
-
-    def access_obj(self, name, accessors):
-        """
-        """
-        obj = self[name]
-        for item in accessors:
-            try:
-                if obj is None or item not in obj:
-                    raise NoneError()
-                obj = obj[item]
-            except TypeError:
-                raise RollitTypeError()
-        return obj
 
     def evaluate_children(self, obj):
         """Evaluates all of the children of a :class:`~rollit.ast.ModelElement` and returns an
@@ -192,23 +157,23 @@ class ExecutionContext:
                          codeinfo=obj.codeinfo)
 
     #pylint: disable = too-complex
-    def _access(self, accessing, accessor):
-        if accessing in (None, elements.SpecialReference.NONE):
+    def _access(self, accessor):
+        if self._accessing in (None, elements.SpecialReference.NONE):
             raise NoneError()
         try:
             if isinstance(accessor, elements.SpecialAccessor):
                 if accessor == elements.SpecialAccessor.LENGTH:
-                    return len(accessing)
+                    return len(self._accessing)
                 if accessor == elements.SpecialAccessor.VALUE:
-                    return accessing.value
+                    return self._accessing.value
                 if accessor == elements.SpecialAccessor.TOTAL:
-                    return accessing.total
+                    return self._accessing.total
                 raise NotImplementedError()
             if isinstance(accessor, (str, int)):
-                return accessing[accessor]
+                return self._accessing[accessor]
             if isinstance(accessor, elements.Reduce):
-                return self.access(accessing, self.reduce(accessor))
-            return accessing[accessor]
+                return self.access(self._accessing, self.reduce(accessor))
+            return self._accessing[accessor]
         except TypeError:
             raise RollitTypeError()
         except (AttributeError, KeyError):
@@ -222,9 +187,8 @@ class ExecutionContext:
         if not accessors:
             return accessing
         for accessor in accessors:
-            if isinstance(accessor, ModelElement):
-                accessor = self.full_reduce(accessor)
-            if isinstance(accessor, StringLiteral):
-                accessor = accessor.value
-            accessing = self._access(accessing, accessor)
+            with now_access(self, accessing):
+                if isinstance(accessor, ModelElement):
+                    accessor = self.full_reduce(accessor)
+                accessing = self._access(accessor)
         return accessing

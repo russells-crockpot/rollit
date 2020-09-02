@@ -20,7 +20,7 @@ number  <- float / int
 string_escape   <- "\\" [\\runftvb']
 string          <- "'" (string_escape / [^'])* "'"      %string
 
-basic_name  <- [a-zA-Z_] [a-zA-Z_0-9]*                  %text
+basic_name  <- [a-zA-Z_] [a-zA-Z_0-9]*                  %reference
 name        <- '$'                                      %special_ref
              / '?'                                      %special_ref
              / '~'                                      %special_ref
@@ -31,16 +31,16 @@ name        <- '$'                                      %special_ref
 empty_bag   <- @'{' _ @'.' _ @'}' _                                     %new_bag
 enlarge <- @'{' _ws expression? _ws '@' _ws expression? _ws @'}' _      %enlarge
 
-reduce  <- @'{' _ws !('.' / special_accessors)
+reduce  <- @'{' _ws !('.' / special_accessor)
            expression _ws @'}' _                                        %reduce
 
 modifier_call   <- @'->' _ access _ modifier_args?                      %modifier_call
 modifier_args   <- @'(' _ws (expression _ ',' _ws )*
                    expression ? _  @')' _                               %arg_list
 
-special_accessors   <- '#' / '*' / '+' / '='
-accessor            <- _ws @'.' _ basic_name _
-                     / _ws @'.' @'{' _ special_accessors _ @'}' _       %special_accessor
+special_accessor    <- '#' / '*' / '+' / '='
+accessor            <- _ws @'.' _ basic_name  _
+                     / _ws @'.' @'{' _ special_accessor _ @'}' _        %special_accessor
                      / _ws @'.' reduce _
 access              <- reduce_expr accessor+                            %access
                      / name

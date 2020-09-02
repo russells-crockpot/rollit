@@ -3,10 +3,11 @@
 """
 from contextlib import suppress
 
+from .base import now_access
 from ..ast import elements, constants, is_valid_iterable
 from ..exceptions import RollitTypeError
 from ..internal_objects import Roll, Bag, OopsException, RestartException, LeaveException
-from ..language_ref import OPERATORS
+from ..langref import OPERATORS
 
 __all__ = ()
 
@@ -19,21 +20,30 @@ def _(self, context):
 
 @elements.Assignment.evaluator
 def _(self, context):
-    if isinstance(self.target, str):
-        context[self.target] = context(self.value)
+    if isinstance(self.target, elements.Reference):
+        context[self.target.value] = context(self.value)
     else:
-        target = context.access_obj(self.target.accessing, self.target.accessors[:-1])
+        # target = context.access_obj(self.target.accessing, self.target.accessors[:-1])
+        target = context(
+            elements.Access(self.target.accessing,
+                            self.target.accessors[:-1],
+                            codeinfo=self.target.codeinfo))
         final_accessor = context.full_reduce(self.target.accessors[-1])
+        if isinstance(self.target, elements.Reference):
+            final_accessor = final_accessor.value
         target[final_accessor] = context(self.value)
 
 
 @elements.Access.evaluator
 def _(self, context):
-    if isinstance(self.accessing, str):
-        current_item = context[self.accessing]
-    else:
-        current_item = context(self.accessing)
-    return context.access(current_item, *self.accessors)
+    accessing = context(self.accessing)
+    for accessor in self.accessors:
+        if isinstance(accessor, elements.Reduce):
+            accessing = accessing[context(accessor)]
+        else:
+            with now_access(context, accessing):
+                accessing = context(accessor)
+    return accessing
 
 
 @elements.Enlarge.evaluator
@@ -92,6 +102,17 @@ def _(self, context):
                 raise RollitTypeError()
     else:
         del context[to_clear]
+
+
+@elements.StringLiteral.evaluator
+@elements.StringLiteral.reducer
+def _(self, context):
+    return self.value
+
+
+@elements.Reference.evaluator
+def _(self, context):
+    return context[self.value]
 
 
 @elements.Oops.evaluator
@@ -180,3 +201,8 @@ def _(self, context):
 def _(self, context):
     number_of_dice = context(self.number_of_dice)
     return Roll([context.roll(context(self.sides)) for _ in range(number_of_dice)])
+
+
+@elements.Reference.reducer
+def _(self, context):
+    return context.reduce(context(self))

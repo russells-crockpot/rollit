@@ -5,6 +5,9 @@ from collections import namedtuple
 __all__ = [
     'KEYWORDS',
     'OPERATORS',
+    'KEYWORD_SET',
+    'SPECIAL_ACCESSORS',
+    'SPECIAL_REFERENCES',
 ]
 
 
@@ -66,6 +69,8 @@ KEYWORDS = _create_holder(
 )
 """
 """
+
+KEYWORD_SET = frozenset(KEYWORDS)
 
 OPERATORS = _create_holder(
     'Operators',

@@ -42,22 +42,23 @@ DeferEvaluation = __create_defer_evaluation()
 """ """
 del __create_defer_evaluation
 
-ElementSpecs = namedtuple(
-    'ElementSpecs',
-    ('predicate_info', 'intern_strings', 'new_scope', 'isolate_scope', 'retain_scope'),
-    defaults=((), True, False, False, False))
+ElementSpecs = namedtuple('ElementSpecs', ('predicate_info', 'intern_strings', 'new_scope',
+                                           'isolate_scope', 'retain_scope', 'always_use_scope'),
+                          defaults=((), True, False, False, False, False))
 """ """
 
 
-class CodeInfo(namedtuple('_CodeInfoBase', ('script', 'start_pos', 'end_pos'))):
+class CodeInfo(namedtuple('_CodeInfoBase', ('text', 'start_pos', 'end_pos'))):
     """
     """
 
-    @property
-    def text(self):
-        """
-        """
-        return self.script[self.start_pos:self.end_pos]
+    def __new__(cls, script, start_pos, end_pos):
+        return super().__new__(
+            cls,
+            text=script[start_pos:end_pos],
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
 
 
 class ModelElementMeta(ABCMeta):
@@ -192,7 +193,7 @@ class SingleValueElement(namedtuple('_SingleValueElementBase', ('value', 'codein
         return f'<{type(self).__name__}: {self.value}>'
 
     def __repr__(self):
-        return f'{type(self).__name__}({self.value!r})'
+        return f'{type(self).__name__}({self.value!r}, codeinfo={self.codeinfo!r})'
 
     def _to_test_dict(self):
         return {'_class': type(self).__name__, 'value': self.value}

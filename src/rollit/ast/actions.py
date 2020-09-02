@@ -8,6 +8,7 @@ from contextlib import suppress
 
 from . import constants, elements, internal, util
 from .base import CodeInfo
+from .. import langref
 from ..exceptions import InvalidNameError
 from ..grammar import TreeNode
 
@@ -111,6 +112,14 @@ def string(text, start, end, values, codeinfo):
                                      text[start + 1:end - 1]),
         codeinfo=codeinfo,
     )
+
+
+@add_codeinfo
+def reference(text, start, end, values, codeinfo):
+    value = text[start:end]
+    if value in langref.KEYWORD_SET:
+        return None
+    return elements.Reference(value, codeinfo=codeinfo)
 
 
 def text(text, start, end, values):

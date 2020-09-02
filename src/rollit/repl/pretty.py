@@ -11,7 +11,7 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from pygments.styles import get_style_by_name
 
 from .base import BaseRepl
-from ..language_ref import KEYWORDS
+from ..langref import KEYWORDS
 from ..extra.pygments import RollitLexer
 
 __all__ = []
