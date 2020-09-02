@@ -171,7 +171,7 @@ def _(self, context):
 def _(self, context):
 
     def _before():
-        if not context(self.until):
+        if context(self.until):
             if self.otherwise:
                 context(self.otherwise)
             return True
