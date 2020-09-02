@@ -30,12 +30,14 @@ class Scope:
         """
         self.parent = parent
         self._isolated = isolate
-        self.error = error
-        self.subject = subject
         self._loop = loop
+        self._error = None
+        self._subject = NoSubject
         if not self.parent:
             self._loops = ChainMap(Bag())
             self._variables = ChainMap(Bag())
+            self.error = error
+            self.subject = subject
         else:
             self._loops = ChainMap(Bag(), *self.parent._loops.maps)
             self._variables = ChainMap(Bag(), *self.parent._variables.maps)
@@ -63,6 +65,9 @@ class Scope:
     def load(self, bag):
         """
         """
+        # pylint: disable=protected-access
+        if isinstance(bag, Scope):
+            bag = bag._variables
         self._variables.update(bag)
 
     def __contains__(self, key):
@@ -75,6 +80,8 @@ class Scope:
             return self.subject
         if name in (elements.SpecialReference.ROOT, '~'):
             return self._variables.maps[-1]
+        if name in (elements.SpecialReference.LOCAL, '$'):
+            return Bag(self._variables)
         if name in (elements.SpecialReference.ERROR, '#'):
             return self.error
         if name in (elements.SpecialReference.NONE, '!'):
@@ -86,8 +93,10 @@ class Scope:
 
     def __setitem__(self, name, value):
         if name == '?':
-            self._subject = value
-            return
+            self.subject = value
+            if self.parent and self.parent.subject is not NoSubject:
+                self.parent['?'] = value
+                return
         if self.parent and not self._isolated and name in self.parent:
             self.parent[name] = value
         self._variables[name] = value
@@ -118,6 +127,10 @@ class Scope:
 
     @error.setter
     def error(self, value):
+        if not value:
+            self._variables.pop('#', None)
+        else:
+            self._variables['#'] = value
         self._error = value
 
     @property
@@ -128,6 +141,10 @@ class Scope:
 
     @subject.setter
     def subject(self, value):
+        if value is NoSubject:
+            self._variables.pop('?', None)
+        else:
+            self._variables['?'] = value
         self._subject = value
 
     @cached_property

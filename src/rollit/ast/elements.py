@@ -135,7 +135,6 @@ Modify = create_model_element_type('Modify', ('subject', 'modifiers'),
                                    specs=ElementSpecs(
                                        new_scope=True,
                                        isolate_scope=True,
-                                       always_use_scope=True,
                                    ))
 """ """
 ModifierCall = create_model_element_type('ModifierCall', ('modifier', 'args'),
@@ -146,7 +145,6 @@ ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 
                                             new_scope=True,
                                             isolate_scope=True,
                                             retain_scope=True,
-                                            always_use_scope=True,
                                         ))
 """ """
 Leave = create_model_element_type('Leave', constant=True)
@@ -193,11 +191,8 @@ class Dice(namedtuple('_DiceBase', ('number_of_dice', 'sides', 'codeinfo')), Mod
     """
     """
 
+    def __repr__(self):
+        return str(self)
+
     def __str__(self):
-        numdice = self.number_of_dice
-        if isinstance(numdice, str):
-            numdice = f'{{{numdice}}}'
-        sides = self.sides
-        if isinstance(sides, str):
-            sides = f'{{{sides}}}'
-        return f'{numdice}d{sides}'
+        return self.codeinfo.text

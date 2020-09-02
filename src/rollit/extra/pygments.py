@@ -1,3 +1,4 @@
+# pylint: disable=no-member
 """
 """
 import re
@@ -42,7 +43,7 @@ class RollitLexer(RegexLexer):
             (_special_refs, Keyword.Constant),
             (words(KEYWORDS.load, suffix=r'\b'), Keyword.Namespace),
             (words(KEYWORDS, suffix=r'\b'), Name.Builtin),
-            (r'\s*(<-)(?:\s*)', bygroups(Operator, Text), 'modifier_params'),
+            # (r'\s*(<-)(?:\s*)', bygroups(Operator, Text), 'modifier_params'),
             (r'\{', Punctuation, 'reduce'),
             (r"'", String, 'string'),
             (words(basic_ops, suffix=r'\b'), Operator),

@@ -3,10 +3,10 @@
 """
 from contextlib import suppress
 
-from .base import now_access
 from ..ast import elements, constants, is_valid_iterable
 from ..exceptions import RollitTypeError
-from ..internal_objects import Roll, Bag, OopsException, RestartException, LeaveException
+from ..internal_objects import Roll, Bag, OopsException, RestartException, LeaveException, \
+        RollitBasedModifier
 from ..langref import OPERATORS
 
 __all__ = ()
@@ -41,7 +41,7 @@ def _(self, context):
         if isinstance(accessor, elements.Reduce):
             accessing = accessing[context(accessor)]
         else:
-            with now_access(context, accessing):
+            with context.now_access(accessing):
                 accessing = context(accessor)
     return accessing
 
@@ -136,12 +136,9 @@ def _(self, context):
     for name, args, _ in self.modifiers:
         modifier = context(name)
         try:
-            modifier.modify(*(context(a) for a in args),
-                            subject=context.scope.subject,
-                            context=context)
+            modifier.modify(*(context(a) for a in args), context=context)
         except LeaveException:
             continue
-    return context.scope.subject
 
 
 @elements.Load.evaluator
@@ -156,7 +153,12 @@ def _(self, context):
 
 @elements.ModifierDef.evaluator
 def _(self, context):
-    raise NotImplementedError()
+    modifier = RollitBasedModifier(self, context.scope)
+    if self.target in (None, elements.SpecialReference.NONE):
+        return modifier
+    with context.now_access(context.scope.parent):
+        context(elements.Assignment(self.target, modifier, codeinfo=self.codeinfo))
+    return None
 
 
 @elements.Restart.evaluator

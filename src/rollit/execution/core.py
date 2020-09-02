@@ -1,6 +1,7 @@
 """
 """
 import inspect
+from contextlib import contextmanager, nullcontext
 
 from .. import grammar
 from ..ast import actions, elements, flatten_tuple, is_valid_iterable, \
@@ -8,7 +9,7 @@ from ..ast import actions, elements, flatten_tuple, is_valid_iterable, \
 from ..exceptions import RollitTypeError, NoneError, CannotReduceError, RollitIndexError, \
         RollitReferenceError
 from . import stdlib
-from .base import DEFAULT_SEARCH_PATH, adjust_accessing, now_access
+from .base import DEFAULT_SEARCH_PATH
 from .scope import Scope
 from .towers import DefaultTower
 
@@ -62,20 +63,32 @@ class ExecutionContext:
 
     def __init__(self, env):
         self._env = env
-        self._accessing = self._root_scope = self._scope = Scope()
+        self.__accessing = self._root_scope = self._scope = Scope()
         self._root_scope.load(stdlib.the_library)
 
-    def new_scope(self, **kwargs):
-        """
-        """
-        self._scope = self._scope.child(**kwargs)
-        return self._scope
+    @property
+    def _accessing(self):
+        return self.__accessing
+
+    @_accessing.setter
+    def _accessing(self, value):
+        if value is None:
+            raise ValueError()
+        self.__accessing = value
 
     @property
     def scope(self):
         """
         """
         return self._scope
+
+    @scope.setter
+    def scope(self, value):
+        if value is None:
+            raise ValueError()
+        if value == elements.SpecialReference.ROOT:
+            self._scope = self._root_scope
+        self._scope = value
 
     def __contains__(self, name):
         return name in self._scope
@@ -107,9 +120,9 @@ class ExecutionContext:
     def evaluate(self, obj):
         """
         """
-        if isinstance(obj, (int, float, str)) or obj is None:
+        if not isinstance(obj, ModelElement):
             return obj
-        with adjust_accessing(self, obj):
+        with self.adjust_accessing(obj):
             return obj.evaluate(self)
 
     def reduce(self, obj):
@@ -187,8 +200,42 @@ class ExecutionContext:
         if not accessors:
             return accessing
         for accessor in accessors:
-            with now_access(self, accessing):
+            with self.now_access(accessing):
                 if isinstance(accessor, ModelElement):
                     accessor = self.full_reduce(accessor)
                 accessing = self._access(accessor)
         return accessing
+
+    @contextmanager
+    def now_access(self, accessing):
+        """
+        """
+        if self._accessing != accessing:
+            old_accessing = self._accessing
+            self._accessing = accessing
+            yield self._accessing
+            self._accessing = old_accessing
+        else:
+            yield
+
+    def adjust_accessing(self, obj):
+        """
+        """
+        if obj.__specs__.always_use_scope:
+            return self.now_access(self._scope)
+        if obj.__specs__.new_scope:
+            return self.new_scope(isolate=obj.__specs__.isolate_scope)
+        return nullcontext()
+
+    @contextmanager
+    def new_scope(self, parent_scope=None, **kwargs):
+        """
+        """
+        if not parent_scope:
+            parent_scope = self.scope
+        old_accessing = self._accessing
+        old_scope = self._scope
+        self._scope = self._accessing = parent_scope.child(**kwargs)
+        yield self._scope
+        self._accessing = old_accessing
+        self._scope = old_scope

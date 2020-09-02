@@ -1,9 +1,12 @@
 """
 """
 from abc import ABCMeta, abstractmethod
+from collections import namedtuple
+from contextlib import suppress
 
-from .ast import elements
+from .ast import elements, is_valid_iterable
 from .exceptions import RollitTypeError
+from .execution.base import NoSubject
 
 __all__ = []
 
@@ -193,20 +196,84 @@ class Modifier(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def modify(self, *args, scope, context):
+    def modify(self, *args, context):
         """
         """
+
+    @property
+    @abstractmethod
+    def display_string(self):
+        """
+        """
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return self.display_string
 
 
 class PythonBasedModifier(Modifier):
     """
     """
-    __slots__ = ('func',)
+    __slots__ = (
+        '_display_string',
+        'func',
+    )
 
     def __init__(self, func):
         self.func = func
+        self._display_string = f'[-built-in modifier: {self.func.__name__.lstrip("_")}-]'
 
-    def modify(self, *args, subject, context):
-        val = self.func(*args, subject=subject, context=context)
-        if val is not None:
-            context['?'] = val
+    def modify(self, *args, context):
+        val = self.func(*args, subject=context.scope.subject, context=context)
+        if val not in (None, NoSubject):
+            context.scope.subject = val
+
+    @property
+    def display_string(self):
+        return self._display_string
+
+    @display_string.setter
+    def display_string(self, value):
+        self._display_string = value
+
+
+class RollitBasedModifier(
+        namedtuple('_RollitBasedModifierBase', ('parameters', 'body', 'scope', 'display_string')),
+        Modifier):
+    """
+    """
+
+    def __new__(cls, modifier_def, scope):
+        if modifier_def.target in (None, elements.SpecialReference.NONE):
+            display_string = '[-lambda-]'
+        else:
+            display_string = f'[-modifier: {modifier_def.target.codeinfo.text}-]'
+        body = modifier_def.definition
+        if not is_valid_iterable(body):
+            body = (body,)
+        return super().__new__(cls,
+                               display_string=display_string,
+                               parameters=modifier_def.parameters,
+                               body=body,
+                               scope=scope)
+
+    def modify(self, *args, context):
+        scope = context.scope
+        with context.new_scope(scope, isolate=True) as call_scope:
+            call_scope.load(self.scope)
+            call_scope.subject = scope.subject
+            call_scope.error = scope.error
+            if args is not None:
+                call_scope.load(dict(zip(self.parameters, args)))
+            with suppress(LeaveException):
+                for statement in self.body:
+                    context(statement)
+            scope.subject = call_scope.subject
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return self.display_string
