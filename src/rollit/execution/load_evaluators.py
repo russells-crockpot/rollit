@@ -139,6 +139,7 @@ def _(self, context):
             modifier.modify(*(context(a) for a in args), context=context)
         except LeaveException:
             continue
+    return context.scope.subject
 
 
 @elements.Load.evaluator

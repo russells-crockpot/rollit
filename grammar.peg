@@ -38,7 +38,7 @@ modifier_call   <- @'->' _ access _ modifier_args?                      %modifie
 modifier_args   <- @'(' _ws (expression _ ',' _ws )*
                    expression ? _  @')' _                               %arg_list
 
-special_accessor    <- '#' / '*' / '+' / '='
+special_accessor    <- '#' / '*' / '+' / '=' / '^'
 accessor            <- _ws @'.' _ basic_name  _
                      / _ws @'.' @'{' _ special_accessor _ @'}' _        %special_accessor
                      / _ws @'.' reduce _
@@ -167,5 +167,6 @@ statement   <- eos
                expression _ @'has' _ loop_body                                  %for_every
              / @'until' _ loop_name? _ expression _ loop_body _ws
                (except_when _ws)* otherwise?                                    %until_do
+             / access _ @'=' &'->' _ modifier_call+                             %modify_and_assign
              / access _ assign_op _ws expression                                %assignment
              / expression _ eos

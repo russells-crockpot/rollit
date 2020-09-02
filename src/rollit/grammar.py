@@ -501,15 +501,22 @@ class TreeNode66(TreeNode):
     def __init__(self, text, offset, elements):
         super(TreeNode66, self).__init__(text, offset, elements)
         self.access = elements[0]
+        self._ = elements[3]
+
+
+class TreeNode67(TreeNode):
+    def __init__(self, text, offset, elements):
+        super(TreeNode67, self).__init__(text, offset, elements)
+        self.access = elements[0]
         self._ = elements[1]
         self.assign_op = elements[2]
         self._ws = elements[3]
         self.expression = elements[4]
 
 
-class TreeNode67(TreeNode):
+class TreeNode68(TreeNode):
     def __init__(self, text, offset, elements):
-        super(TreeNode67, self).__init__(text, offset, elements)
+        super(TreeNode68, self).__init__(text, offset, elements)
         self.expression = elements[0]
         self._ = elements[1]
         self.eos = elements[2]
@@ -2064,6 +2071,21 @@ class Grammar(object):
                             self._expected.append('\'=\'')
                     if address0 is FAILURE:
                         self._offset = index1
+                        chunk4, max4 = None, self._offset + 1
+                        if max4 <= self._input_size:
+                            chunk4 = self._input[self._offset:max4]
+                        if chunk4 == '^':
+                            address0 = TreeNode(self._input[self._offset:self._offset + 1], self._offset, [])
+                            self._offset = self._offset + 1
+                        else:
+                            address0 = FAILURE
+                            if self._offset > self._failure:
+                                self._failure = self._offset
+                                self._expected = []
+                            if self._offset == self._failure:
+                                self._expected.append('\'^\'')
+                        if address0 is FAILURE:
+                            self._offset = index1
         self._cache['special_accessor'][index0] = (address0, self._offset)
         return address0
 
@@ -6424,17 +6446,64 @@ class Grammar(object):
                                                                     if address61 is not FAILURE:
                                                                         elements14.append(address61)
                                                                         address62 = FAILURE
-                                                                        address62 = self._read_assign_op()
+                                                                        chunk15, max15 = None, self._offset + 1
+                                                                        if max15 <= self._input_size:
+                                                                            chunk15 = self._input[self._offset:max15]
+                                                                        if chunk15 == '=':
+                                                                            address62 = TreeNode(self._input[self._offset:self._offset + 1], self._offset, [])
+                                                                            self._offset = self._offset + 1
+                                                                        else:
+                                                                            address62 = FAILURE
+                                                                            if self._offset > self._failure:
+                                                                                self._failure = self._offset
+                                                                                self._expected = []
+                                                                            if self._offset == self._failure:
+                                                                                self._expected.append('\'=\'')
                                                                         if address62 is not FAILURE:
-                                                                            elements14.append(address62)
                                                                             address63 = FAILURE
-                                                                            address63 = self._read__ws()
+                                                                            index21 = self._offset
+                                                                            chunk16, max16 = None, self._offset + 2
+                                                                            if max16 <= self._input_size:
+                                                                                chunk16 = self._input[self._offset:max16]
+                                                                            if chunk16 == '->':
+                                                                                address63 = TreeNode(self._input[self._offset:self._offset + 2], self._offset, [])
+                                                                                self._offset = self._offset + 2
+                                                                            else:
+                                                                                address63 = FAILURE
+                                                                                if self._offset > self._failure:
+                                                                                    self._failure = self._offset
+                                                                                    self._expected = []
+                                                                                if self._offset == self._failure:
+                                                                                    self._expected.append('\'->\'')
+                                                                            self._offset = index21
+                                                                            if address63 is not FAILURE:
+                                                                                address63 = TreeNode(self._input[self._offset:self._offset], self._offset, [])
+                                                                                self._offset = self._offset
+                                                                            else:
+                                                                                address63 = FAILURE
                                                                             if address63 is not FAILURE:
                                                                                 elements14.append(address63)
                                                                                 address64 = FAILURE
-                                                                                address64 = self._read_expression()
+                                                                                address64 = self._read__()
                                                                                 if address64 is not FAILURE:
                                                                                     elements14.append(address64)
+                                                                                    address65 = FAILURE
+                                                                                    remaining2, index22, elements15, address66 = 1, self._offset, [], True
+                                                                                    while address66 is not FAILURE:
+                                                                                        address66 = self._read_modifier_call()
+                                                                                        if address66 is not FAILURE:
+                                                                                            elements15.append(address66)
+                                                                                            remaining2 -= 1
+                                                                                    if remaining2 <= 0:
+                                                                                        address65 = TreeNode(self._input[index22:self._offset], index22, elements15)
+                                                                                        self._offset = self._offset
+                                                                                    else:
+                                                                                        address65 = FAILURE
+                                                                                    if address65 is not FAILURE:
+                                                                                        elements14.append(address65)
+                                                                                    else:
+                                                                                        elements14 = None
+                                                                                        self._offset = index20
                                                                                 else:
                                                                                     elements14 = None
                                                                                     self._offset = index20
@@ -6453,39 +6522,82 @@ class Grammar(object):
                                                                 if elements14 is None:
                                                                     address0 = FAILURE
                                                                 else:
-                                                                    address0 = self._actions.assignment(self._input, index20, self._offset, elements14)
+                                                                    address0 = self._actions.modify_and_assign(self._input, index20, self._offset, elements14)
                                                                     self._offset = self._offset
                                                                 if address0 is FAILURE:
                                                                     self._offset = index1
-                                                                    index21, elements15 = self._offset, []
-                                                                    address65 = FAILURE
-                                                                    address65 = self._read_expression()
-                                                                    if address65 is not FAILURE:
-                                                                        elements15.append(address65)
-                                                                        address66 = FAILURE
-                                                                        address66 = self._read__()
-                                                                        if address66 is not FAILURE:
-                                                                            elements15.append(address66)
-                                                                            address67 = FAILURE
-                                                                            address67 = self._read_eos()
-                                                                            if address67 is not FAILURE:
-                                                                                elements15.append(address67)
+                                                                    index23, elements16 = self._offset, []
+                                                                    address67 = FAILURE
+                                                                    address67 = self._read_access()
+                                                                    if address67 is not FAILURE:
+                                                                        elements16.append(address67)
+                                                                        address68 = FAILURE
+                                                                        address68 = self._read__()
+                                                                        if address68 is not FAILURE:
+                                                                            elements16.append(address68)
+                                                                            address69 = FAILURE
+                                                                            address69 = self._read_assign_op()
+                                                                            if address69 is not FAILURE:
+                                                                                elements16.append(address69)
+                                                                                address70 = FAILURE
+                                                                                address70 = self._read__ws()
+                                                                                if address70 is not FAILURE:
+                                                                                    elements16.append(address70)
+                                                                                    address71 = FAILURE
+                                                                                    address71 = self._read_expression()
+                                                                                    if address71 is not FAILURE:
+                                                                                        elements16.append(address71)
+                                                                                    else:
+                                                                                        elements16 = None
+                                                                                        self._offset = index23
+                                                                                else:
+                                                                                    elements16 = None
+                                                                                    self._offset = index23
                                                                             else:
-                                                                                elements15 = None
-                                                                                self._offset = index21
+                                                                                elements16 = None
+                                                                                self._offset = index23
                                                                         else:
-                                                                            elements15 = None
-                                                                            self._offset = index21
+                                                                            elements16 = None
+                                                                            self._offset = index23
                                                                     else:
-                                                                        elements15 = None
-                                                                        self._offset = index21
-                                                                    if elements15 is None:
+                                                                        elements16 = None
+                                                                        self._offset = index23
+                                                                    if elements16 is None:
                                                                         address0 = FAILURE
                                                                     else:
-                                                                        address0 = TreeNode67(self._input[index21:self._offset], index21, elements15)
+                                                                        address0 = self._actions.assignment(self._input, index23, self._offset, elements16)
                                                                         self._offset = self._offset
                                                                     if address0 is FAILURE:
                                                                         self._offset = index1
+                                                                        index24, elements17 = self._offset, []
+                                                                        address72 = FAILURE
+                                                                        address72 = self._read_expression()
+                                                                        if address72 is not FAILURE:
+                                                                            elements17.append(address72)
+                                                                            address73 = FAILURE
+                                                                            address73 = self._read__()
+                                                                            if address73 is not FAILURE:
+                                                                                elements17.append(address73)
+                                                                                address74 = FAILURE
+                                                                                address74 = self._read_eos()
+                                                                                if address74 is not FAILURE:
+                                                                                    elements17.append(address74)
+                                                                                else:
+                                                                                    elements17 = None
+                                                                                    self._offset = index24
+                                                                            else:
+                                                                                elements17 = None
+                                                                                self._offset = index24
+                                                                        else:
+                                                                            elements17 = None
+                                                                            self._offset = index24
+                                                                        if elements17 is None:
+                                                                            address0 = FAILURE
+                                                                        else:
+                                                                            address0 = TreeNode68(self._input[index24:self._offset], index24, elements17)
+                                                                            self._offset = self._offset
+                                                                        if address0 is FAILURE:
+                                                                            self._offset = index1
         self._cache['statement'][index0] = (address0, self._offset)
         return address0
 

@@ -201,6 +201,19 @@ def enlarge(text, start, end, values, codeinfo):
 
 @elements_to_values
 @add_codeinfo
+def modify_and_assign(text, start, end, values, codeinfo):
+    modifiers = values[-1]
+    if not util.is_valid_iterable(modifiers):
+        modifiers = (modifiers,)
+    return (elements.Assignment(
+        target=values[0],
+        value=elements.Modify(subject=values[0], modifiers=modifiers, codeinfo=codeinfo),
+        codeinfo=codeinfo,
+    ))
+
+
+@elements_to_values
+@add_codeinfo
 def assignment(text, start, end, values, codeinfo):
     target, op, value = values
     if len(op) > 1:
@@ -466,16 +479,16 @@ def modifier_def(text, start, end, values, codeinfo):
             definition = (definition,)
     if target == '!':
         target = elements.SpecialReference.NONE
-    seen = set()
-    for param in params:
-        if param in seen:
+    new_params = []
+    for param in (p.value for p in params):
+        if param in new_params:
             #TODO pretty print target
             raise InvalidNameError(f'Parameter {param} of modifier {target} is '
                                    'defined more than once!')
-        seen.add(param)
+        new_params.append(param)
     return elements.ModifierDef(
         target=target,
-        parameters=params,
+        parameters=tuple(new_params),
         definition=definition,
         codeinfo=codeinfo,
     )

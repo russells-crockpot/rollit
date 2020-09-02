@@ -1,17 +1,11 @@
 """
 """
-import sys
 from collections import ChainMap
 
 from ..ast import elements
 from ..exceptions import InvalidNameError, NoSuchLoopError, RollitSyntaxError
 from ..internal_objects import Bag
 from .base import NoSubject
-
-if sys.version_info.minor >= 8:
-    from functools import cached_property
-else:
-    cached_property = property
 
 __all__ = []
 
@@ -147,7 +141,7 @@ class Scope:
             self._variables['?'] = value
         self._subject = value
 
-    @cached_property
+    @property
     def root_loop(self):
         """
         """
@@ -155,7 +149,7 @@ class Scope:
             return self.parent.root_loop
         return self._loop
 
-    @cached_property
+    @property
     def current_loop(self):
         """
         """
@@ -163,13 +157,13 @@ class Scope:
             return self._loop
         return self.parent.current_loop
 
-    @cached_property
+    @property
     def in_modifier(self):
         """
         """
         return self._subject is not NoSubject
 
-    @cached_property
+    @property
     def root(self):
         """
         """

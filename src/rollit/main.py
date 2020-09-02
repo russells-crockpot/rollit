@@ -4,7 +4,7 @@
 import argparse
 import sys
 
-from .execution import ExecutionEnvironment
+from .execution import ExecutionEnvironment, towers
 from .repl.base import Repl
 has_pretty = False
 try:
@@ -13,9 +13,23 @@ try:
 except ImportError:
     pass
 
+_TOWER_MAP = {
+    'default': towers.DefaultTower,
+    'incremental': towers.IncrementalTower,
+    'max': towers.MaxTower,
+    'min': towers.MinTower,
+}
+
 
 def create_argparser():
     argparser = argparse.ArgumentParser(__file__, description='rollit interpreter')
+    argparser.add_argument(
+        '-t',
+        '--tower',
+        help='The tower class to use.',
+        default='default',
+        choices=['default', 'incremental', 'max', 'min'],
+    )
     argparser.add_argument('-i',
                            '--interactive',
                            help='Start in interactive mode.',
@@ -60,7 +74,7 @@ def create_argparser():
 
 def main():
     args = create_argparser().parse_args()
-    env = ExecutionEnvironment()
+    env = ExecutionEnvironment(dice_tower=_TOWER_MAP[args.tower])
     if args.script_file:
         if len(args.script_file) > 1:
             print('Only one rollit script file can be provided at at time!', file=sys.stderr)

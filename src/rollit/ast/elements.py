@@ -42,6 +42,7 @@ class SpecialAccessor(ModelEnumElement):
     TOTAL = '+'
     VALUE = '='
     EVERY = '*'
+    SIDES = '^'
 
     # pylint: disable=no-member, missing-function-docstring
     def evaluate(self, context):
@@ -196,3 +197,10 @@ class Dice(namedtuple('_DiceBase', ('number_of_dice', 'sides', 'codeinfo')), Mod
 
     def __str__(self):
         return self.codeinfo.text
+
+    def __getitem__(self, key):
+        if key in (SpecialAccessor.LENGTH, '#'):
+            return self.number_of_dice
+        if key in (SpecialAccessor.SIDES, '^'):
+            return self.sides
+        return super().__getitem__(key)

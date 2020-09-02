@@ -1,0 +1,48 @@
+name: modifiers
+categories:
+- modifiers
+tests:
+- name: modifier_calls
+  categories:
+  - modifier_calls
+  tests:
+  - statements:
+    - ['1d6 -> print', [1, 6]]
+  - statements:
+    - ['2d6 -> top', [2]]
+  - statements:
+    - ['3d6 -> bottom', [1]]
+  - statements:
+    - ['4d6 -> top(2)', [4, 3]]
+  - statements:
+    - ['5d6 -> bottom(2)', [1, 2]]
+  - statements:
+    - ['7d6 -> bottom(2)', [1, 1]]
+
+- name: modifier_defs
+  categories:
+  - modifier_defs
+  tests:
+  - statements:
+    - ['test1 <-: 1', null]
+    - ['2 -> test1', 2]
+  - statements:
+    - ['test2 <-: ? = 3', null]
+    - ['4 -> test2', 3]
+  - statements:
+    - ['test3 <-: ? += 1', null]
+    - ['2d6 -> test3', 4]
+  - statements:
+    - ['test4 <- val1 : ? += val1', null]
+    - ['3 -> test4(2)', 5]
+    - ['3 -> test4(3)', 6]
+    - ['4 -> test4(1d6) -> test4(2d6)', 10]
+  - statements:
+    - ['test5 <- val1, val2 [val1 = val1->top | val2 = val2 -> bottom | ? += val1 + val2]', null]
+    - ['1d6 -> test5(2d6, 3d6)', 11]
+    - ['{1d6} -> test5(2d6, 3d6)', 8]
+  #- statements:
+    #- ['test6 <-', null]
+    #- ['test7 <-', null]
+    #- [' -> test6', ]
+    #- [' -> test7', ]
