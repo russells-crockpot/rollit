@@ -4,9 +4,9 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
 
-from .ast import elements, is_valid_iterable
-from .exceptions import RollitTypeError
-from .execution.base import NoSubject
+from ..ast import elements, is_valid_iterable
+from ..exceptions import RollitTypeError
+from .base import NoSubject
 
 __all__ = []
 
@@ -44,6 +44,51 @@ class OopsException(RollitNonErrorException):
     #pylint: disable=super-init-not-called
     def __init__(self, value):
         self.value = value
+
+
+class Dice:
+    """
+    """
+    __slots__ = ('num_dice', 'sides')
+
+    def __init__(self, num_dice, sides, *args, **kwargs):
+        self.num_dice = num_dice
+        self.sides = sides
+
+    # pylint: disable=no-member, protected-access
+    def __getitem__(self, key):
+        if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.LENGTH._value_):
+            return self.num_dice
+        if key in (elements.SpecialAccessor.PARENT, elements.SpecialAccessor.PARENT._value_):
+            return self.sides
+        raise RollitTypeError()
+
+    # pylint: disable=no-member, protected-access
+    def __setitem__(self, key, value):
+        if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.LENGTH._value_):
+            self.num_dice = value
+        elif key in (elements.SpecialAccessor.PARENT, elements.SpecialAccessor.PARENT._value_):
+            self.sides = value
+        else:
+            raise RollitTypeError()
+
+    def reduce(self, context):
+        """
+        """
+        num_dice = context(self.num_dice)
+        return Roll([context.roll(context(self.sides)) for _ in range(num_dice)])
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        num_dice = self.num_dice
+        if not isinstance(num_dice, int):
+            num_dice = f'({num_dice.codeinfo.text})'
+        sides = self.sides
+        if not isinstance(sides, int):
+            sides = f'({sides.codeinfo.text})'
+        return f'{num_dice}d{sides}'
 
 
 class Roll(list):

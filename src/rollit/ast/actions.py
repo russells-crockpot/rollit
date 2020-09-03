@@ -67,7 +67,7 @@ def add_codeinfo(func):
 @elements_to_values
 @add_codeinfo
 def dice(text, start, end, values, codeinfo):
-    return elements.Dice(*values, codeinfo=codeinfo)
+    return elements.DiceNode(*values, codeinfo=codeinfo)
 
 
 @elements_to_values

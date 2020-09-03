@@ -31,6 +31,10 @@ tests:
     - ['3 * 3', 9]
   - statements:
     - ['4/4', 1]
+  - statements:
+    - ['1 + 2 * 3', 7]
+  - statements:
+    - ['1 * 2 + 3', 5]
 
 - name: dice
   categories:

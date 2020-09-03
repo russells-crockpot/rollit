@@ -8,7 +8,7 @@ from abc import ABCMeta, abstractmethod
 from ..ast import is_valid_iterable
 from ..exceptions import RollitException
 from ..grammar import ParseError
-from ..internal_objects import Roll
+from ..execution.objects import Roll
 
 try:
     import readline  # pylint: disable=unused-import

@@ -12,7 +12,7 @@ __all__ = [
     'BinaryOp',
     'ButIf',
     'ClearValue',
-    'Dice',
+    'DiceNode',
     'Enlarge',
     'ForEvery',
     'IfThen',
@@ -42,7 +42,7 @@ class SpecialAccessor(ModelEnumElement):
     TOTAL = '+'
     VALUE = '='
     EVERY = '*'
-    SIDES = '^'
+    PARENT = '^'
 
     # pylint: disable=no-member, missing-function-docstring
     def evaluate(self, context):
@@ -115,10 +115,10 @@ StringLiteral.preevaluate = _string_literal_preeval
 
 # Loops
 UntilDo = create_model_element_type('UntilDo', ('name', 'until', 'do', 'otherwise'),
-                                    specs=ElementSpecs(new_scope=True, isolate_scope=True))
+                                    specs=ElementSpecs(new_scope=True))
 """ """
 ForEvery = create_model_element_type('ForEvery', ('name', 'item_name', 'iterable', 'do'),
-                                     specs=ElementSpecs(new_scope=True, isolate_scope=True))
+                                     specs=ElementSpecs(new_scope=True))
 """ """
 Restart = create_model_element_type('Restart', ('location_specifier', 'target'))
 """ """
@@ -187,20 +187,5 @@ UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'),
                                   ))
 """ """
 
-
-class Dice(namedtuple('_DiceBase', ('number_of_dice', 'sides', 'codeinfo')), ModelElement):
-    """
-    """
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        return self.codeinfo.text
-
-    def __getitem__(self, key):
-        if key in (SpecialAccessor.LENGTH, '#'):
-            return self.number_of_dice
-        if key in (SpecialAccessor.SIDES, '^'):
-            return self.sides
-        return super().__getitem__(key)
+DiceNode = create_model_element_type('DiceNode', ('number_of_dice', 'sides'))
+""" """

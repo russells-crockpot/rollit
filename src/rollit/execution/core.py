@@ -9,7 +9,7 @@ from ..ast import actions, elements, flatten_tuple, is_valid_iterable, \
 from ..exceptions import RollitTypeError, NoneError, CannotReduceError, RollitIndexError, \
         RollitReferenceError
 from . import stdlib
-from .base import DEFAULT_SEARCH_PATH
+from .base import DEFAULT_SEARCH_PATH, is_atom
 from .scope import Scope
 from .towers import DefaultTower
 
@@ -128,7 +128,7 @@ class ExecutionContext:
     def reduce(self, obj):
         """
         """
-        if isinstance(obj, (int, float, str)) or obj is None:
+        if is_atom(obj):
             return obj
         try:
             return obj.reduce(self)
@@ -140,7 +140,7 @@ class ExecutionContext:
         """
         seen = []
         seen.append(self.reduce(obj))
-        while seen[-1] is not None and not isinstance(seen[-1], (str, int, float)):
+        while not is_atom(seen[-1]):
             reduced_value = self.reduce(seen[-1])
             if reduced_value in seen:
                 raise RuntimeError()
@@ -174,15 +174,7 @@ class ExecutionContext:
         if self._accessing in (None, elements.SpecialReference.NONE):
             raise NoneError()
         try:
-            if isinstance(accessor, elements.SpecialAccessor):
-                if accessor == elements.SpecialAccessor.LENGTH:
-                    return len(self._accessing)
-                if accessor == elements.SpecialAccessor.VALUE:
-                    return self._accessing.value
-                if accessor == elements.SpecialAccessor.TOTAL:
-                    return self._accessing.total
-                raise NotImplementedError()
-            if isinstance(accessor, (str, int)):
+            if isinstance(accessor, (str, int, elements.SpecialAccessor)):
                 return self._accessing[accessor]
             if isinstance(accessor, elements.Reduce):
                 return self.access(self._accessing, self.reduce(accessor))

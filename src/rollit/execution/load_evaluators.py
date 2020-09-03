@@ -5,8 +5,8 @@ from contextlib import suppress
 
 from ..ast import elements, constants, is_valid_iterable
 from ..exceptions import RollitTypeError
-from ..internal_objects import Roll, Bag, OopsException, RestartException, LeaveException, \
-        RollitBasedModifier
+from .objects import Roll, Bag, OopsException, RestartException, LeaveException, \
+        RollitBasedModifier, Dice
 from ..langref import OPERATORS
 
 __all__ = ()
@@ -23,14 +23,18 @@ def _(self, context):
     if isinstance(self.target, elements.Reference):
         context[self.target.value] = context(self.value)
     else:
-        # target = context.access_obj(self.target.accessing, self.target.accessors[:-1])
-        target = context(
-            elements.Access(self.target.accessing,
-                            self.target.accessors[:-1],
-                            codeinfo=self.target.codeinfo))
-        final_accessor = context.full_reduce(self.target.accessors[-1])
-        if isinstance(self.target, elements.Reference):
+        if len(self.target.accessors) == 1:
+            target = context(self.target.accessing)
+        else:
+            target = context(
+                elements.Access(self.target.accessing,
+                                self.target.accessors[:-1],
+                                codeinfo=self.target.codeinfo))
+        final_accessor = self.target.accessors[-1]
+        if isinstance(final_accessor, elements.Reference):
             final_accessor = final_accessor.value
+        else:
+            final_accessor = context.full_reduce(final_accessor)
         target[final_accessor] = context(self.value)
 
 
@@ -52,9 +56,14 @@ def _(self, context):
     return Roll(context(self.value) for _ in range(context(size)))
 
 
-@elements.Dice.evaluator
+@elements.DiceNode.evaluator
 def _(self, context):
-    return self
+    num_dice, sides, *_ = self
+    if isinstance(num_dice, elements.Reduce):
+        num_dice = context(num_dice)
+    if isinstance(sides, elements.Reduce):
+        sides = context(sides)
+    return Dice(num_dice, sides)
 
 
 @elements.Negation.evaluator
@@ -84,6 +93,7 @@ def _(self, context):
 @elements.UseIf.evaluator
 @elements.IfThen.evaluator
 def _(self, context):
+    #TODO
     return context.evaluate_children(self)
 
 
@@ -198,12 +208,6 @@ def _(self, context):
                     return
             elif e.location_specifier == elements.RestartLocationSpecifier.AFTER:
                 return
-
-
-@elements.Dice.reducer
-def _(self, context):
-    number_of_dice = context(self.number_of_dice)
-    return Roll([context.roll(context(self.sides)) for _ in range(number_of_dice)])
 
 
 @elements.Reference.reducer

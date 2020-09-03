@@ -2,12 +2,15 @@
 """
 from collections import namedtuple
 
+from .ast import elements
+
 __all__ = [
     'KEYWORDS',
     'OPERATORS',
     'KEYWORD_SET',
     'SPECIAL_ACCESSORS',
     'SPECIAL_REFERENCES',
+    'ATOM_TYPES',
 ]
 
 
@@ -88,4 +91,7 @@ SPECIAL_REFERENCES = ('?', '~', '!', '$', '#')
 """ """
 
 SPECIAL_ACCESSORS = ('#', '+', '=', '*')
+""" """
+
+ATOM_TYPES = (int, float, str, elements.SpecialAccessor, elements.SpecialReference, type(None))
 """ """

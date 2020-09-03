@@ -1,9 +1,8 @@
 """
 """
 
-from ..ast.elements import Dice
 from ..exceptions import RollitTypeError
-from ..internal_objects import PythonBasedModifier, Bag, Roll
+from .objects import PythonBasedModifier, Bag, Roll, Dice
 
 __all__ = [
     'the_library',

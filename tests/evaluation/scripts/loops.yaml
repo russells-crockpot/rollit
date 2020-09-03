@@ -1,0 +1,28 @@
+name: loops
+categories:
+- loops
+tests:
+- name: until_do
+  categories:
+  - until_do
+  tests:
+  - statements:
+    - ['a = 1d6', null]
+    - ['until a.{#} >= 3 do a = {a.{#} + 1}d6', null]
+    - ['a', [3, 6]]
+  - statements:
+    - ['b = 2', null]
+    - ['until b >= 4 do [ b += 1 | c = b]', null]
+    - ['b', 4]
+    - ["$ has 'c'", false]
+  - statements:
+    - ['c = 2', null]
+    - ['until c >= 4 do [ c += 1 | ~.d = c + 1 ]', null]
+    - ['c', 4]
+    - ['d', 5]
+  - statements:
+    - ['d = 2', null]
+    - ['e = 1', null]
+    - ['until d >= 4 do [ d += 1 | $.e = d]', null]
+    - ['d', 4]
+    - ['e', 1]

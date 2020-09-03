@@ -1,7 +1,9 @@
 """
 """
 
-__all__ = ['DEFAULT_SEARCH_PATH', 'NoSubject']
+from ..langref import ATOM_TYPES
+
+__all__ = ['DEFAULT_SEARCH_PATH', 'NoSubject', 'is_atom']
 
 DEFAULT_SEARCH_PATH = ('.',)
 """ """
@@ -34,3 +36,9 @@ def __create_no_subject():
 NoSubject = __create_no_subject()
 """ """
 del __create_no_subject
+
+
+def is_atom(value):
+    """
+    """
+    return isinstance(value, ATOM_TYPES)

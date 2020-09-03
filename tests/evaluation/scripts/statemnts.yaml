@@ -10,33 +10,37 @@ tests:
     - ['a = 1', null]
     - ['a', 1]
   - statements:
-    - ['a = 2', null]
-    - ['a += 1', null]
-    - ['a', 3]
+    - ['b = 2', null]
+    - ['b += 1', null]
+    - ['b', 3]
   - statements:
-    - ['a = 3', null]
-    - ['a -= 1', null]
-    - ['a', 2]
+    - ['c = 3', null]
+    - ['c -= 1', null]
+    - ['c', 2]
   - statements:
-    - ['a = 4', null]
-    - ['a *= 2', null]
-    - ['a', 8]
+    - ['d = 4', null]
+    - ['d *= 2', null]
+    - ['d', 8]
   - statements:
-    - ['a = 5', null]
-    - ['a %/= 2', null]
-    - ['a', 2.5]
+    - ['e = 5', null]
+    - ['e %/= 2', null]
+    - ['e', 2.5]
   - statements:
-    - ['a = 6', null]
-    - ['a /= 2', null]
-    - ['a', 3]
+    - ['f = 6', null]
+    - ['f /= 2', null]
+    - ['f', 3]
   - statements:
-    - ['a = 7', null]
-    - ['a /= 2', null]
-    - ['a', 3]
+    - ['g = 7', null]
+    - ['g /= 2', null]
+    - ['g', 3]
   - statements:
-    - ['a = 7', null]
-    - ['a %= 2', null]
-    - ['a', 1]
+    - ['h = 7', null]
+    - ['h %= 2', null]
+    - ['h', 1]
+  - statements:
+    - ['i = 3d6', null]
+    - ['i =-> top', null]
+    - ['i', [3]]
 
 - name: bags
   categories:

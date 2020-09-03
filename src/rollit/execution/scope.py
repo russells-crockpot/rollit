@@ -4,7 +4,7 @@ from collections import ChainMap
 
 from ..ast import elements
 from ..exceptions import InvalidNameError, NoSuchLoopError, RollitSyntaxError
-from ..internal_objects import Bag
+from .objects import Bag
 from .base import NoSubject
 
 __all__ = []
