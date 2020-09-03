@@ -1,11 +1,13 @@
 """
 """
+import functools
 from enum import Enum
 from rollit.ast import SingleValueElement, ModelElement
 
 __all__ = [
     'pformat_model',
     'pprint_model',
+    'unwrap_func',
 ]
 
 
@@ -61,3 +63,19 @@ def pprint_model(elem):
     """
     """
     print(pformat_model(elem))
+
+
+def unwrap_func(func):
+    """
+    """
+    seen = set()
+    while True:
+        if id(func) in seen:
+            raise RuntimeError(f'Circular reference in unwrapping of function {func}')
+        seen.add(id(func))
+        if isinstance(func, functools.partial):
+            func = func.func
+        elif hasattr(func, '__wrapped__'):
+            func = func.__wrapped__
+        else:
+            return func

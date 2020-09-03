@@ -101,6 +101,14 @@ class StringLiteral(namedtuple('_StringLiteralBase', ('parts', 'codeinfo')), Mod
             return self.parts[0]
         return ''.join(self.parts)
 
+    def _to_test_dict(self):
+        """
+        """
+        return {
+            '_class': type(self).__name__,
+            'value': self.value,
+        }
+
 
 SingleValueElement.register(StringLiteral)
 
@@ -167,7 +175,7 @@ Enlarge = create_model_element_type('Enlarge', ('size', 'value'))
 Reduce = create_model_element_type('Reduce', specs=ElementSpecs(always_use_scope=True))
 """ """
 
-NewBag = create_model_element_type('NewBag', constant=True)
+NewBag = create_model_element_type('NewBag')
 """ """
 
 Reference = create_model_element_type('Reference')

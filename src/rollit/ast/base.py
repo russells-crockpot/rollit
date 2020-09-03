@@ -47,18 +47,8 @@ ElementSpecs = namedtuple('ElementSpecs', ('predicate_info', 'intern_strings', '
                           defaults=((), True, False, False, False, False))
 """ """
 
-
-class CodeInfo(namedtuple('_CodeInfoBase', ('text', 'start_pos', 'end_pos'))):
-    """
-    """
-
-    def __new__(cls, script, start_pos, end_pos):
-        return super().__new__(
-            cls,
-            text=script[start_pos:end_pos],
-            start_pos=start_pos,
-            end_pos=end_pos,
-        )
+CodeInfo = namedtuple('CodeInfo', ('text', 'start_pos', 'end_pos'))
+""" """
 
 
 class ModelElementMeta(ABCMeta):
@@ -147,6 +137,10 @@ class ModelEnumElement(enum.Enum):
     def _to_test_dict(self):
         # pylint: disable=no-member
         return {'_class': type(self).__name__, 'value': self._name_}
+
+    @classmethod
+    def preevaluate(cls, value):
+        return DeferEvaluation
 
 
 ModelElement.register(ModelEnumElement)

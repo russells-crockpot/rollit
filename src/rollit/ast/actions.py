@@ -11,6 +11,7 @@ from .base import CodeInfo
 from .. import langref
 from ..exceptions import InvalidNameError
 from ..grammar import TreeNode
+from ..util import unwrap_func
 
 __all__ = ()
 
@@ -56,7 +57,7 @@ def add_codeinfo(func):
 
     @functools.wraps(func)
     def _wrapper(text, start, end, values):
-        return func(text, start, end, values, CodeInfo(text, start, end))
+        return func(text, start, end, values, CodeInfo(text[start:end], start, end))
 
     return _wrapper
 
@@ -79,8 +80,9 @@ def binary_op(text, start, end, values, codeinfo):
     if isinstance(left, elements.StringLiteral) and isinstance(right, elements.StringLiteral):
         #TODO they maybe chained
         return elements.StringLiteral((left, right),
-                                      codeinfo=CodeInfo(text, left.codeinfo.start_pos,
-                                                        right.codeinfo.end_pos))
+                                      codeinfo=CodeInfo(
+                                          text[left.codeinfo.start_pos:right.codeinfo.end_pos],
+                                          left.codeinfo.start_pos, right.codeinfo.end_pos))
     return elements.BinaryOp(left, op, right, codeinfo=codeinfo)
 
 
@@ -137,7 +139,7 @@ def ignore(*args):
 @elements_to_values
 @add_codeinfo
 def negate(text, start, end, values, codeinfo):
-    return util.negate(values[0], codeinfo=codeinfo)
+    return util.negate(values[0], codeinfo=codeinfo, script=text)
 
 
 @elements_to_values
@@ -155,9 +157,14 @@ def modifier_call(text, start, end, values, codeinfo):
 @elements_to_values
 @add_codeinfo
 def modify(text, start, end, values, codeinfo):
-    return elements.Modify(subject=values[0],
-                           modifiers=util.to_tuple(values[-1]),
-                           codeinfo=codeinfo)
+    (subject, first_call), *other_calls = values
+    calls = [first_call]
+    if other_calls:
+        if util.is_valid_iterable(other_calls[0]):
+            calls += other_calls[0]
+        else:
+            calls.append(other_calls[0])
+    return elements.Modify(subject=subject, modifiers=tuple(calls), codeinfo=codeinfo)
 
 
 @elements_to_values
@@ -250,7 +257,7 @@ def otherwise(text, start, end, values, codeinfo):
 @elements_to_values
 @add_codeinfo
 def new_bag(text, start, end, values, codeinfo):
-    return elements.NewBag(codeinfo=codeinfo)
+    return elements.NewBag(util.flatten_tuple(values), codeinfo=codeinfo)
 
 
 @elements_to_values
@@ -402,7 +409,7 @@ def if_stmt(text, start, end, values, codeinfo):
         if not rval or isinstance(rval, internal.Otherwise):
             return previous
         rval = elements.IfThen(
-            predicate=util.negate(if_.predicate, codeinfo),
+            predicate=util.negate(if_.predicate, codeinfo, text),
             then=previous,
             otherwise=if_.statement,
             codeinfo=codeinfo,
@@ -502,6 +509,35 @@ def block(text, start, end, values, codeinfo):
     return values[0]
 
 
+def _add_accessor(access, accessor, codeinfo=None):
+    pass
+
+
+@elements_to_values
+@add_codeinfo
+def first_modifier_call(text, start, end, values, codeinfo):
+    target, op, modifier, *args = values
+    if op == '+':
+        accessing = target
+        accessors = []
+        if isinstance(target, elements.Access):
+            accessing = target.accessing
+            accessors = list(target.accessors)
+        if isinstance(modifier, elements.Reference):
+            accessors.append(modifier)
+        elif isinstance(modifier, elements.Access):
+            accessors.append(modifier.accessing)
+            accessors.extend(modifier.accessors)
+        modifier = elements.Access(
+            accessing=accessing,
+            accessors=tuple(accessors),
+            codeinfo=modifier.codeinfo,
+        )
+    if args:
+        args = args[0]
+    return (target, unwrap_func(modifier_call)(text, start, end, (modifier, args), codeinfo))
+
+
 def empty_block(*args):
     return ()
 
@@ -509,7 +545,10 @@ def empty_block(*args):
 @elements_to_values
 @add_codeinfo
 def but_if(text, start, end, values, codeinfo):
-    return elements.ButIf(*values, codeinfo=codeinfo)
+    predicate, statement = values
+    if predicate == '*':
+        predicate = elements.SpecialReference.ALL
+    return elements.ButIf(predicate, statement, codeinfo=codeinfo)
 
 
 @elements_to_values

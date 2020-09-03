@@ -28,15 +28,19 @@ name        <- '$'                                      %special_ref
              / '#'                                      %special_ref
              / basic_name
 
-empty_bag   <- @'{' _ @'.' _ @'}' _                                     %new_bag
-enlarge <- @'{' _ws expression? _ws '@' _ws expression? _ws @'}' _      %enlarge
+empty_bag   <- @'{' _ @'-' _ @'}' _                                             %new_bag
+             / @'{-' _ws @'-}' _                                                %new_bag
+new_bag     <- @'{-' _ws (_ statement _ eos _)* _ stmt_or_expr _ws @'-}' _      %new_bag
+             / empty_bag
+enlarge     <- @'{' _ws expression? _ws '@' _ws expression? _ws @'}' _          %enlarge
+reduce      <- @'{' _ws !('-' / '.' / special_accessor)
+               expression _ws @'}' _                                            %reduce
 
-reduce  <- @'{' _ws !('.' / special_accessor)
-           expression _ws @'}' _                                        %reduce
 
-modifier_call   <- @'->' _ access _ modifier_args?                      %modifier_call
-modifier_args   <- @'(' _ws (expression _ ',' _ws )*
-                   expression ? _  @')' _                               %arg_list
+first_modifier_call  <- dice _ ('-'/'+') @'>' _ access _ modifier_args?     %first_modifier_call
+modifier_call        <- _ @'->' _ access _ modifier_args?                   %modifier_call
+modifier_args        <- @'(' _ws (expression _ ',' _ws )*
+                        expression ? _  @')' _                              %arg_list
 
 special_accessor    <- '#' / '*' / '+' / '=' / '^'
 accessor            <- _ws @'.' _ basic_name  _
@@ -94,7 +98,7 @@ add_math    <- mult_math _ add_op !'=' _ add_math       %binary_op
 mult_math <- modify _ mult_op !'=' _  mult_math         %binary_op
            / modify
 
-modify  <- dice _ modifier_call+                        %modify
+modify  <- first_modifier_call modifier_call*      %modify
          / dice
 
 dice    <- !(name/string) reduce_expr _ @`d` _
@@ -103,7 +107,7 @@ dice    <- !(name/string) reduce_expr _ @`d` _
           / reduce_expr
 
 reduce_expr <- enlarge
-             / empty_bag
+             / new_bag
              / reduce
              / '(' _ws expression _ws ')'
              / atom
@@ -145,7 +149,7 @@ stmt_or_expr    <- statement / expression
 block_stmt      <- (statement _ !']')* _ (expression _ &']' / statement)
 
 but_if_stmt         <- expression _ &'but' / stmt_or_expr
-but_if              <- @'but' !'always' _ @'if' _ expression _
+but_if              <- @'but' !'always' _ @'if' _ (expression / '*' ) _
                        @'occurs' _ @'then' _ws but_if_stmt                      %but_if
 always              <- @'but' _ @'always' _ws stmt_or_expr                      %always
 attempt             <- @'attempt' _ws but_if_stmt _ws always                    %attempt

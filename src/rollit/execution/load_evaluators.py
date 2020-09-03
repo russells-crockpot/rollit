@@ -130,11 +130,6 @@ def _(self, context):
     raise OopsException(context(self.value))
 
 
-@elements.Attempt.evaluator
-def _(self, context):
-    raise NotImplementedError()
-
-
 @elements.Leave.evaluator
 def _(self, context):
     raise LeaveException()
@@ -152,6 +147,22 @@ def _(self, context):
     return context.scope.subject
 
 
+@elements.Attempt.evaluator
+def _(self, context):
+    try:
+        context(self.attempt)
+    except OopsException as e:
+        with context.new_scope(isolate=True, error=context(e.value)):
+            for but in self.buts or ():
+                if but.predicate == elements.SpecialReference.ALL or context(but.predicate):
+                    context(but.statement)
+                    return
+            raise
+    finally:
+        if self.always:
+            context(self.always)
+
+
 @elements.Load.evaluator
 def _(self, context):
     raise NotImplementedError()
@@ -162,6 +173,11 @@ def _(self, context):
     raise NotImplementedError()
 
 
+@elements.Restart.evaluator
+def _(self, context):
+    raise RestartException(*self)
+
+
 @elements.ModifierDef.evaluator
 def _(self, context):
     modifier = RollitBasedModifier(self, context.scope)
@@ -170,11 +186,6 @@ def _(self, context):
     with context.now_access(context.scope.parent):
         context(elements.Assignment(self.target, modifier, codeinfo=self.codeinfo))
     return None
-
-
-@elements.Restart.evaluator
-def _(self, context):
-    raise NotImplementedError()
 
 
 @elements.UntilDo.evaluator

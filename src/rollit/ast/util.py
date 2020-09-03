@@ -47,7 +47,7 @@ def to_tuple(item):
 
 
 # pylint: disable=too-many-function-args
-def negate(element, codeinfo=None):
+def negate(element, codeinfo=None, script=None):
     """
     """
     if element is None or element == SpecialReference.NONE:
@@ -60,9 +60,11 @@ def negate(element, codeinfo=None):
         return element.value
     if isinstance(element, BinaryOp) and element.op == '!=':
         start_pos = element.codeinfo.start_pos if not codeinfo else codeinfo.start_pos
+        codeinfo_text = element.codeinfo.text
+        if script:
+            codeinfo_text = script[start_pos:element.codeinfo.end_pos]
         return BinaryOp(element.left,
                         '==',
                         element.right,
-                        codeinfo=CodeInfo(element.codeinfo.script, start_pos,
-                                          element.codeinfo.end_pos))
+                        codeinfo=CodeInfo(codeinfo_text, start_pos, element.codeinfo.end_pos))
     return Negation(element, codeinfo=codeinfo)

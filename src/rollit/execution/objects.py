@@ -19,6 +19,7 @@ class RollitNonErrorException(BaseException):
 class LeaveException(RollitNonErrorException):
     """
     """
+    __slots__ = ()
     __THE_EXCEPTION = None
 
     def __new__(cls):
@@ -30,16 +31,18 @@ class LeaveException(RollitNonErrorException):
 class RestartException(RollitNonErrorException):
     """
     """
-    location_specifier = name = None
+    __slots__ = ('location_specifier', 'name')
 
     #pylint: disable=super-init-not-called
-    def __init__(self, restart_obj):
-        self.location_specifier, self.name = restart_obj
+    def __init__(self, location_specifier, name, *args):
+        self.location_specifier = location_specifier
+        self.name = name
 
 
 class OopsException(RollitNonErrorException):
     """
     """
+    __slots__ = ('value',)
 
     #pylint: disable=super-init-not-called
     def __init__(self, value):
