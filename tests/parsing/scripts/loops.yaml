@@ -17,7 +17,9 @@ tests:
   - script: 'until @name 1 do 2'
     result:
       _class: UntilDo
-      name: 'name'
+      name:
+        _class: Reference
+        value: 'name'
       until: 1
       do: 2
       otherwise: null
@@ -35,7 +37,9 @@ tests:
       until: 1
       do:
         _class: IfThen
-        predicate: a
+        predicate:
+          _class: Reference
+          value: a
         then: 4
         otherwise: 2
       otherwise: null
@@ -46,7 +50,9 @@ tests:
       until: 1
       do:
         _class: IfThen
-        predicate: a
+        predicate:
+          _class: Reference
+          value: a
         then: 4
         otherwise: 2
       otherwise: 5
@@ -58,7 +64,9 @@ tests:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: g
+        right:
+          _class: Reference
+          value: g
       do: 3
       otherwise: null
   - script: 'until 1 do g > 3'
@@ -68,7 +76,9 @@ tests:
       until: 1
       do:
         _class: BinaryOp
-        left: g
+        left:
+          _class: Reference
+          value: g
         op: '>'
         right: 3
       otherwise: null
@@ -80,10 +90,14 @@ tests:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: g
+        right:
+          _class: Reference
+          value: g
       do:
         _class: BinaryOp
-        left: s
+        left:
+          _class: Reference
+          value: s
         op: '>='
         right: 4
       otherwise: null
@@ -93,11 +107,13 @@ tests:
       name: null
       until:
         _class: BinaryOp
-        left: 'test'
+        left:
+          _class: Reference
+          value: 'test'
         op: '>='
         right: 5
       do:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
       otherwise: null
@@ -107,18 +123,24 @@ tests:
       name: null
       until:
         _class: BinaryOp
-        left: 'test'
+        left:
+          _class: Reference
+          value: 'test'
         op: '>='
         right: 5
       do:
         _class: Assignment
-        target: 'test'
+        target:
+          _class: Reference
+          value: 'test'
         value:
           _class: BinaryOp
-          left: 'test'
+          left:
+            _class: Reference
+            value: 'test'
           op: '&'
           right:
-            _class: Dice
+            _class: DiceNode
             number_of_dice: 1
             sides: 6
       otherwise: null
@@ -128,18 +150,24 @@ tests:
       name: null
       until:
         _class: BinaryOp
-        left: 'test'
+        left:
+          _class: Reference
+          value: 'test'
         op: '>'
         right: 25
       do:
         _class: Assignment
-        target: 'test'
+        target:
+          _class: Reference
+          value: 'test'
         value:
           _class: BinaryOp
-          left: 'test'
+          left:
+            _class: Reference
+            value: 'test'
           op: '&'
           right:
-            _class: Dice
+            _class: DiceNode
             number_of_dice: 1
             sides: 6
       otherwise: null
@@ -149,23 +177,31 @@ tests:
       name: null
       until:
         _class: BinaryOp
-        left: 'test'
+        left:
+          _class: Reference
+          value: 'test'
         op: '>'
         right: 25
       do:
         _class: Assignment
-        target: 'test'
+        target:
+          _class: Reference
+          value: 'test'
         value:
           _class: BinaryOp
-          left: 'test'
+          left:
+            _class: Reference
+            value: 'test'
           op: '&'
           right:
-            _class: Dice
+            _class: DiceNode
             number_of_dice: 1
             sides: 6
       otherwise:
         _class: Assignment
-        target: 'test'
+        target:
+          _class: Reference
+          value: 'test'
         value:
           _class: Enlarge
           size: null
@@ -173,26 +209,36 @@ tests:
   - script: 'until @name test > 25 do test = test & 1d6 otherwise test = {@0}'
     result:
       _class: UntilDo
-      name: 'name'
+      name:
+        _class: Reference
+        value: 'name'
       until:
         _class: BinaryOp
-        left: 'test'
+        left:
+          _class: Reference
+          value: 'test'
         op: '>'
         right: 25
       do:
         _class: Assignment
-        target: 'test'
+        target:
+          _class: Reference
+          value: 'test'
         value:
           _class: BinaryOp
-          left: 'test'
+          left:
+            _class: Reference
+            value: 'test'
           op: '&'
           right:
-            _class: Dice
+            _class: DiceNode
             number_of_dice: 1
             sides: 6
       otherwise:
         _class: Assignment
-        target: 'test'
+        target:
+          _class: Reference
+          value: 'test'
         value:
           _class: Enlarge
           size: null
@@ -289,21 +335,27 @@ tests:
       location_specifier:
         _class: RestartLocationSpecifier
         value: 'BEFORE'
-      target: 'test'
+      target:
+        _class: Reference
+        value: 'test'
   - script: 'restart at test'
     result:
       _class: Restart
       location_specifier:
         _class: RestartLocationSpecifier
         value: 'AT'
-      target: 'test'
+      target:
+        _class: Reference
+        value: 'test'
   - script: 'restart after test'
     result:
       _class: Restart
       location_specifier:
         _class: RestartLocationSpecifier
         value: 'AFTER'
-      target: 'test'
+      target:
+        _class: Reference
+        value: 'test'
 
 - name: for_every
   categories:
@@ -313,37 +365,51 @@ tests:
     result:
       _class: ForEvery
       name: null
-      item_name: 'item'
+      item_name:
+        _class: Reference
+        value: 'item'
       iterable: 2
       do: 3
   - script: 'for every @ loop_name item that 2 has do 3'
     result:
       _class: ForEvery
-      name: 'loop_name'
-      item_name: 'item'
+      name:
+        _class: Reference
+        value: 'loop_name'
+      item_name:
+        _class: Reference
+        value: 'item'
       iterable: 2
       do: 3
   - script: 'for every @ loop_name item that {1d6} has do 3'
     result:
       _class: ForEvery
-      name: 'loop_name'
-      item_name: 'item'
+      name:
+        _class: Reference
+        value: 'loop_name'
+      item_name:
+        _class: Reference
+        value: 'item'
       iterable:
         _class: Reduce
         value:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides: 6
       do: 3
   - script: 'for every @ loop_name item that {1d6} has do restart after'
     result:
       _class: ForEvery
-      name: 'loop_name'
-      item_name: 'item'
+      name:
+        _class: Reference
+        value: 'loop_name'
+      item_name:
+        _class: Reference
+        value: 'item'
       iterable:
         _class: Reduce
         value:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides: 6
       do:
@@ -357,12 +423,16 @@ tests:
   - script: 'for every @ loop_name item that {1d6} has do leave'
     result:
       _class: ForEvery
-      name: 'loop_name'
-      item_name: 'item'
+      name:
+        _class: Reference
+        value: 'loop_name'
+      item_name:
+        _class: Reference
+        value: 'item'
       iterable:
         _class: Reduce
         value:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides: 6
       do:

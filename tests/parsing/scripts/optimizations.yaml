@@ -14,11 +14,17 @@ tests:
       _class: BinaryOp
       left: 1
       op: '=='
-      right: 'a'
+      right:
+        _class: Reference
+        value: 'a'
   - script: 'use a if 1 otherwise b'
-    result: 'a'
+    result:
+      _class: Reference
+      value: 'a'
   - script: 'use a if 0 otherwise b'
-    result: 'b'
+    result:
+      _class: Reference
+      value: 'b'
   - script: '1 + 3'
     result: 4
   - script: '1 == 3'
@@ -38,7 +44,9 @@ tests:
   - script: 'if 0 then 2 unless 0 then 3 unless b then 4 otherwise 5'
     result:
       _class: IfThen
-      predicate: 'b'
+      predicate:
+        _class: Reference
+        value: 'b'
       otherwise: 5
   - script: 'until 1 do 2 except when 3 then 4'
     result:

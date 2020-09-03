@@ -11,12 +11,14 @@ tests:
   - script: 'not test'
     result:
       _class: Negation
-      value: 'test'
+      value:
+        _class: Reference
+        value: 'test'
   - script: 'not 1d6'
     result:
       _class: Negation
       value:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
 
@@ -31,43 +33,57 @@ tests:
       _class: BinaryOp
       left: 1
       op: '=='
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: '1 >= a'
     result:
       _class: BinaryOp
       left: 1
       op: '>='
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: '1 <= a'
     result:
       _class: BinaryOp
       left: 1
       op: '<='
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: '1 != a'
     result:
       _class: BinaryOp
       left: 1
       op: '!='
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: '1 > a'
     result:
       _class: BinaryOp
       left: 1
       op: '>'
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: '1 < a'
     result:
       _class: BinaryOp
       left: 1
       op: '<'
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: '1 has a'
     result:
       _class: BinaryOp
       left: 1
       op: 'has'
-      right: a
+      right:
+        _class: Reference
+        value: a
 
 - name: comparisons
   categories:
@@ -79,12 +95,14 @@ tests:
       _class: BinaryOp
       left: 1
       op: '>'
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: '1d6 has 2'
     result:
       _class: BinaryOp
       left:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
       op: 'has'
@@ -93,7 +111,7 @@ tests:
     result:
       _class: BinaryOp
       left:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
       op: 'has'
@@ -101,12 +119,14 @@ tests:
         _class: BinaryOp
         left: 2
         op: '-'
-        right: b
+        right:
+          _class: Reference
+          value: b
   - script: '1d6 < 2 !=  z'
     result:
       _class: BinaryOp
       left:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
       op: '<'
@@ -114,14 +134,16 @@ tests:
         _class: BinaryOp
         left: 2
         op: '!='
-        right: z
+        right:
+          _class: Reference
+          value: z
   - script: '(1d6 < 2) !=  3'
     result:
       _class: BinaryOp
       left:
         _class: BinaryOp
         left:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides: 6
         op: '<'
@@ -138,37 +160,45 @@ tests:
     result:
       _class: UseIf
       use: 1
-      predicate: 'a'
+      predicate:
+        _class: Reference
+        value: 'a'
       otherwise: 0
   - script: 'use 1d6 if use_d6 otherwise 2d4'
     result:
       _class: UseIf
       use:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
-      predicate: 'use_d6'
+      predicate:
+        _class: Reference
+        value: 'use_d6'
       otherwise:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 2
         sides: 4
   - script: 'use 1d6 if use_d6 otherwise use 2d4 if use_d4 otherwise 3d3'
     result:
       _class: UseIf
       use:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
-      predicate: 'use_d6'
+      predicate:
+        _class: Reference
+        value: 'use_d6'
       otherwise:
         _class: UseIf
         use:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 2
           sides: 4
-        predicate: 'use_d4'
+        predicate:
+          _class: Reference
+          value: 'use_d4'
         otherwise:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 3
           sides: 3
 
@@ -180,33 +210,45 @@ tests:
   - script: 'if a then 2'
     result:
       _class: IfThen
-      predicate: 'a'
+      predicate:
+        _class: Reference
+        value: 'a'
       then: 2
       otherwise: null
   - script: 'if a then 2 otherwise 3'
     result:
       _class: IfThen
-      predicate: 'a'
+      predicate:
+        _class: Reference
+        value: 'a'
       then: 2
       otherwise: 3
   - script: 'if a then 2 otherwise if b then 4'
     result:
       _class: IfThen
-      predicate: 'a'
+      predicate:
+        _class: Reference
+        value: 'a'
       then: 2
       otherwise:
         _class: IfThen
-        predicate: 'b'
+        predicate:
+          _class: Reference
+          value: 'b'
         then: 4
         otherwise: null
   - script: 'if a then 2 otherwise if b then 4 otherwise 5'
     result:
       _class: IfThen
-      predicate: 'a'
+      predicate:
+        _class: Reference
+        value: 'a'
       then: 2
       otherwise:
         _class: IfThen
-        predicate: 'b'
+        predicate:
+          _class: Reference
+          value: 'b'
         then: 4
         otherwise: 5
   - script: 'if a then 2 unless b then 4'
@@ -214,10 +256,14 @@ tests:
       _class: IfThen
       predicate:
         _class: Negation
-        value: 'a'
+        value:
+          _class: Reference
+          value: 'a'
       then:
         _class: IfThen
-        predicate: 'b'
+        predicate:
+          _class: Reference
+          value: 'b'
         then: 4
         otherwise: null
       otherwise: 2
@@ -226,10 +272,14 @@ tests:
       _class: IfThen
       predicate:
         _class: Negation
-        value: 'a'
+        value:
+          _class: Reference
+          value: 'a'
       then:
         _class: IfThen
-        predicate: 'b'
+        predicate:
+          _class: Reference
+          value: 'b'
         then: 4
         otherwise: 3
       otherwise: 2

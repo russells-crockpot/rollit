@@ -14,37 +14,55 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      load_from: 'test'
-      into: 'test'
+      load_from:
+        _class: Reference
+        value: 'test'
+      into:
+        _class: Reference
+        value: 'test'
   - script: 'load test, test2'
     result:
     - _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
-      load_from: 'test'
-      into: 'test'
+      load_from:
+        _class: Reference
+        value: 'test'
+      into:
+        _class: Reference
+        value: 'test'
     - _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
-      load_from: 'test2'
-      into: 'test2'
-  - script: 'load test into alias'
+      load_from:
+        _class: Reference
+        value: 'test2'
+      into:
+        _class: Reference
+        value: 'test2'
+  - script: 'load test into copy'
     result:
       _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
-      load_from: 'test'
-      into: 'alias'
+      load_from:
+        _class: Reference
+        value: 'test'
+      into:
+        _class: Reference
+        value: 'copy'
   - script: 'load test, test_two into ~'
     result:
     - _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
-      load_from: 'test'
+      load_from:
+        _class: Reference
+        value: 'test'
       into:
         _class: SpecialReference
         value: ROOT
@@ -52,7 +70,9 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      load_from: 'test_two'
+      load_from:
+        _class: Reference
+        value: 'test_two'
       into:
         _class: SpecialReference
         value: ROOT
@@ -62,76 +82,126 @@ tests:
       to_load:
         _class: SpecialReference
         value: ALL
-      load_from: 'test'
+      load_from:
+        _class: Reference
+        value: 'test'
       into:
         _class: SpecialReference
         value: ROOT
   - script: 'load test from bag'
     result:
     - _class: Load
-      to_load: 'test'
-      load_from: 'bag'
+      to_load:
+        _class: Reference
+        value: 'test'
+      load_from:
+        _class: Reference
+        value: 'bag'
       into:
         _class: SpecialReference
         value: ROOT
   - script: 'load test1 from bag into other_bag'
     result:
     - _class: Load
-      to_load: 'test1'
-      load_from: 'bag'
-      into: 'other_bag'
+      to_load:
+        _class: Reference
+        value: 'test1'
+      load_from:
+        _class: Reference
+        value: 'bag'
+      into:
+        _class: Reference
+        value: 'other_bag'
   - script: 'load bag into other_bag'
     result:
     - _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
-      load_from: 'bag'
-      into: 'other_bag'
+      load_from:
+        _class: Reference
+        value: 'bag'
+      into:
+        _class: Reference
+        value: 'other_bag'
   - script: 'load test, test2 from bag'
     result:
     - _class: Load
-      to_load: 'test'
-      load_from: 'bag'
+      to_load:
+        _class: Reference
+        value: 'test'
+      load_from:
+        _class: Reference
+        value: 'bag'
       into:
         _class: SpecialReference
         value: ROOT
     - _class: Load
-      to_load: 'test2'
-      load_from: 'bag'
+      to_load:
+        _class: Reference
+        value: 'test2'
+      load_from:
+        _class: Reference
+        value: 'bag'
       into:
         _class: SpecialReference
         value: ROOT
-  - script: 'load test from bag into alias'
+  - script: 'load test from bag into other_bag'
     result:
       _class: Load
-      to_load: 'test'
-      load_from: 'bag'
-      into: 'alias'
+      to_load:
+        _class: Reference
+        value: 'test'
+      load_from:
+        _class: Reference
+        value: 'bag'
+      into:
+        _class: Reference
+        value: 'other_bag'
   - script: 'load test2, test3 from bag into ~'
     result:
     - _class: Load
-      to_load: 'test2'
-      load_from: 'bag'
+      to_load:
+        _class: Reference
+        value: 'test2'
+      load_from:
+        _class: Reference
+        value: 'bag'
       into:
         _class: SpecialReference
         value: ROOT
     - _class: Load
-      to_load: 'test3'
-      load_from: 'bag'
+      to_load:
+        _class: Reference
+        value: 'test3'
+      load_from:
+        _class: Reference
+        value: 'bag'
       into:
         _class: SpecialReference
         value: ROOT
   - script: 'load test4, test5 from bag into other_bag'
     result:
     - _class: Load
-      to_load: 'test4'
-      load_from: 'bag'
-      into: 'other_bag'
+      to_load:
+        _class: Reference
+        value: 'test4'
+      load_from:
+        _class: Reference
+        value: 'bag'
+      into:
+        _class: Reference
+        value: 'other_bag'
     - _class: Load
-      to_load: 'test5'
-      load_from: 'bag'
-      into: 'other_bag'
+      to_load:
+        _class: Reference
+        value: 'test5'
+      load_from:
+        _class: Reference
+        value: 'bag'
+      into:
+        _class: Reference
+        value: 'other_bag'
 
 - name: assignment
   categories:
@@ -140,69 +210,99 @@ tests:
   - script: 'name = 1'
     result:
       _class: Assignment
-      target: name
+      target:
+        _class: Reference
+        value: name
       value: 1
   - script: 'name += 1'
     result:
       _class: Assignment
-      target: 'name'
+      target:
+        _class: Reference
+        value: 'name'
       value:
         _class: BinaryOp
-        left: 'name'
+        left:
+          _class: Reference
+          value: 'name'
         op: '+'
         right: 1
   - script: 'name -= 1'
     result:
       _class: Assignment
-      target: 'name'
+      target:
+        _class: Reference
+        value: 'name'
       value:
         _class: BinaryOp
-        left: 'name'
+        left:
+          _class: Reference
+          value: 'name'
         op: '-'
         right: 1
   - script: 'name /= 1'
     result:
       _class: Assignment
-      target: 'name'
+      target:
+        _class: Reference
+        value: 'name'
       value:
         _class: BinaryOp
-        left: 'name'
+        left:
+          _class: Reference
+          value: 'name'
         op: '/'
         right: 1
   - script: 'name %/= 1'
     result:
       _class: Assignment
-      target: 'name'
+      target:
+        _class: Reference
+        value: 'name'
       value:
         _class: BinaryOp
-        left: 'name'
+        left:
+          _class: Reference
+          value: 'name'
         op: '%/'
         right: 1
   - script: 'name %= 1'
     result:
       _class: Assignment
-      target: 'name'
+      target:
+        _class: Reference
+        value: 'name'
       value:
         _class: BinaryOp
-        left: 'name'
+        left:
+          _class: Reference
+          value: 'name'
         op: '%'
         right: 1
   - script: 'name &= 1'
     result:
       _class: Assignment
-      target: 'name'
+      target:
+        _class: Reference
+        value: 'name'
       value:
         _class: BinaryOp
-        left: 'name'
+        left:
+          _class: Reference
+          value: 'name'
         op: '&'
         right: 1
   - script: 'name ^= 1'
     result:
       _class: Assignment
-      target: 'name'
+      target:
+        _class: Reference
+        value: 'name'
       value:
         _class: BinaryOp
-        left: name
+        left:
+          _class: Reference
+          value: name
         op: '^'
         right: 1
   - script: '?.{1} = 3'
@@ -220,22 +320,28 @@ tests:
   - script: 'name = 1d6'
     result:
       _class: Assignment
-      target: name
+      target:
+        _class: Reference
+        value: name
       value:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
   - script: 'name = {2}'
     result:
       _class: Assignment
-      target: name
+      target:
+        _class: Reference
+        value: name
       value:
         _class: Reduce
         value: 2
   - script: 'name = {@}'
     result:
       _class: Assignment
-      target: name
+      target:
+        _class: Reference
+        value: name
       value:
         _class: Enlarge
         size: null
@@ -243,17 +349,19 @@ tests:
   - script: 'name = {1d6@(3d4 + 5)}'
     result:
       _class: Assignment
-      target: name
+      target:
+        _class: Reference
+        value: name
       value:
         _class: Enlarge
         size:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides: 6
         value:
           _class: BinaryOp
           left:
-            _class: Dice
+            _class: DiceNode
             number_of_dice: 3
             sides: 4
           op: '+'
@@ -261,28 +369,38 @@ tests:
   - script: 'name = value'
     result:
       _class: Assignment
-      target: name
-      value: 'value'
+      target:
+        _class: Reference
+        value: name
+      value:
+        _class: Reference
+        value: 'value'
   - script: 'name = {1d6}->top(2)'
     result:
       _class: Assignment
-      target: name
+      target:
+        _class: Reference
+        value: name
       value:
         _class: Modify
         subject:
           _class: Reduce
           value:
-            _class: Dice
+            _class: DiceNode
             number_of_dice: 1
             sides: 6
         modifiers:
-        - modifier: 'top'
+        - _class: ModifierCall
+          modifier:
+            _class: Reference
+            value: 'top'
           args: [2]
-          _class: ModifierCall
   - script: 'name = {{(2d4)d6}->top(3)}'
     result:
       _class: Assignment
-      target: name
+      target:
+        _class: Reference
+        value: name
       value:
         _class: Reduce
         value:
@@ -290,16 +408,18 @@ tests:
           subject:
             _class: Reduce
             value:
-              _class: Dice
+              _class: DiceNode
               number_of_dice:
-                _class: Dice
+                _class: DiceNode
                 number_of_dice: 2
                 sides: 4
               sides: 6
           modifiers:
-          - modifier: 'top'
+          - _class: ModifierCall
+            modifier:
+              _class: Reference
+              value: 'top'
             args: [3]
-            _class: ModifierCall
 
 - name: blocks
   categories:
@@ -312,60 +432,84 @@ tests:
       _class: BinaryOp
       left: 1
       op: '+'
-      right: z
+      right:
+        _class: Reference
+        value: z
   - script: '[1 + z  ]'
     result:
       _class: BinaryOp
       left: 1
       op: '+'
-      right: z
+      right:
+        _class: Reference
+        value: z
   - script: '[ 1 + z|]'
     result:
     - _class: BinaryOp
       left: 1
       op: '+'
-      right: z
+      right:
+        _class: Reference
+        value: z
   - script: '[ a = 1]'
     result:
     - _class: Assignment
-      target: 'a'
+      target:
+        _class: Reference
+        value: 'a'
       value: 1
   - script: '[a = 1 | b = 3]'
     result:
     - _class: Assignment
-      target: 'a'
+      target:
+        _class: Reference
+        value: 'a'
       value: 1
     - _class: Assignment
-      target: 'b'
+      target:
+        _class: Reference
+        value: 'b'
       value: 3
   - script: '[1 + z | b = 3]'
     result:
     - _class: BinaryOp
       left: 1
       op: '+'
-      right: z
+      right:
+        _class: Reference
+        value: z
     - _class: Assignment
-      target: 'b'
+      target:
+        _class: Reference
+        value: 'b'
       value: 3
   - script: '[a = 1 | 3 * y]'
     result:
     - _class: Assignment
-      target: 'a'
+      target:
+        _class: Reference
+        value: 'a'
       value: 1
     - _class: BinaryOp
       left: 3
       op: '*'
-      right: y
+      right:
+        _class: Reference
+        value: y
   - script: '[1 + z | 3 * y]'
     result:
     - _class: BinaryOp
       left: 1
       op: '+'
-      right: z
+      right:
+        _class: Reference
+        value: z
     - _class: BinaryOp
       left: 3
       op: '*'
-      right: y
+      right:
+        _class: Reference
+        value: y
   - script: "
     [
       1 + z
@@ -376,62 +520,94 @@ tests:
     - _class: BinaryOp
       left: 1
       op: '+'
-      right: z
+      right:
+        _class: Reference
+        value: z
     - _class: BinaryOp
       left: 3
       op: '*'
-      right: y
+      right:
+        _class: Reference
+        value: y
 
 - name: attempt
   categories:
   - attempt
   - error_handling
   tests:
-  - script: 'attempt a but always b'
+  - script: 'attempt a1 but always b'
     result:
       _class: Attempt
-      attempt: 'a'
+      attempt:
+        _class: Reference
+        value: 'a1'
       buts: []
-      always: 'b'
-  - script: "attempt a but if #.message == 'test' occurs then b"
+      always:
+        _class: Reference
+        value: 'b'
+  - script: "attempt a2 but if b occurs then c"
     result:
       _class: Attempt
-      attempt: 'a'
+      attempt:
+        _class: Reference
+        value: 'a2'
       buts:
       - _class: ButIf
         predicate:
-          _class: BinaryOp
-          left:
-            _class: Access
-            accessing:
-              _class: SpecialReference
-              value: ERROR
-            accessors:
-            - 'message'
-          op: '=='
-          right:
-            _class: StringLiteral
-            value: 'test'
-        statement: 'b'
+          _class: Reference
+          value: 'b'
+        statement:
+          _class: Reference
+          value: 'c'
       always: null
-  - script: "attempt a but if #.message == 'test' occurs then b but always c"
+  - script: "attempt a3 but always b"
     result:
       _class: Attempt
-      attempt: 'a'
+      attempt:
+        _class: Reference
+        value: 'a3'
+      buts: []
+      always:
+        _class: Reference
+        value: 'b'
+  - script: "attempt a4 but if b occurs then c but always d"
+    result:
+      _class: Attempt
+      attempt:
+        _class: Reference
+        value: 'a4'
       buts:
       - _class: ButIf
         predicate:
-          _class: BinaryOp
-          left:
-            _class: Access
-            accessing:
-              _class: SpecialReference
-              value: ERROR
-            accessors:
-            - 'message'
-          op: '=='
-          right:
-            _class: StringLiteral
-            value: 'test'
-        statement: 'b'
-      always: 'c'
+          _class: Reference
+          value: 'b'
+        statement:
+          _class: Reference
+          value: 'c'
+      always:
+        _class: Reference
+        value: 'd'
+  - script: "attempt a5 but if b occurs then c but if * occurs then d but always e"
+    result:
+      _class: Attempt
+      attempt:
+        _class: Reference
+        value: 'a5'
+      buts:
+      - _class: ButIf
+        predicate:
+          _class: Reference
+          value: 'b'
+        statement:
+          _class: Reference
+          value: 'c'
+      - _class: ButIf
+        predicate:
+          _class: SpecialReference
+          value: ALL
+        statement:
+          _class: Reference
+          value: 'd'
+      always:
+        _class: Reference
+        value: 'e'

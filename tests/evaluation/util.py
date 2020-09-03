@@ -2,7 +2,7 @@
 import pytest
 
 from rollit.ast import ModelElement
-from rollit.execution.objects import Dice
+from rollit.execution.objects import DiceNode
 
 from .conftest import script_tests
 from ..util import reorder_keys
@@ -11,7 +11,7 @@ from ..util import reorder_keys
 def _convert_values(value):
     if isinstance(value, ModelElement):
         value = tuple(value[:-1])
-    if isinstance(value, Dice):
+    if isinstance(value, DiceNode):
         return (value.num_dice, value.sides)
     if isinstance(value, (list, set, tuple)):
         return tuple(_convert_values(v) for v in value)

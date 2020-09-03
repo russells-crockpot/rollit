@@ -14,10 +14,10 @@ tests:
     result: 3.0
   - script: '-4.5'
     result: -4.5
-  - script: '{.}'
+  - script: '{-}'
     result:
       _class: NewBag
-  - script: '{ . }'
+  - script: '{ - }'
     result:
       _class: NewBag
   - script: "'test'"
@@ -66,23 +66,31 @@ tests:
       _class: BinaryOp
       left: 1
       op: '+'
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: 'a - 1'
     result:
       _class: BinaryOp
-      left: a
+      left:
+        _class: Reference
+        value: a
       op: '-'
       right: 1
   - script: 'a - -1'
     result:
       _class: BinaryOp
-      left: a
+      left:
+        _class: Reference
+        value: a
       op: '-'
       right: -1
   - script: 'a * 3'
     result:
       _class: BinaryOp
-      left: a
+      left:
+        _class: Reference
+        value: a
       op: '*'
       right: 3
   - script: '3 % a'
@@ -90,11 +98,15 @@ tests:
       _class: BinaryOp
       left: 3
       op: '%'
-      right: a
+      right:
+        _class: Reference
+        value: a
   - script: 'a / 1'
     result:
       _class: BinaryOp
-      left: a
+      left:
+        _class: Reference
+        value: a
       op: '/'
       right: 1
   - script: '4 %/ a'
@@ -102,7 +114,9 @@ tests:
       _class: BinaryOp
       left: 4
       op: '%/'
-      right: a
+      right:
+        _class: Reference
+        value: a
 
 - name: order_of_operations
   categories:
@@ -115,7 +129,9 @@ tests:
       op: '+'
       right:
         _class: BinaryOp
-        left: a
+        left:
+          _class: Reference
+          value: a
         op: '*'
         right: 3
   - script: '4 * b + 6'
@@ -125,7 +141,9 @@ tests:
         _class: BinaryOp
         left: 4
         op: '*'
-        right: b
+        right:
+          _class: Reference
+          value: b
       op: '+'
       right: 6
 
@@ -136,35 +154,47 @@ tests:
   - script: 'test & 2'
     result:
       _class: BinaryOp
-      left: 'test'
+      left:
+        _class: Reference
+        value: 'test'
       op: '&'
       right: 2
   - script: 'test ^ 2'
     result:
       _class: BinaryOp
-      left: 'test'
+      left:
+        _class: Reference
+        value: 'test'
       op: '^'
       right: 2
   - script: 'test ^ 2 + c'
     result:
       _class: BinaryOp
-      left: 'test'
+      left:
+        _class: Reference
+        value: 'test'
       op: '^'
       right:
         _class: BinaryOp
         left: 2
         op: '+'
-        right: c
+        right:
+          _class: Reference
+          value: c
   - script: 'test ^ 2 * c'
     result:
       _class: BinaryOp
-      left: 'test'
+      left:
+        _class: Reference
+        value: 'test'
       op: '^'
       right:
         _class: BinaryOp
         left: 2
         op: '*'
-        right: c
+        right:
+          _class: Reference
+          value: c
   - script: '1 ^ test & c'
     result:
       _class: BinaryOp
@@ -172,19 +202,27 @@ tests:
       op: '^'
       right:
         _class: BinaryOp
-        left: 'test'
+        left:
+          _class: Reference
+          value: 'test'
         op: '&'
-        right: c
+        right:
+          _class: Reference
+          value: c
   - script: '(test ^ 2) & c'
     result:
       _class: BinaryOp
       left:
         _class: BinaryOp
-        left: 'test'
+        left:
+          _class: Reference
+          value: 'test'
         op: '^'
         right: 2
       op: '&'
-      right: c
+      right:
+        _class: Reference
+        value: c
 
 - name: dice
   categories:
@@ -192,7 +230,7 @@ tests:
   tests:
   - script: '1d6'
     result:
-      _class: Dice
+      _class: DiceNode
       number_of_dice: 1
       sides: 6
   - script: '1 + 2d3'
@@ -201,61 +239,65 @@ tests:
       left: 1
       op: '+'
       right:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 2
         sides: 3
   - script: '2d3 * 4'
     result:
       _class: BinaryOp
       left:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 2
         sides: 3
       op: '*'
       right: 4
   - script: '(1+a)d3'
     result:
-      _class: Dice
+      _class: DiceNode
       number_of_dice:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: a
+        right:
+          _class: Reference
+          value: a
       sides: 3
   - script: '1d(a *3)'
     result:
-      _class: Dice
+      _class: DiceNode
       number_of_dice: 1
       sides:
         _class: BinaryOp
-        left: a
+        left:
+          _class: Reference
+          value: a
         op: '*'
         right: 3
   - script: '(1d6)d4'
     result:
-      _class: Dice
+      _class: DiceNode
       number_of_dice:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
       sides: 4
   - script: '2d(3d4)'
     result:
-      _class: Dice
+      _class: DiceNode
       number_of_dice: 2
       sides:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 3
         sides: 4
   - script: '(7d3)d(2d5)'
     result:
-      _class: Dice
+      _class: DiceNode
       number_of_dice:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 7
         sides: 3
       sides:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 2
         sides: 5
 
@@ -273,7 +315,7 @@ tests:
     result:
       _class: Reduce
       value:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
   - script: '{1d6 +2}'
@@ -282,7 +324,7 @@ tests:
       value:
         _class: BinaryOp
         left:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides: 6
         op: '+'
@@ -293,31 +335,32 @@ tests:
       left:
         _class: Reduce
         value:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides: 6
       op: '+'
       right: 2
   - script: '{test}.attr'
-    categories:
-    - access
     result:
       _class: Access
       accessing:
         _class: Reduce
-        value: 'test'
+        value:
+          _class: Reference
+          value: 'test'
       accessors:
-      - 'attr'
+      - _class: Reference
+        value: 'attr'
   - script: '{1d{2d4}}'
     result:
       _class: Reduce
       value:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides:
           _class: Reduce
           value:
-            _class: Dice
+            _class: DiceNode
             number_of_dice: 2
             sides: 4
   - script: '{1}->top'
@@ -327,8 +370,10 @@ tests:
         _class: Reduce
         value: 1
       modifiers:
-      - modifier: 'top'
-        _class: ModifierCall
+      - _class: ModifierCall
+        modifier:
+          _class: Reference
+          value: 'top'
         args: []
   - script: '{1d4}->top'
     result:
@@ -336,31 +381,35 @@ tests:
       subject:
         _class: Reduce
         value:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides: 4
       modifiers:
-      - modifier: 'top'
+      - _class: ModifierCall
+        modifier:
+          _class: Reference
+          value: 'top'
         args: []
-        _class: ModifierCall
   - script: '{1d{2d4}}->top'
     result:
       _class: Modify
       subject:
         _class: Reduce
         value:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 1
           sides:
             _class: Reduce
             value:
-              _class: Dice
+              _class: DiceNode
               number_of_dice: 2
               sides: 4
       modifiers:
-      - modifier: 'top'
+      - _class: ModifierCall
+        modifier:
+          _class: Reference
+          value: 'top'
         args: []
-        _class: ModifierCall
   - script: '{1}'
     result:
       _class: Reduce
@@ -372,7 +421,9 @@ tests:
         _class: BinaryOp
         left: 1
         op: '+'
-        right: a
+        right:
+          _class: Reference
+          value: a
   - script: '{3 * a - 4}'
     result:
       _class: Reduce
@@ -382,7 +433,9 @@ tests:
           _class: BinaryOp
           left: 3
           op: '*'
-          right: a
+          right:
+            _class: Reference
+            value: a
         op: '-'
         right: 4
   - script: '{3 * (a - 4)}'
@@ -394,7 +447,9 @@ tests:
         op: '*'
         right:
           _class: BinaryOp
-          left: a
+          left:
+            _class: Reference
+            value: a
           op: '-'
           right: 4
   - script: '{3 * {a - 4}}'
@@ -408,7 +463,9 @@ tests:
           _class: Reduce
           value:
             _class: BinaryOp
-            left: a
+            left:
+              _class: Reference
+              value: a
             op: '-'
             right: 4
 
@@ -440,24 +497,24 @@ tests:
     result:
       _class: Enlarge
       size:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
       value:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 2
         sides: 3
   - script: '{1d6@{2d3}}'
     result:
       _class: Enlarge
       size:
-        _class: Dice
+        _class: DiceNode
         number_of_dice: 1
         sides: 6
       value:
         _class: Reduce
         value:
-          _class: Dice
+          _class: DiceNode
           number_of_dice: 2
           sides: 3
 #  - script: '{}'
@@ -471,57 +528,83 @@ tests:
   tests:
   - script: 'test.test2'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
-      - 'test2'
+      - _class: Reference
+        value: 'test2'
   - script: 'test.test2.test3'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
-      - 'test2'
-      - 'test3'
+      - _class: Reference
+        value: 'test2'
+      - _class: Reference
+        value: 'test3'
   - script: 'test.{name}'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
       - _class: Reduce
-        value: 'name'
+        value:
+          _class: Reference
+          value: 'name'
   - script: 'test.{3}'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
       - _class: Reduce
         value: 3
   - script: 'test.{1}.name.{test}'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
       - _class: Reduce
         value: 1
-      - 'name'
+      - _class: Reference
+        value: 'name'
       - _class: Reduce
-        value: 'test'
+        value:
+          _class: Reference
+          value: 'test'
   - script: 'test.{#}'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
       - _class: SpecialAccessor
         value: LENGTH
   - script: 'test.{+}'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
       - _class: SpecialAccessor
         value: TOTAL
   - script: 'test.{=}'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
       - _class: SpecialAccessor
         value: VALUE
   - script: 'test.{*}'
     result:
-      accessing: 'test'
+      accessing:
+        _class: Reference
+        value: 'test'
       accessors:
       - _class: SpecialAccessor
         value: EVERY
