@@ -11,12 +11,14 @@ from .base import CodeInfo
 from .. import langref
 from ..exceptions import InvalidNameError
 from ..grammar import TreeNode
-from ..util import unwrap_func
 
 __all__ = ()
 
 
+# pylint: disable=too-many-return-statements
 def _unwrap_node(node):
+    if node is None:
+        return None
     if util.is_valid_iterable(node):
         items = type(node)(
             nd for nd in (_unwrap_node(n) for n in node) if nd or isinstance(nd, (int, float)))
@@ -26,6 +28,8 @@ def _unwrap_node(node):
         return items
     if not isinstance(node, TreeNode):
         return node
+    if not node.elements:
+        return node.text
     elements = _unwrap_node(node.elements)
     with suppress(TypeError):
         if len(elements) == 1 and util.is_valid_iterable(node):
@@ -43,7 +47,8 @@ def elements_to_values(func):
         for element in args[-1]:
             if isinstance(element, TreeNode):
                 element = element.elements or element.text.strip()
-                element = _unwrap_node(element)
+                if element:
+                    element = _unwrap_node(element)
             if element or isinstance(element, (int, float)):
                 values.append(element)
         return func(*args[:-1], values)
@@ -116,6 +121,14 @@ def string(text, start, end, values, codeinfo):
     )
 
 
+def special_accessor(text, start, end, values):
+    return elements.SpecialAccessor(text[start:end])
+
+
+def special_ref(text, start, end, values):
+    return elements.SpecialReference(text[start:end])
+
+
 @add_codeinfo
 def reference(text, start, end, values, codeinfo):
     value = text[start:end]
@@ -126,10 +139,6 @@ def reference(text, start, end, values, codeinfo):
 
 def text(text, start, end, values):
     return text[start:end]
-
-
-def special_ref(text, start, end, values):
-    return elements.SpecialReference(text[start:end])
 
 
 def ignore(*args):
@@ -209,12 +218,11 @@ def enlarge(text, start, end, values, codeinfo):
 @elements_to_values
 @add_codeinfo
 def modify_and_assign(text, start, end, values, codeinfo):
-    modifiers = values[-1]
-    if not util.is_valid_iterable(modifiers):
-        modifiers = (modifiers,)
     return (elements.Assignment(
         target=values[0],
-        value=elements.Modify(subject=values[0], modifiers=modifiers, codeinfo=codeinfo),
+        value=elements.Modify(subject=values[0],
+                              modifiers=util.flatten_tuple(values[1:]),
+                              codeinfo=codeinfo),
         codeinfo=codeinfo,
     ))
 
@@ -256,8 +264,37 @@ def otherwise(text, start, end, values, codeinfo):
 
 @elements_to_values
 @add_codeinfo
+def bag_info(text, start, end, values, codeinfo):
+    isolate = True
+    parent = None
+    value = values[0]
+    if util.is_valid_iterable(value):
+        isolate, parent = value
+    elif isinstance(value, str):
+        isolate = value
+    else:
+        parent = value
+    if isinstance(isolate, str):
+        isolate = isolate == '!'
+    return internal.BagInfo(parent=parent, isolate=isolate, codeinfo=None)
+
+
+@elements_to_values
+@add_codeinfo
 def new_bag(text, start, end, values, codeinfo):
-    return elements.NewBag(util.flatten_tuple(values), codeinfo=codeinfo)
+    isolate = True
+    parent = None
+    statements = ()
+    if values and isinstance(values[0], internal.BagInfo):
+        parent, isolate, *_ = values.pop(0)
+    if values:
+        statements = util.flatten_tuple(values[0])
+    return elements.NewBag(
+        parent=parent,
+        isolate=isolate,
+        statements=statements,
+        codeinfo=codeinfo,
+    )
 
 
 @elements_to_values
@@ -477,15 +514,15 @@ def for_every(text, start, end, values, codeinfo):
 @add_codeinfo
 def modifier_def(text, start, end, values, codeinfo):
     params = definition = ()
-    target = values.pop(0)
+    target, *values = values
+    if values and util.is_valid_iterable(values[0]):
+        values = values[0]
     if values and isinstance(values[0], internal.ItemList):
         params = tuple(values.pop(0))
     if values:
         definition = values[0]
         if not util.is_valid_iterable(definition):
             definition = (definition,)
-    if target == '!':
-        target = elements.SpecialReference.NONE
     new_params = []
     for param in (p.value for p in params):
         if param in new_params:
@@ -509,33 +546,27 @@ def block(text, start, end, values, codeinfo):
     return values[0]
 
 
-def _add_accessor(access, accessor, codeinfo=None):
-    pass
-
-
 @elements_to_values
 @add_codeinfo
 def first_modifier_call(text, start, end, values, codeinfo):
-    target, op, modifier, *args = values
+    target, op, call = values
     if op == '+':
         accessing = target
         accessors = []
         if isinstance(target, elements.Access):
             accessing = target.accessing
             accessors = list(target.accessors)
-        if isinstance(modifier, elements.Reference):
-            accessors.append(modifier)
-        elif isinstance(modifier, elements.Access):
-            accessors.append(modifier.accessing)
-            accessors.extend(modifier.accessors)
-        modifier = elements.Access(
+        if isinstance(call.modifier, elements.Reference):
+            accessors.append(call.modifier)
+        elif isinstance(call.modifier, elements.Access):
+            accessors.append(call.modifier.accessing)
+            accessors.extend(call.modifier.accessors)
+        call = call._replace(modifier=elements.Access(
             accessing=accessing,
             accessors=tuple(accessors),
-            codeinfo=modifier.codeinfo,
-        )
-    if args:
-        args = args[0]
-    return (target, unwrap_func(modifier_call)(text, start, end, (modifier, args), codeinfo))
+            codeinfo=call.codeinfo,
+        ))
+    return (target, call)
 
 
 def empty_block(*args):
@@ -580,11 +611,6 @@ def attempt(text, start, end, values, codeinfo):
 @add_codeinfo
 def oops(text, start, end, values, codeinfo):
     return elements.Oops(values[0], codeinfo=codeinfo)
-
-
-@elements_to_values
-def special_accessor(text, start, end, values):
-    return elements.SpecialAccessor(values[0])
 
 
 @elements_to_values

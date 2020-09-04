@@ -85,7 +85,13 @@ def _(self, context):
 
 @elements.NewBag.evaluator
 def _(self, context):
-    return Bag()
+    parent = context(self.parent)
+    bag = Bag(parent=parent, isolate=self.isolate)
+    if self.statements:
+        with context.now_access(bag):
+            for stmt in self.statements:
+                context(stmt)
+    return bag
 
 
 # Because these objects are predicated, we can just have their children be evaluated

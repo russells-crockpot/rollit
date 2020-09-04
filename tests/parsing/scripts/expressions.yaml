@@ -14,12 +14,6 @@ tests:
     result: 3.0
   - script: '-4.5'
     result: -4.5
-  - script: '{-}'
-    result:
-      _class: NewBag
-  - script: '{ - }'
-    result:
-      _class: NewBag
   - script: "'test'"
     result:
       _class: StringLiteral
@@ -146,83 +140,6 @@ tests:
           value: b
       op: '+'
       right: 6
-
-- name: roll_math
-  categories:
-  - math
-  tests:
-  - script: 'test & 2'
-    result:
-      _class: BinaryOp
-      left:
-        _class: Reference
-        value: 'test'
-      op: '&'
-      right: 2
-  - script: 'test ^ 2'
-    result:
-      _class: BinaryOp
-      left:
-        _class: Reference
-        value: 'test'
-      op: '^'
-      right: 2
-  - script: 'test ^ 2 + c'
-    result:
-      _class: BinaryOp
-      left:
-        _class: Reference
-        value: 'test'
-      op: '^'
-      right:
-        _class: BinaryOp
-        left: 2
-        op: '+'
-        right:
-          _class: Reference
-          value: c
-  - script: 'test ^ 2 * c'
-    result:
-      _class: BinaryOp
-      left:
-        _class: Reference
-        value: 'test'
-      op: '^'
-      right:
-        _class: BinaryOp
-        left: 2
-        op: '*'
-        right:
-          _class: Reference
-          value: c
-  - script: '1 ^ test & c'
-    result:
-      _class: BinaryOp
-      left: 1
-      op: '^'
-      right:
-        _class: BinaryOp
-        left:
-          _class: Reference
-          value: 'test'
-        op: '&'
-        right:
-          _class: Reference
-          value: c
-  - script: '(test ^ 2) & c'
-    result:
-      _class: BinaryOp
-      left:
-        _class: BinaryOp
-        left:
-          _class: Reference
-          value: 'test'
-        op: '^'
-        right: 2
-      op: '&'
-      right:
-        _class: Reference
-        value: c
 
 - name: dice
   categories:

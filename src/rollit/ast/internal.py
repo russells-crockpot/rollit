@@ -49,6 +49,8 @@ LoopBody = create_temporay_element_type('LoopBody')
 """ """
 Always = create_temporay_element_type('Always')
 """ """
+BagInfo = create_temporay_element_type('BagInfo', ('parent', 'isolate'))
+""" """
 
 
 class ItemList(tuple):

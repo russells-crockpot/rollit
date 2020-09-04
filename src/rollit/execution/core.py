@@ -1,13 +1,13 @@
 """
 """
 import inspect
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager, nullcontext, suppress
 
 from .. import grammar
 from ..ast import actions, elements, flatten_tuple, is_valid_iterable, \
         ModelElement, SingleValueElement
 from ..exceptions import RollitTypeError, NoneError, CannotReduceError, RollitIndexError, \
-        RollitReferenceError
+        RollitReferenceError, InvalidNameError
 from . import stdlib
 from .base import DEFAULT_SEARCH_PATH, is_atom
 from .scope import Scope
@@ -91,10 +91,18 @@ class ExecutionContext:
         self._scope = value
 
     def __contains__(self, name):
+        if name in self._accessing:
+            return True
         return name in self._scope
 
     def __getitem__(self, name):
-        return self._accessing[name]
+        try:
+            return self._accessing[name]
+        except InvalidNameError:
+            if self._accessing != self._scope:
+                with suppress(InvalidNameError):
+                    return self._scope[name]
+            raise
 
     def __setitem__(self, name, value):
         self._accessing[name] = value

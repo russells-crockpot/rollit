@@ -6,7 +6,6 @@ tests:
 - name: load
   categories:
   - load
-  - bags
   tests:
   - script: 'load test'
     result:
@@ -279,32 +278,23 @@ tests:
           value: 'name'
         op: '%'
         right: 1
-  - script: 'name &= 1'
+  - script: 'name => top'
     result:
       _class: Assignment
       target:
         _class: Reference
         value: 'name'
       value:
-        _class: BinaryOp
-        left:
+        _class: Modify
+        subject:
           _class: Reference
           value: 'name'
-        op: '&'
-        right: 1
-  - script: 'name ^= 1'
-    result:
-      _class: Assignment
-      target:
-        _class: Reference
-        value: 'name'
-      value:
-        _class: BinaryOp
-        left:
-          _class: Reference
-          value: name
-        op: '^'
-        right: 1
+        modifiers:
+        - _class: ModifierCall
+          modifier:
+            _class: Reference
+            value: 'top'
+          args: []
   - script: '?.{1} = 3'
     result:
       _class: Assignment

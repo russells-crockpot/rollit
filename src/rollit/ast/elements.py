@@ -1,6 +1,7 @@
 """
 """
 from collections import namedtuple
+from contextlib import suppress
 
 from .base import create_model_element_type, ElementSpecs, ModelEnumElement, ModelElement, \
         SingleValueElement
@@ -43,6 +44,10 @@ class SpecialAccessor(ModelEnumElement):
     VALUE = '='
     EVERY = '*'
     PARENT = '^'
+    ON_ACCESS = '.'
+    ON_CLEAR = '-'
+    ON_SET = VALUE
+    ON_CREATE = TOTAL
 
     # pylint: disable=no-member, missing-function-docstring
     def evaluate(self, context):
@@ -58,6 +63,7 @@ class SpecialReference(ModelEnumElement):
     NONE = '!'
     LOCAL = '$'
     ERROR = '#'
+    PARENT = '^'
 
     # pylint: disable=no-member
     def __nonzero__(self):
@@ -109,17 +115,26 @@ class StringLiteral(namedtuple('_StringLiteralBase', ('parts', 'codeinfo')), Mod
             'value': self.value,
         }
 
+    @classmethod
+    def preevaluate(cls, value):
+        return value.value
+
 
 SingleValueElement.register(StringLiteral)
 
 
-def _string_literal_preeval(obj):
-    if isinstance(obj.value, str):
-        return obj.value
-    return ''.join(obj.value)
+class Reference(create_model_element_type('BaseReference')):
+    """
+    """
+
+    def __new__(cls, value, *, codeinfo):
+        with suppress(ValueError):
+            return SpecialReference(value)
+        #pylint: disable=too-many-function-args
+        return super().__new__(cls, value, codeinfo=codeinfo)
 
 
-StringLiteral.preevaluate = _string_literal_preeval
+Reference.register(SpecialReference)
 
 # Loops
 UntilDo = create_model_element_type('UntilDo', ('name', 'until', 'do', 'otherwise'),
@@ -175,12 +190,8 @@ Enlarge = create_model_element_type('Enlarge', ('size', 'value'))
 Reduce = create_model_element_type('Reduce', specs=ElementSpecs(always_use_scope=True))
 """ """
 
-NewBag = create_model_element_type('NewBag')
+NewBag = create_model_element_type('NewBag', ('parent', 'isolate', 'statements'))
 """ """
-
-Reference = create_model_element_type('Reference')
-""" """
-Reference.register(SpecialReference)
 
 ClearValue = create_model_element_type('ClearValue')
 """ """

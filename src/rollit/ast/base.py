@@ -54,7 +54,7 @@ CodeInfo = namedtuple('CodeInfo', ('text', 'start_pos', 'end_pos'))
 class ModelElementMeta(ABCMeta):
     """
     """
-    _evaluator = _reducer = None
+    _preevaluator = _evaluator = _reducer = None
 
     def evaluator(cls, func):
         """
@@ -66,6 +66,12 @@ class ModelElementMeta(ABCMeta):
         """
         """
         cls._reducer = func
+        return func
+
+    def preevaluator(cls, func):
+        """
+        """
+        cls._preevaluator = func
         return func
 
 
@@ -90,6 +96,9 @@ class ModelElement(namedtuple('_ModelElementBase', ('codeinfo',)), metaclass=Mod
     def preevaluate(cls, value):
         """
         """
+        # pylint: disable=not-callable
+        if cls._preevaluator:
+            return cls._preevaluator(value)
         return DeferEvaluation
 
     def reduce(self, context):

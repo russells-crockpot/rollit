@@ -3,7 +3,7 @@
 from collections import ChainMap
 
 from ..ast import elements
-from ..exceptions import InvalidNameError, NoSuchLoopError, RollitSyntaxError
+from ..exceptions import NoSuchLoopError, RollitSyntaxError
 from .objects import Bag
 from .base import NoSubject
 
@@ -28,13 +28,13 @@ class Scope:
         self._error = None
         self._subject = NoSubject
         if not self.parent:
-            self._loops = ChainMap(Bag())
-            self._variables = ChainMap(Bag())
+            self._variables = Bag(isolate=isolate)
+            self._loops = ChainMap()
             self.error = error
             self.subject = subject
         else:
-            self._loops = ChainMap(Bag(), *self.parent._loops.maps)
-            self._variables = ChainMap(Bag(), *self.parent._variables.maps)
+            self._variables = Bag(parent=parent._variables, isolate=isolate)
+            self._loops = self.parent._loops.new_child()
             self.subject = subject if subject is not NoSubject else self.parent.subject
             self.error = error if error is not None else self.parent.error
             self._loop = loop if loop is not None else self.parent._loop
@@ -49,12 +49,19 @@ class Scope:
         """
         if name in (elements.SpecialReference.NONE, '!', None, ''):
             return self.current_loop
+        if name in (elements.SpecialAccessor.PARENT, '^'):
+            parent = self.parent
+            while parent and parent.current_loop == self.current_loop:
+                parent = parent.parent
+            if not parent or not parent.current_loop:
+                raise NoSuchLoopError('^') from None
+            return parent.current_loop
         if name in (elements.SpecialReference.ROOT, '~'):
             return self.root_loop
         try:
             return self._loops[name]
         except KeyError:
-            raise NoSuchLoopError(name) from None
+            raise NoSuchLoopError(name)
 
     def load(self, bag):
         """
@@ -62,7 +69,7 @@ class Scope:
         # pylint: disable=protected-access
         if isinstance(bag, Scope):
             bag = bag._variables
-        self._variables.update(bag)
+        self._variables.load(bag)
 
     def __contains__(self, key):
         return key in self._variables
@@ -73,17 +80,14 @@ class Scope:
                 raise RollitSyntaxError('Cannot refer to the subject outside of a modifier!')
             return self.subject
         if name in (elements.SpecialReference.ROOT, '~'):
-            return self._variables.maps[-1]
+            return self._variables.root
         if name in (elements.SpecialReference.LOCAL, '$'):
-            return Bag(self._variables)
+            return self._variables
         if name in (elements.SpecialReference.ERROR, '#'):
             return self.error
         if name in (elements.SpecialReference.NONE, '!'):
             return None
-        try:
-            return self._variables[name]
-        except KeyError:
-            raise InvalidNameError(name) from None
+        return self._variables[name]
 
     def __setitem__(self, name, value):
         if name == '?':
@@ -122,9 +126,9 @@ class Scope:
     @error.setter
     def error(self, value):
         if not value:
-            self._variables.pop('#', None)
+            del self._variables[elements.SpecialReference.ERROR]
         else:
-            self._variables['#'] = value
+            self._variables[elements.SpecialReference.ERROR] = value
         self._error = value
 
     @property
@@ -136,9 +140,9 @@ class Scope:
     @subject.setter
     def subject(self, value):
         if value is NoSubject:
-            self._variables.pop('?', None)
+            del self._variables[elements.SpecialReference.SUBJECT]
         else:
-            self._variables['?'] = value
+            self._variables[elements.SpecialReference.SUBJECT] = value
         self._subject = value
 
     @property
@@ -170,16 +174,6 @@ class Scope:
         if self.parent:
             return self.parent.root
         return self
-
-    def destroy(self):
-        """
-        """
-        for k in tuple(self._variables.maps[0].keys()):
-            del self._variables[k]
-        for k in tuple(self._loops.maps[0].keys()):
-            del self._loops[k]
-        for a in self.__slots__:
-            delattr(self, a)
 
     def child(self, **kwargs):
         """

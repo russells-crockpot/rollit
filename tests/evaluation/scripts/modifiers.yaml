@@ -35,12 +35,15 @@ tests:
   - statements:
     - ['test4 <- val1 : ? += val1', null]
     - ['3 -> test4(2)', 5]
-    - ['3 -> test4(3)', 6]
-    - ['4 -> test4(1d6) -> test4(2d6)', 10]
   - statements:
-    - ['test5 <- val1, val2 [val1 = val1->top | val2 = val2 -> bottom | ? += val1 + val2]', null]
-    - ['1d6 -> test5(2d6, 3d6)', 11]
-    - ['{1d6} -> test5(2d6, 3d6)', 8]
+    - ['test5 <- val1 : ? += val1', null]
+    - ['3 -> test5(2)', 5]
+    - ['3 -> test5(3)', 6]
+    - ['4 -> test5(1d6) -> test5(2d6)', 10]
+  - statements:
+    - ['test6 <- val1, val2 [val1 = val1->top | val2 = val2 -> bottom | ? += val1 + val2]', null]
+    - ['1d6 -> test6(2d6, 3d6)', 11]
+    - ['{1d6} -> test6(2d6, 3d6)', 8]
   #- statements:
     #- ['test6 <-', null]
     #- ['test7 <-', null]

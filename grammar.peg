@@ -26,25 +26,34 @@ name        <- '$'                                      %special_ref
              / '~'                                      %special_ref
              / '!'                                      %special_ref
              / '#'                                      %special_ref
+             #/ '^'                                      %special_ref
              / basic_name
 
-empty_bag   <- @'{' _ @'-' _ @'}' _                                             %new_bag
-             / @'{-' _ws @'-}' _                                                %new_bag
-new_bag     <- @'{-' _ws (_ statement _ eos _)* _ stmt_or_expr _ws @'-}' _      %new_bag
-             / empty_bag
-enlarge     <- @'{' _ws expression? _ws '@' _ws expression? _ws @'}' _          %enlarge
-reduce      <- @'{' _ws !('-' / '.' / special_accessor)
-               expression _ws @'}' _                                            %reduce
+bag_info_item       <- ('!' / '^' ) _ @'(' _ws expression _ws @')' _
+                     / @'(' _ws expression _ws @')' _
+                     / '!'
+                     / '^'
+bag_info            <- @'[:' _ws bag_info_item  _ws @':]' _                 %bag_info
+bag_def             <- @'{:' _ws (_ statement _ eos)* _
+                       stmt_or_expr _ws @':}' _
+                     / @'{' _ @':' _ @'}' _
+                     / @'{:' _ws @':}' _
+new_bag             <- bag_info? bag_def                                    %new_bag
 
+enlarge     <- @'{' _ws !(':' / special_accessor)
+               expression? _ws '@' _ws expression? _ws @'}' _               %enlarge
+reduce      <- @'{' _ws !(':' / special_accessor)
+               expression _ws @'}' _                                        %reduce
 
-first_modifier_call  <- dice _ ('-'/'+') @'>' _ access _ modifier_args?     %first_modifier_call
-modifier_call        <- _ @'->' _ access _ modifier_args?                   %modifier_call
-modifier_args        <- @'(' _ws (expression _ ',' _ws )*
-                        expression ? _  @')' _                              %arg_list
-
-special_accessor    <- '#' / '*' / '+' / '=' / '^'
+special_accessor    <- '#'                                                  %special_accessor
+                     / '*'                                                  %special_accessor
+                     / '+'                                                  %special_accessor
+                     / '='                                                  %special_accessor
+                     / '^'                                                  %special_accessor
+                     / '.'                                                  %special_accessor
+                     / '-'                                                  %special_accessor
 accessor            <- _ws @'.' _ basic_name  _
-                     / _ws @'.' @'{' _ special_accessor _ @'}' _        %special_accessor
+                     / _ws @'.' @'{' _ special_accessor _ @'}' _
                      / _ws @'.' reduce _
 access              <- reduce_expr accessor+                            %access
                      / name
@@ -65,17 +74,14 @@ comp_op         <- '=='                         %text
                  / 'and' !(_ 'always')          %text
                  / 'or'                         %text
                  / 'isa'                        %text
-roll_op         <- '&'                          %text
-                 / '^'                          %text
 assign_op       <- '+='                         %text
                  / '-='                         %text
                  / '*='                         %text
                  / '/='                         %text
                  / '%='                         %text
                  / '%/='                        %text
-                 / '^='                         %text
                  / '&='                         %text
-                 / '='                          %text
+                 / '=' !'>'                     %text
 
 
 expression <- use_if
@@ -89,7 +95,7 @@ use_if <- @'use' _ expression _ @'if' _ comparison _
 comparison  <- roll_math _ comp_op _ comparison         %binary_op
              / roll_math
 
-roll_math   <- add_math _ roll_op !'=' _ roll_math      %binary_op
+roll_math   <- add_math _ '&' !'=' _ roll_math      %binary_op
              / add_math
 
 add_math    <- mult_math _ add_op !'=' _ add_math       %binary_op
@@ -109,22 +115,34 @@ dice    <- !(name/string) reduce_expr _ @`d` _
 reduce_expr <- enlarge
              / new_bag
              / reduce
-             / '(' _ws expression _ws ')'
+             / @'(' _ws expression _ws @')' _
              / atom
 
 atom        <- number / name / string
 
-modifier_params <- (basic_name _ @',' _ws )* basic_name?                    %item_list
-modifier_def    <- (access / '!') _ @'<-' _ modifier_params _ws
-                   @(':'/ ':'? &'[') _ stmt_or_expr                         %modifier_def
+
+
+modifier_tail           <- access _ modifier_args?                          %modifier_call
+first_modifier_call     <- dice _ ('-'/'+') @'>' _ modifier_tail            %first_modifier_call
+modifier_call           <- _ws @'->' _ modifier_tail
+modifier_args           <- @'(' _ws (expression _ @',' _ws )*
+                            expression ? _  @')' _                          %arg_list
+
+modifier_params         <- (basic_name _ @',' _ws )* basic_name?                %item_list
+modifier_def_body       <- modifier_params _ws @(':'/ ':'? &'[') _ stmt_or_expr
+modifier_def_target     <- access
+                         / @'{' _ special_accessor _ @'}' _
+                         / '!'                                                  %special_ref
+                         / '?'                                                  %special_ref
+modifier_def            <- modifier_def_target _ @'<-' _ modifier_def_body      %modifier_def
 
 if_then         <- @'if' _ expression _ @'then' _ws stmt_or_expr            %predicated_statement
 unless          <- @'unless' _ expression _ @'then' _ws stmt_or_expr        %predicated_statement
 
 otherwise       <- @'otherwise' _ws stmt_or_expr                            %otherwise
 
-basic_load_list     <- (basic_name _ ',' _ws )* basic_name?
-access_load_list    <- (access _ ',' _ws )* access?
+basic_load_list     <- (basic_name _ @',' _ws )* basic_name?
+access_load_list    <- (access _ @',' _ws )* access?
 load_into           <- @'into' _ access
 load_from           <- @'from' _ basic_load_list
 load                <- @'load' _ '*' _ load_from _ load_into?               %load_from_into
@@ -142,18 +160,18 @@ restart_pos     <- 'before' _ name?                     %restart
 except_when     <- @'except' _ @'when' _ expression _
                    @'then' _ws stmt_or_expr             %predicated_statement
 
-loop_name       <- @'@' _ basic_name                    %loop_name
-loop_body       <- @'do' @_ws stmt_or_expr              %loop_body
-
 stmt_or_expr    <- statement / expression
 block_stmt      <- (statement _ !']')* _ (expression _ &']' / statement)
 
-but_if_stmt         <- expression _ &'but' / stmt_or_expr
-but_if              <- @'but' !'always' _ @'if' _ (expression / '*' ) _
-                       @'occurs' _ @'then' _ws but_if_stmt                      %but_if
-always              <- @'but' _ @'always' _ws stmt_or_expr                      %always
-attempt             <- @'attempt' _ws but_if_stmt _ws always                    %attempt
-                     / @'attempt' _ws but_if_stmt _ws but_if+ (_ws always)?     %attempt
+loop_name   <- @'@' _ basic_name                    %loop_name
+loop_body   <- @'do' @_ws stmt_or_expr              %loop_body
+
+but_if_stmt <- expression _ &'but' / stmt_or_expr
+but_if      <- @'but' !'always' _ @'if' _ (expression / '*' ) _
+               @'occurs' _ @'then' _ws but_if_stmt                      %but_if
+always      <- @'but' _ @'always' _ws stmt_or_expr                      %always
+attempt     <- @'attempt' _ws but_if_stmt _ws always                    %attempt
+             / @'attempt' _ws but_if_stmt _ws but_if+ (_ws always)?     %attempt
 
 statement   <- eos
              / 'leave'                                                          %leave
@@ -161,9 +179,9 @@ statement   <- eos
              / @'oops' _ expression                                             %oops
              / @'clear' _ access                                                %clear
              / @'restart' _  restart_pos
-             / @'[' _ws block_stmt _ws @']' _                                   %block
-             / @'[' _ws @']' _                                                  %empty_block
-             / @'={' access @'}' _                                              %reduce_and_assign
+             / @'[' !':' _ws block_stmt _ws @']' _                              %block
+             / @'[' !':' _ws @']' _                                             %empty_block
+             / @'={' !':' _ access _ @'}' _                                     %reduce_and_assign
              / load
              / modifier_def
              / if_then (_ws unless)* (_ws otherwise)?                           %if_stmt
@@ -171,6 +189,6 @@ statement   <- eos
                expression _ @'has' _ loop_body                                  %for_every
              / @'until' _ loop_name? _ expression _ loop_body _ws
                (except_when _ws)* otherwise?                                    %until_do
-             / access _ @'=' &'->' _ modifier_call+                             %modify_and_assign
+             / access _ @'=>' _ modifier_tail modifier_call*                    %modify_and_assign
              / access _ assign_op _ws expression                                %assignment
              / expression _ eos

@@ -1,0 +1,195 @@
+name: bags
+categories:
+- bags
+tests:
+
+- name: empty_bags
+  categories:
+  - empty_bags
+  tests:
+  - script: '{:}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements: []
+  - script: '{: :}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements: []
+
+- name: bag_info
+  categories:
+  - bag_info
+  tests:
+  - script: '[:^:]{:}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: false
+      statements: []
+  - script: '[:!:]{:}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements: []
+  - script: '[:(a):]{:}'
+    result:
+      _class: NewBag
+      parent:
+        _class: Reference
+        value: 'a'
+      isolate: true
+      statements: []
+  - script: '[: ! (b) :]{:}'
+    result:
+      _class: NewBag
+      parent:
+        _class: Reference
+        value: 'b'
+      isolate: true
+      statements: []
+  - script: '[:^(c):]{:}'
+    result:
+      _class: NewBag
+      parent:
+        _class: Reference
+        value: 'c'
+      isolate: false
+      statements: []
+
+- name: bag_body
+  categories:
+  - bag_body
+  tests:
+  - script: '{: a = 1 :}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements:
+      - _class: Assignment
+        target:
+          _class: Reference
+          value: 'a'
+        value: 1
+  - script: '{: b = 1 | c=2 :}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements:
+      - _class: Assignment
+        target:
+          _class: Reference
+          value: 'b'
+        value: 1
+      - _class: Assignment
+        target:
+          _class: Reference
+          value: 'c'
+        value: 2
+  - script: '{: c = 1 | d += 2 | e = d + 1:}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements:
+      - _class: Assignment
+        target:
+          _class: Reference
+          value: 'c'
+        value: 1
+      - _class: Assignment
+        target:
+          _class: Reference
+          value: 'd'
+        value:
+          _class: BinaryOp
+          left:
+            _class: Reference
+            value: 'd'
+          op: '+'
+          right: 2
+      - _class: Assignment
+        target:
+          _class: Reference
+          value: 'e'
+        value:
+          _class: BinaryOp
+          left:
+            _class: Reference
+            value: 'd'
+          op: '+'
+          right: 1
+  - script: '{: a <-[] :}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements:
+      - _class: ModifierDef
+        target:
+          _class: Reference
+          value: 'a'
+        parameters: []
+        definition: []
+  - script: '{: b <-[] | c <-: 1 :}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements:
+      - _class: ModifierDef
+        target:
+          _class: Reference
+          value: 'b'
+        parameters: []
+        definition: []
+      - _class: ModifierDef
+        target:
+          _class: Reference
+          value: 'c'
+        parameters: []
+        definition: [1]
+  - script: '{: {^} <-[] :}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements:
+      - _class: ModifierDef
+        target:
+          _class: SpecialAccessor
+          value: PARENT
+        parameters: []
+        definition: []
+  - script: '{: {+} <-[] :}'
+    result:
+      _class: NewBag
+      parent: null
+      isolate: true
+      statements:
+      - _class: ModifierDef
+        target:
+          _class: SpecialAccessor
+          value: TOTAL
+        parameters: []
+        definition: []
+  - script: '[:^(z):]{: {.} <-[] :}'
+    result:
+      _class: NewBag
+      parent:
+        _class: Reference
+        value: 'z'
+      isolate: false
+      statements:
+      - _class: ModifierDef
+        target:
+          _class: SpecialAccessor
+          value: ON_ACCESS
+        parameters: []
+        definition: []
