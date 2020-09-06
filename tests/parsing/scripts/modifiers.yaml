@@ -31,7 +31,7 @@ tests:
         value: 'name'
       parameters: []
       definition: []
-  - script: 'name <- : 1'
+  - script: 'name <- : [1]'
     result:
       _class: ModifierDef
       target:
@@ -39,6 +39,19 @@ tests:
         value: 'name'
       parameters: []
       definition: [1]
+  - script: 'name <- : 1'
+    result:
+      _class: ModifierDef
+      target:
+        _class: Reference
+        value: 'name'
+      parameters: []
+      definition:
+        _class: Assignment
+        target:
+          _class: SpecialReference
+          value: SUBJECT
+        value: 1
   - script: 'name<-:1d6'
     result:
       _class: ModifierDef
@@ -47,9 +60,14 @@ tests:
         value: name
       parameters: []
       definition:
-      - _class: DiceNode
-        number_of_dice: 1
-        sides: 6
+        _class: Assignment
+        target:
+          _class: SpecialReference
+          value: SUBJECT
+        value:
+          _class: DiceNode
+          number_of_dice: 1
+          sides: 6
   - script: 'name<-param[]'
     result:
       _class: ModifierDef
@@ -66,7 +84,7 @@ tests:
         value: 'name'
       parameters: ['param']
       definition: []
-  - script: 'name<-param1: 1 + a'
+  - script: 'name<-param1 [1 + a]'
     result:
       _class: ModifierDef
       target:
@@ -80,7 +98,7 @@ tests:
         right:
           _class: Reference
           value: a
-  - script: 'name<-param1: ? + 2'
+  - script: 'name<-param1: [? + 2]'
     result:
       _class: ModifierDef
       target:
@@ -104,14 +122,19 @@ tests:
       - 'param1'
       - 'param2'
       definition:
-      - _class: BinaryOp
-        left:
-          _class: Reference
-          value: 'param1'
-        op: '+'
-        right:
-          _class: Reference
-          value: 'param2'
+        _class: Assignment
+        target:
+          _class: SpecialReference
+          value: SUBJECT
+        value:
+          _class: BinaryOp
+          left:
+            _class: Reference
+            value: 'param1'
+          op: '+'
+          right:
+            _class: Reference
+            value: 'param2'
   - script: 'name<-param1, param2 [param1 + param2]'
     result:
       _class: ModifierDef

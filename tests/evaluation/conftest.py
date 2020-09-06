@@ -8,8 +8,8 @@ from contextlib import suppress
 
 import pytest
 
-from rollit.execution import ExecutionEnvironment
-from rollit.execution.towers import IncrementalTower
+from rollit.runtime import Runner
+from rollit.runtime.towers import IncrementalTower
 from rollit.ast import actions, is_valid_iterable
 
 try:
@@ -77,4 +77,4 @@ with suppress(Exception):
 
 @pytest.fixture
 def runner():
-    return ExecutionEnvironment(dice_tower=IncrementalTower())
+    return Runner(dice_tower=IncrementalTower())

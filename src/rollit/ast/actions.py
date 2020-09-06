@@ -62,7 +62,9 @@ def add_codeinfo(func):
 
     @functools.wraps(func)
     def _wrapper(text, start, end, values):
-        return func(text, start, end, values, CodeInfo(text[start:end], start, end))
+        #TODO account for \r and \f
+        lineno = text[:start].count('\n') + 1
+        return func(text, start, end, values, CodeInfo(text[start:end], start, end, lineno))
 
     return _wrapper
 
@@ -97,10 +99,11 @@ def use_if(text, start, end, values, codeinfo):
     return elements.UseIf(*values, codeinfo=codeinfo)
 
 
-def basic_name(text, start, end, values):
+@add_codeinfo
+def basic_name(text, start, end, values, codeinfo):
     name = text[start:end]
     if name in elements.KEYWORDS:
-        raise InvalidNameError(f'{name} is a keyword and cannot be used.')
+        raise InvalidNameError(f'{name} is a keyword and cannot be used.', codeinfo=codeinfo)
     return name
 
 
@@ -119,6 +122,10 @@ def string(text, start, end, values, codeinfo):
                                      text[start + 1:end - 1]),
         codeinfo=codeinfo,
     )
+
+
+def special_entry(text, start, end, values):
+    return elements.SpecialEntry(text[start:end])
 
 
 def special_accessor(text, start, end, values):
@@ -153,6 +160,77 @@ def negate(text, start, end, values, codeinfo):
 
 @elements_to_values
 @add_codeinfo
+def normal_modifier_body(text, start, end, values, codeinfo):
+    params = body = ()
+    if values and util.is_valid_iterable(values[0]):
+        values = values[0]
+    if values and isinstance(values[0], internal.ItemList):
+        params = tuple(values.pop(0))
+    if values:
+        body = values[0]
+        if not util.is_valid_iterable(body):
+            body = (body,)
+        else:
+            body = util.flatten_tuple(body)
+    return params, body
+
+
+@add_codeinfo
+def small_modifier_body(text, start, end, values, codeinfo):
+    params, body = normal_modifier_body(text, start, end, values)
+    return params, elements.Assignment(
+        target=elements.SpecialReference.SUBJECT,
+        value=body[0],
+        codeinfo=codeinfo,
+    )
+
+
+@elements_to_values
+@add_codeinfo
+def modifier_def(text, start, end, values, codeinfo):
+    target, (params, body) = values
+    seen = set()
+    for param in params:
+        if param in seen:
+            #TODO pretty print target
+            raise InvalidNameError(
+                f'Parameter {param} of modifier {target} is '
+                'defined more than once!',
+                codeinfo=codeinfo)
+        seen.add(param)
+    return elements.ModifierDef(
+        target=target,
+        parameters=params,
+        definition=body,
+        codeinfo=codeinfo,
+    )
+
+
+@elements_to_values
+@add_codeinfo
+def first_modifier_call(text, start, end, values, codeinfo):
+    target, op, call = values
+    if op == '+':
+        accessing = target
+        accessors = []
+        if isinstance(target, elements.Access):
+            accessing = target.accessing
+            accessors = list(target.accessors)
+        if isinstance(call.modifier, elements.Reference):
+            accessors.append(call.modifier)
+        elif isinstance(call.modifier, elements.Access):
+            accessors.append(call.modifier.accessing)
+            accessors.extend(call.modifier.accessors)
+        call = call._replace(modifier=elements.Access(
+            accessing=accessing,
+            accessors=tuple(accessors),
+            codeinfo=call.codeinfo,
+        ))
+    return (target, call)
+
+
+@elements_to_values
+@add_codeinfo
 def modifier_call(text, start, end, values, codeinfo):
     if len(values) == 1:
         return elements.ModifierCall(modifier=values[0], args=(), codeinfo=codeinfo)
@@ -177,13 +255,19 @@ def modify(text, start, end, values, codeinfo):
 
 
 @elements_to_values
-def item_list(text, start, end, values):
-    return internal.ItemList(util.flatten_tuple(values))
+def param_list(text, start, end, values):
+    return internal.ItemList(p.value for p in util.flatten_tuple(values))
 
 
 @elements_to_values
 def arg_list(text, start, end, values):
     return util.flatten_tuple(values)
+
+
+@elements_to_values
+@add_codeinfo
+def raw_accessor(text, start, end, values, codeinfo):
+    return elements.RawAccessor(values[0], codeinfo=codeinfo)
 
 
 @elements_to_values
@@ -246,8 +330,9 @@ def reduce_and_assign(text, start, end, values, codeinfo):
                                codeinfo=codeinfo)
 
 
-def leave(text, start, end, values):
-    return elements.Leave(codeinfo=(text, start, end))
+@add_codeinfo
+def leave(text, start, end, values, codeinfo):
+    return elements.Leave(codeinfo=codeinfo)
 
 
 @elements_to_values
@@ -264,37 +349,10 @@ def otherwise(text, start, end, values, codeinfo):
 
 @elements_to_values
 @add_codeinfo
-def bag_info(text, start, end, values, codeinfo):
-    isolate = True
-    parent = None
-    value = values[0]
-    if util.is_valid_iterable(value):
-        isolate, parent = value
-    elif isinstance(value, str):
-        isolate = value
-    else:
-        parent = value
-    if isinstance(isolate, str):
-        isolate = isolate == '!'
-    return internal.BagInfo(parent=parent, isolate=isolate, codeinfo=None)
-
-
-@elements_to_values
-@add_codeinfo
 def new_bag(text, start, end, values, codeinfo):
-    isolate = True
-    parent = None
-    statements = ()
-    if values and isinstance(values[0], internal.BagInfo):
-        parent, isolate, *_ = values.pop(0)
-    if values:
-        statements = util.flatten_tuple(values[0])
-    return elements.NewBag(
-        parent=parent,
-        isolate=isolate,
-        statements=statements,
-        codeinfo=codeinfo,
-    )
+    if not values:
+        return elements.NewBag((), codeinfo=codeinfo)
+    return elements.NewBag(util.flatten_tuple(values), codeinfo=codeinfo)
 
 
 @elements_to_values
@@ -512,61 +570,10 @@ def for_every(text, start, end, values, codeinfo):
 
 @elements_to_values
 @add_codeinfo
-def modifier_def(text, start, end, values, codeinfo):
-    params = definition = ()
-    target, *values = values
-    if values and util.is_valid_iterable(values[0]):
-        values = values[0]
-    if values and isinstance(values[0], internal.ItemList):
-        params = tuple(values.pop(0))
-    if values:
-        definition = values[0]
-        if not util.is_valid_iterable(definition):
-            definition = (definition,)
-    new_params = []
-    for param in (p.value for p in params):
-        if param in new_params:
-            #TODO pretty print target
-            raise InvalidNameError(f'Parameter {param} of modifier {target} is '
-                                   'defined more than once!')
-        new_params.append(param)
-    return elements.ModifierDef(
-        target=target,
-        parameters=tuple(new_params),
-        definition=definition,
-        codeinfo=codeinfo,
-    )
-
-
-@elements_to_values
-@add_codeinfo
 def block(text, start, end, values, codeinfo):
     if util.is_valid_iterable(values[0]):
         return util.flatten_tuple(values[0])
     return values[0]
-
-
-@elements_to_values
-@add_codeinfo
-def first_modifier_call(text, start, end, values, codeinfo):
-    target, op, call = values
-    if op == '+':
-        accessing = target
-        accessors = []
-        if isinstance(target, elements.Access):
-            accessing = target.accessing
-            accessors = list(target.accessors)
-        if isinstance(call.modifier, elements.Reference):
-            accessors.append(call.modifier)
-        elif isinstance(call.modifier, elements.Access):
-            accessors.append(call.modifier.accessing)
-            accessors.extend(call.modifier.accessors)
-        call = call._replace(modifier=elements.Access(
-            accessing=accessing,
-            accessors=tuple(accessors),
-            codeinfo=call.codeinfo,
-        ))
-    return (target, call)
 
 
 def empty_block(*args):

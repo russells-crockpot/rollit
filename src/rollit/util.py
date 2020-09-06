@@ -8,6 +8,7 @@ __all__ = [
     'pformat_model',
     'pprint_model',
     'unwrap_func',
+    'format_runtime_error',
 ]
 
 
@@ -79,3 +80,14 @@ def unwrap_func(func):
             func = func.__wrapped__
         else:
             return func
+
+
+def format_runtime_error(error):
+    """
+    """
+    return '\n'.join((
+        f'A {type(error).__name__} occurred!',
+        f'  Error Message: {error.msg}',
+        f'  Code Fragment: {error.codeinfo.text}',
+        f'  Line Number: {error.codeinfo.lineno}',
+    ))

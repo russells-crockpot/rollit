@@ -10,56 +10,11 @@ tests:
   - script: '{:}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements: []
+      value: []
   - script: '{: :}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements: []
-
-- name: bag_info
-  categories:
-  - bag_info
-  tests:
-  - script: '[:^:]{:}'
-    result:
-      _class: NewBag
-      parent: null
-      isolate: false
-      statements: []
-  - script: '[:!:]{:}'
-    result:
-      _class: NewBag
-      parent: null
-      isolate: true
-      statements: []
-  - script: '[:(a):]{:}'
-    result:
-      _class: NewBag
-      parent:
-        _class: Reference
-        value: 'a'
-      isolate: true
-      statements: []
-  - script: '[: ! (b) :]{:}'
-    result:
-      _class: NewBag
-      parent:
-        _class: Reference
-        value: 'b'
-      isolate: true
-      statements: []
-  - script: '[:^(c):]{:}'
-    result:
-      _class: NewBag
-      parent:
-        _class: Reference
-        value: 'c'
-      isolate: false
-      statements: []
+      value: []
 
 - name: bag_body
   categories:
@@ -68,9 +23,7 @@ tests:
   - script: '{: a = 1 :}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements:
+      value:
       - _class: Assignment
         target:
           _class: Reference
@@ -79,9 +32,7 @@ tests:
   - script: '{: b = 1 | c=2 :}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements:
+      value:
       - _class: Assignment
         target:
           _class: Reference
@@ -95,9 +46,7 @@ tests:
   - script: '{: c = 1 | d += 2 | e = d + 1:}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements:
+      value:
       - _class: Assignment
         target:
           _class: Reference
@@ -128,9 +77,7 @@ tests:
   - script: '{: a <-[] :}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements:
+      value:
       - _class: ModifierDef
         target:
           _class: Reference
@@ -140,9 +87,7 @@ tests:
   - script: '{: b <-[] | c <-: 1 :}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements:
+      value:
       - _class: ModifierDef
         target:
           _class: Reference
@@ -154,42 +99,39 @@ tests:
           _class: Reference
           value: 'c'
         parameters: []
-        definition: [1]
-  - script: '{: {^} <-[] :}'
+        definition:
+          _class: Assignment
+          target:
+            _class: SpecialReference
+            value: SUBJECT
+          value: 1
+  - script: '{: <^> <-[] :}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements:
+      value:
       - _class: ModifierDef
         target:
-          _class: SpecialAccessor
+          _class: SpecialEntry
           value: PARENT
         parameters: []
         definition: []
-  - script: '{: {+} <-[] :}'
+  - script: '{: <:> <-[] :}'
     result:
       _class: NewBag
-      parent: null
-      isolate: true
-      statements:
+      value:
       - _class: ModifierDef
         target:
-          _class: SpecialAccessor
-          value: TOTAL
+          _class: SpecialEntry
+          value: CREATE
         parameters: []
         definition: []
-  - script: '[:^(z):]{: {.} <-[] :}'
+  - script: '{: <.> <-[] :}'
     result:
       _class: NewBag
-      parent:
-        _class: Reference
-        value: 'z'
-      isolate: false
-      statements:
+      value:
       - _class: ModifierDef
         target:
-          _class: SpecialAccessor
-          value: ON_ACCESS
+          _class: SpecialEntry
+          value: ACCESS
         parameters: []
         definition: []

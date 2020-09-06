@@ -44,10 +44,21 @@ class SpecialAccessor(ModelEnumElement):
     VALUE = '='
     EVERY = '*'
     PARENT = '^'
-    ON_ACCESS = '.'
-    ON_CLEAR = '-'
-    ON_SET = VALUE
-    ON_CREATE = TOTAL
+
+    # pylint: disable=no-member, missing-function-docstring
+    def evaluate(self, context):
+        return context[self]
+
+
+class SpecialEntry(ModelEnumElement):
+    """
+    """
+    PARENT = '^'
+    ACCESS = '.'
+    SET = '='
+    CLEAR = 'clear'
+    CREATE = ':'
+    DESTROY = '!'
 
     # pylint: disable=no-member, missing-function-docstring
     def evaluate(self, context):
@@ -94,8 +105,14 @@ class StringLiteral(namedtuple('_StringLiteralBase', ('parts', 'codeinfo')), Mod
     """
     __specs__ = ElementSpecs(intern_strings=False)
 
-    def __new__(cls, *parts, codeinfo):
-        return super().__new__(cls, parts, codeinfo=codeinfo)
+    def __new__(cls, parts, codeinfo):
+        new_parts = []
+        for part in parts:
+            if isinstance(part, StringLiteral):
+                new_parts.extend(part.parts)
+            else:
+                new_parts.append(part)
+        return super().__new__(cls, tuple(new_parts), codeinfo=codeinfo)
 
     @property
     def value(self):
@@ -137,11 +154,9 @@ class Reference(create_model_element_type('BaseReference')):
 Reference.register(SpecialReference)
 
 # Loops
-UntilDo = create_model_element_type('UntilDo', ('name', 'until', 'do', 'otherwise'),
-                                    specs=ElementSpecs(new_scope=True))
+UntilDo = create_model_element_type('UntilDo', ('name', 'until', 'do', 'otherwise'))
 """ """
-ForEvery = create_model_element_type('ForEvery', ('name', 'item_name', 'iterable', 'do'),
-                                     specs=ElementSpecs(new_scope=True))
+ForEvery = create_model_element_type('ForEvery', ('name', 'item_name', 'iterable', 'do'))
 """ """
 Restart = create_model_element_type('Restart', ('location_specifier', 'target'))
 """ """
@@ -155,21 +170,11 @@ Oops = create_model_element_type('Oops')
 """ """
 
 # Modifiers
-Modify = create_model_element_type('Modify', ('subject', 'modifiers'),
-                                   specs=ElementSpecs(
-                                       new_scope=True,
-                                       isolate_scope=True,
-                                   ))
+Modify = create_model_element_type('Modify', ('subject', 'modifiers'))
 """ """
-ModifierCall = create_model_element_type('ModifierCall', ('modifier', 'args'),
-                                         specs=ElementSpecs(always_use_scope=True))
+ModifierCall = create_model_element_type('ModifierCall', ('modifier', 'args'))
 """ """
-ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 'definition'),
-                                        specs=ElementSpecs(
-                                            new_scope=True,
-                                            isolate_scope=True,
-                                            retain_scope=True,
-                                        ))
+ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 'definition'))
 """ """
 Leave = create_model_element_type('Leave', constant=True)
 """ """
@@ -187,10 +192,12 @@ Access = create_model_element_type('Access', ('accessing', 'accessors'))
 """ """
 Enlarge = create_model_element_type('Enlarge', ('size', 'value'))
 """ """
-Reduce = create_model_element_type('Reduce', specs=ElementSpecs(always_use_scope=True))
+Reduce = create_model_element_type('Reduce')
+""" """
+RawAccessor = create_model_element_type('RawAccessor')
 """ """
 
-NewBag = create_model_element_type('NewBag', ('parent', 'isolate', 'statements'))
+NewBag = create_model_element_type('NewBag')
 """ """
 
 ClearValue = create_model_element_type('ClearValue')

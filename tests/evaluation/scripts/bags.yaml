@@ -1,0 +1,240 @@
+name: bags
+categories:
+- bags
+tests:
+- name: empty_bags
+  categories:
+  - empty_bags
+  tests:
+  - statements:
+    - ['{:}', {}]
+  - statements:
+    - ['{::}', {}]
+  - statements:
+    - ['{ :  }', {}]
+  - statements:
+    - ['{: :}', {}]
+
+- name: bag_access
+  categories:
+  - bag_access
+  tests:
+  - statements:
+    - ['a = {:}', null]
+    - ['a.{1} = 2', null]
+    - ['a', { 1: 2 }]
+    - ['a.{1}', 2]
+  - statements:
+    - ['b = {:}', null]
+    - ["b.{'x'} = 3", null]
+    - ['b', {'x': 3}]
+    - ['b.x', 3]
+  - statements:
+    - ['c = {:}', null]
+    - ["c.<'x'> = 3", null]
+    - ['c', {'x': 3}]
+    - ['c.x', 3]
+    - ["c.{'x'}", 3]
+  - statements:
+    - ['d = {:}', null]
+    - ['d.x = 4', null]
+    - ['d', {'x': 4}]
+    - ["d.{'x'}", 4]
+  - statements:
+    - ['e = {:}', null]
+    - ["e.{'x'} = 1", null]
+    - ['e.x += 4', null]
+    - ['e', {'x': 5}]
+    - ['e.x', 5]
+    - ["e.{'x'}", 5]
+  - statements:
+    - ['f = {:}', null]
+    - ['f.x = {:}', null]
+    - ['f', {'x': {}}]
+    - ['f.x.a = 2', null]
+    - ['f', {'x': {'a': 2}}]
+    - ["f.x.{'a'} *= 2", null]
+    - ['f', {'x': {'a': 4}}]
+    - ['f.x', {'a': 4}]
+    - ["f.{'x'}", {'a': 4}]
+    - ['f.x.a', 4]
+  - statements:
+    - ['g = {:}', null]
+    - ["y = 'x'", null]
+    - ['g.x = 4', null]
+    - ['g.y = 3', null]
+    - ["g.{'x'} += 1", null]
+    - ['g.{y} += 1', null]
+    - ['g', {'x': 6, 'y': 3}]
+    - ["g.{'x'}", 6]
+    - ["g.<'x'>", 6]
+    - ['g.{y}', 6]
+    - ['g.<y>', 6]
+    - ['g.y', 3]
+  - statements:
+    - ['h = {:}', null]
+    - ['h.x = {:}', null]
+    - ['h', {'x': {}}]
+    - ["h.x.<'a'> = 2", null]
+    - ['h', {'x': {'a': 2}}]
+    - ["h.x.<'a'> *= 2", null]
+    - ['h', {'x': {'a': 4}}]
+    - ['h.x', {'a': 4}]
+    - ["h.{'x'}", {'a': 4}]
+    - ['h.x.a', 4]
+    - ["h.x.<'a'>", 4]
+    - ["h.<'x'>.<'a'>", 4]
+    - ["h.<'x'>.a", 4]
+    - ["h.<'x'>.{'a'}", 4]
+
+- name: bag_definitions
+  categories:
+  - bag_definitions
+  tests:
+  - statements:
+    - ['{: a = 1 :}', {'a': 1}]
+  - statements:
+    - ["{: b = 1 | c = 'test' :}", {'b': 1, 'c': 'test'}]
+  - statements:
+    - ['{: c = 1 | d = 2 | e = 3 | f = c + d + e:}', {'c': 1, 'd': 2, 'e': 3, 'f': 6}]
+  - statements:
+    - ['{:~.d = 1:}', {}]
+  - statements:
+    - ['{: 1 + 2 :}', {}]
+
+- name: special_entries
+  categories:
+  - special_entries
+  tests:
+  - statements:
+    - ['a = {: <.> <- k: 4 :}', null]
+    - ['a.z = 1', null]
+    - ['a', {'z': 1}]
+    - ['a.z', 4]
+    - ['a.c', 4]
+    - ['a', {'z': 1}]
+  - statements:
+    - ['b = {: :}', null]
+    - ['b.z = 1', null]
+    - ['b', {'z': 1}]
+    - ['b.z', 1]
+    - ['b.<.> <- k: [ ?.<k> = 3 | ? = 2]', null]
+    - ['b.z', 2]
+    - ["b.<'z'>", 3]
+  - statements:
+    - ['c = {: <=> <- k, v [ ?.<k> = 4 ] :}', null]
+    - ['c.z = 1', null]
+    - ['c', {'z': 4}]
+    - ['c.z', 4]
+  - statements:
+    - ['d = {: :}', null]
+    - ['d.z = 1', null]
+    - ['d', {'z': 1}]
+    - ['d.z', 1]
+    - ['d.<=> <- k, v: [?.<k> = 3]', null]
+    - ['d', {'z': 1}]
+    - ['d.z', 1]
+    - ['d.z = 2', null]
+    - ['d', {'z': 3}]
+    - ['d.z', 3]
+  - statements:
+    - ['e = {: <=> <- k, v: 4 :}', null]
+    - ['e.z = 1', null]
+    - ['e', {'z': 4}]
+    - ['e.z', 4]
+    - ['clear e.<=>', null]
+    - ['e.z = 2', null]
+    - ['e', {'z': 2}]
+    - ['e.z', 2]
+  - statements:
+    - ['f = {: <clear> <- k: [] | z = 1 :}', null]
+    - ['f', {'z': 1}]
+    - ['clear f.z', null]
+    - ['f', {'z': 1}]
+
+- name: bag_parents
+  categories:
+  - bag_parents
+  tests:
+  - statements:
+    - ['a = {: v = 1 :}', null]
+    - ['z = {::}', null]
+    - ['z.<^> = a', null]
+    - ['z.v', 1]
+  - statements:
+    - ['b = {: v = 1 :}', null]
+    - ['z = {: v = 2:}', null]
+    - ['z.v', 2]
+    - ['z.<^> = b', null]
+    - ['b.v', 1]
+    - ['z.v', 2]
+  - statements:
+    - ['c = {: v = 1 :}', null]
+    - ['z = {: :}', null]
+    - ['z.<^> = c', null]
+    - ['z.v = 2', null]
+    - ['c.v', 1]
+    - ['z.v', 2]
+    #FIXME
+    #- ['z.<^>.v', 1]
+  - statements:
+    - ['d = {: v = 1 :}', null]
+    - ['z = {::}', null]
+    - ['z.<^> = d', null]
+    - ['z.v', 1]
+    - ['d.v = 2', null]
+    - ['z.v', 2]
+  - statements:
+    - ['e = {: v = 1 :}', null]
+    - ['z = {::}', null]
+    - ['z.<^> = e', null]
+    - ['z.v', 1]
+  - statements:
+    - ['f = {: v = 1 :}', null]
+    - ['z = {: <^> = f:}', null]
+    - ['z.v', 1]
+  - statements:
+    - ['g = {: v = 1 :}', null]
+    - ['y = {: v = 2 :}', null]
+    - ['z = {: <^> = g:}', null]
+    - ['z.v', 1]
+    - ["z.<'v'>", 1]
+    - ['z.<^> = y', null]
+    - ['z.v', 2]
+    - ["z.<'v'>", 2]
+  - statements:
+    - ['h = {: v = 1 :}', null]
+    - ['y = {: v = 2 :}', null]
+    - ['z = {: <^> = h:}', null]
+    - ['z.v', 1]
+    - ['z.<^> = y', null]
+    - ['z.v', 2]
+    - ['clear y.v', null]
+    - ['y.<^> = h', null]
+    - ['h.v', 1]
+  - statements:
+    - ['i = {: v = 1 :}', null]
+    - ['y = {: v = 2 :}', null]
+    - ['z = {: <^> = i | v = 3:}', null]
+    - ['z.v', 3]
+    - ['z.<^> = y', null]
+    - ['y.v', 2]
+    - ['z.v', 3]
+    - ['clear y.v', null]
+    - ['y.<^> = i', null]
+    - ['i.v', 1]
+    - ['y.v', 1]
+    - ['z.v', 3]
+  - statements:
+    - ['j = {: v = 1 :}', null]
+    - ['y = {: <^> = j :}', null]
+    - ['z = {: <^> = y :}', null]
+    - ['z.v', 1]
+    - ["z.<'v'>", 1]
+    - ['clear y.v', null]
+    - ['z.v', 1]
+    - ["z.<'v'>", 1]
+  - statements:
+    - ['k = {: v = 1 :}', null]
+    - ['z = {: <^> = k :}', null]
+    - ['z.v', 1]

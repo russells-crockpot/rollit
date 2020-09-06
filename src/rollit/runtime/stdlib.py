@@ -2,7 +2,7 @@
 """
 
 from ..exceptions import RollitTypeError
-from .objects import PythonBasedModifier, Bag, Roll, Dice
+from .objects import PythonBasedModifier, PythonBasedLibrary, Roll, Dice
 
 __all__ = [
     'the_library',
@@ -40,7 +40,7 @@ def _bottom(*args, subject, context):
     return Roll(sorted(subject)[0:num])
 
 
-the_library = Bag({
+the_library = PythonBasedLibrary({
     'print': _print,
     'top': _top,
     'bottom': _bottom,

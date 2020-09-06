@@ -1,0 +1,47 @@
+name: statements
+categories:
+- statements
+tests:
+- name: assignment
+  categories:
+  - assignment
+  tests:
+  - statements:
+    - ['a = 1', null]
+    - ['a', 1]
+  - statements:
+    - ['b = 2', null]
+    - ['b += 1', null]
+    - ['b', 3]
+  - statements:
+    - ['c = 3', null]
+    - ['c -= 1', null]
+    - ['c', 2]
+  - statements:
+    - ['d = 4', null]
+    - ['d *= 2', null]
+    - ['d', 8]
+  - statements:
+    - ['e = 5', null]
+    - ['e %/= 2', null]
+    - ['e', 2.5]
+  - statements:
+    - ['f = 6', null]
+    - ['f /= 2', null]
+    - ['f', 3]
+  - statements:
+    - ['g = 7', null]
+    - ['g /= 2', null]
+    - ['g', 3]
+  - statements:
+    - ['h = 7', null]
+    - ['h %= 2', null]
+    - ['h', 1]
+  - statements:
+    - ['i = 3d6', null]
+    - ['i => top', null]
+    - ['i', [3]]
+  - statements:
+    - ['i = 3d6', null]
+    - ['i => top(2) -> bottom', null]
+    - ['i', [2]]

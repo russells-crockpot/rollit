@@ -443,47 +443,47 @@ tests:
   categories:
   - access
   tests:
-  - script: 'test.test2'
+  - script: 'a.test2'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'a'
       accessors:
       - _class: Reference
         value: 'test2'
-  - script: 'test.test2.test3'
+  - script: 'b.test2.test3'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'b'
       accessors:
       - _class: Reference
         value: 'test2'
       - _class: Reference
         value: 'test3'
-  - script: 'test.{name}'
+  - script: 'c.{name}'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'c'
       accessors:
       - _class: Reduce
         value:
           _class: Reference
           value: 'name'
-  - script: 'test.{3}'
+  - script: 'd.{3}'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'd'
       accessors:
       - _class: Reduce
         value: 3
-  - script: 'test.{1}.name.{test}'
+  - script: 'e.{1}.name.{e}'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'e'
       accessors:
       - _class: Reduce
         value: 1
@@ -492,36 +492,54 @@ tests:
       - _class: Reduce
         value:
           _class: Reference
-          value: 'test'
-  - script: 'test.{#}'
+          value: 'e'
+  - script: 'f.{#}'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'f'
       accessors:
       - _class: SpecialAccessor
         value: LENGTH
-  - script: 'test.{+}'
+  - script: 'g.{+}'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'g'
       accessors:
       - _class: SpecialAccessor
         value: TOTAL
-  - script: 'test.{=}'
+  - script: 'h.{=}'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'h'
       accessors:
       - _class: SpecialAccessor
         value: VALUE
-  - script: 'test.{*}'
+  - script: 'i.{*}'
     result:
       accessing:
         _class: Reference
-        value: 'test'
+        value: 'i'
       accessors:
       - _class: SpecialAccessor
         value: EVERY
+  - script: "j.<'test'>"
+    result:
+      accessing:
+        _class: Reference
+        value: 'j'
+      accessors:
+      - _class: RawAccessor
+        value:
+          _class: StringLiteral
+          value: 'test'
+  - script: 'k.<=>'
+    result:
+      accessing:
+        _class: Reference
+        value: 'k'
+      accessors:
+      - _class: SpecialEntry
+        value: SET

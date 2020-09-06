@@ -4,9 +4,9 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
 
-from ..ast import elements, is_valid_iterable, ModelElement
+from ..ast import elements, is_valid_iterable, ModelElement, ModelEnumElement
 from ..exceptions import RollitTypeError, InvalidNameError
-from .base import NoSubject
+from .base import NoSubject, NoValue
 
 __all__ = []
 
@@ -24,7 +24,7 @@ class LeaveException(RollitNonErrorException):
 
     def __new__(cls):
         if not cls.__THE_EXCEPTION:
-            cls.__THE_EXCEPTION = object.__new__(cls)
+            cls.__THE_EXCEPTION = super().__new__(cls)
         return cls.__THE_EXCEPTION
 
 
@@ -234,49 +234,121 @@ class Roll(list):
         return other % self.value
 
 
+# pylint: disable=protected-access
+class BagSpecialEntries:
+    """
+    """
+    __slots__ = ('_owner', '_context', 'parent', 'access', 'set', 'clear', 'create', 'destroy')
+
+    def __init__(self, owner, context):
+        self._owner = owner
+        self._context = context
+        self.parent = None
+        self.access = None
+        self.set = None
+        self.clear = None
+        self.create = None
+        self.destroy = None
+
+    @property
+    def owner(self):
+        """
+        """
+        return self._owner
+
+    def _execute(self, entry_name, bag, *args, from_parent=False):
+        with self._context.use_subject(bag):
+            if from_parent:
+                if self.parent:
+                    entry = getattr(self.parent._special_entries, entry_name)
+                else:
+                    entry = None
+            else:
+                entry = getattr(self, entry_name)
+            if entry:
+                entry.call(*args, context=self._context)
+                return self._context.subject
+            if self.parent:
+                method = getattr(self.parent._special_entries, f'on_{entry_name}')
+                return method(*args, bag=bag)
+            return NoValue
+
+    def on_access(self, name, bag=None):
+        """
+        """
+        bag = bag or self.owner
+        rval = self._execute('access', bag, name)
+        if rval in (NoSubject, NoValue):
+            rval = bag.raw_get(name)
+        if rval in (NoSubject, NoValue, bag):
+            return None
+        return rval
+
+    def on_set(self, name, value, bag=None):
+        """
+        """
+        bag = bag or self.owner
+        rval = self._execute('set', bag, name, value)
+        if rval is NoValue:
+            return value
+        return rval
+
+    def on_clear(self, name, bag=None):
+        """
+        """
+        bag = bag or self.owner
+        rval = self._execute('clear', bag, name)
+        if rval is NoValue:
+            bag.raw_clear(name)
+
+    def on_create(self, bag=None):
+        """
+        """
+        bag = bag or self.owner
+        if not bag.parent:
+            return
+        self._execute('create', bag, from_parent=True)
+
+    def on_destroy(self, bag=None):
+        """
+        """
+        bag = bag or self.owner
+        self._execute('destroy', bag)
+
+    def __delitem__(self, key):
+        return setattr(self, key._name_.lower(), None)
+
+    def __getitem__(self, key):
+        try:
+            return getattr(self, key._name_.lower())
+        except AttributeError:
+            raise KeyError(key)
+
+    # pylint: disable=no-member
+    def __setitem__(self, key, value):
+        if key in (elements.SpecialEntry.PARENT, elements.SpecialEntry.PARENT._value_):
+            self.parent = value
+        elif key in (elements.SpecialEntry.CREATE, elements.SpecialEntry.CREATE._value_):
+            self.create = value
+        elif key in (elements.SpecialEntry.ACCESS, elements.SpecialEntry.ACCESS._value_):
+            self.access = value
+        elif key in (elements.SpecialEntry.CLEAR, elements.SpecialEntry.CLEAR._value_):
+            self.clear = value
+        elif key in (elements.SpecialEntry.SET, elements.SpecialEntry.SET._value_):
+            self.set = value
+        else:
+            raise KeyError(key)
+
+
 class Bag:
     """
     """
-    __slots__ = ('parent', '_isolated', '_entries', 'on_create', 'on_set', 'on_clear', 'on_access')
+    __slots__ = ('_entries', '_context', '_special_entries')
 
-    #pylint: disable=abstract-method
-    class BagEntry(Roll):
-        """
-        """
-        __slots__ = ('_bag_key', '_bag_value')
-
-        def __init__(self, key, value):
-            self._bag_key = key
-            self._bag_value = value
-            super().__init__((self._bag_key, self._bag_value))
-
-        @property
-        def total(self):
-            return self._bag_key
-
-        @property
-        def value(self):
-            return self._bag_value
-
-        def __setitem__(self, *args):
-            raise RollitTypeError()
-
-    def __init__(self, entries=None, *, parent=None, isolate=False):
-        super().__init__()
-        if parent and not isinstance(parent, Bag):
-            raise RollitTypeError()
-        self.parent = parent
-        self._isolated = isolate
+    def __init__(self, context):
+        self._context = context
+        self._special_entries = BagSpecialEntries(self, self._context)
         self._entries = {}
-        self.load(entries)
-
-    @property
-    def root(self):
-        """
-        """
-        if self.parent:
-            return self.parent.root
-        return self
 
     def keys(self):
         """
@@ -288,6 +360,12 @@ class Bag:
 
     def __str__(self):
         return str(self._entries)
+
+    @property
+    def parent(self):
+        """
+        """
+        return self._special_entries.parent
 
     # pylint: disable=protected-access
     def load(self, bag):
@@ -303,35 +381,57 @@ class Bag:
     def __getitem__(self, key):
         if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.LENGTH._value_):
             return len(self)
-        if key in (elements.SpecialAccessor.PARENT, elements.SpecialAccessor.PARENT._value_):
-            return self.parent
-        if key in self._entries:
-            return self._entries[key]
-        if self.parent and key in self.parent:
-            return self.parent[key]
-        raise InvalidNameError(key)
+        if isinstance(key, elements.SpecialEntry):
+            return self._special_entries[key]
+        rval = self._special_entries.on_access(key)
+        if rval in (NoValue, NoSubject):
+            raise InvalidNameError(key)
+        return rval
 
     def __setitem__(self, key, value):
         if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.LENGTH._value_):
             raise RollitTypeError()
-        if key in (elements.SpecialAccessor.PARENT, elements.SpecialAccessor.PARENT._value_):
-            self.parent = value
-        elif not self._isolated and self.parent and key in self.parent:
-            self.parent[key] = value
+        if isinstance(key, elements.SpecialEntry):
+            self._special_entries[key] = value
         else:
-            self._entries[key] = value
+            rval = self._special_entries.on_set(key, value)
+            if rval is not self:
+                self._entries[key] = rval
 
     def __delitem__(self, key):
         if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.LENGTH._value_):
             raise RollitTypeError()
-        if key in (elements.SpecialAccessor.PARENT, elements.SpecialAccessor.PARENT._value_):
-            self.parent = None
-        elif not self._isolated and self.parent and key in self.parent:
-            with suppress(KeyError):
-                del self.parent[key]
+        if isinstance(key, elements.SpecialEntry):
+            del self._special_entries[key]
         else:
-            with suppress(KeyError):
-                del self._entries[key]
+            self._special_entries.on_clear(key)
+
+    def raw_clear(self, key):
+        """
+        """
+        if isinstance(key, elements.SpecialEntry):
+            del self._special_entries[key]
+        else:
+            del self._entries[key]
+
+    def raw_set(self, key, value):
+        """
+        """
+        if isinstance(key, elements.SpecialEntry):
+            self._special_entries[key] = value
+        else:
+            self._entries[key] = value
+
+    def raw_get(self, key):
+        """
+        """
+        if isinstance(key, elements.SpecialEntry):
+            return self._special_entries[key]
+        if key in self._entries:
+            return self._entries[key]
+        if self._special_entries.parent:
+            return self.parent.raw_get(key)
+        raise InvalidNameError(key)
 
     def __len__(self):
         return len(self._entries)
@@ -340,18 +440,37 @@ class Bag:
         return key in self._entries or (self.parent and key in self.parent)
 
     def __iter__(self):
-        return iter(self.BagEntry(*item) for item in self._entries.items())
+        return iter(Roll(*item) for item in self._entries.items())
 
     def __reversed__(self):
-        return reversed(self.BagEntry(*item) for item in self._entries.items())
+        return reversed(Roll(*item) for item in self._entries.items())
 
     def __bool__(self):
-        return bool(self._entries)
+        return True
+
+
+class PythonBasedLibrary(Bag):
+    """
+    """
+
+    def __init__(self, entries, context=None):
+        super().__init__(context)
+        self._entries.update(entries)
 
 
 class Modifier(metaclass=ABCMeta):
     """
     """
+
+    def call(self, *args, context):
+        """
+        """
+        scope = context.scope
+        with context.new_scope(scope, isolate=True) as scope:
+            context.scope.error = scope.error
+            context.scope.subject = scope.subject
+            self.modify(*args, context=context)
+            scope.subject = context.scope.subject
 
     @abstractmethod
     def modify(self, *args, context):
@@ -404,10 +523,16 @@ class RollitBasedModifier(
     """
 
     def __new__(cls, modifier_def, scope):
-        if modifier_def.target in (None, elements.SpecialReference.NONE):
-            display_string = '[-lambda-]'
+        target_name = modifier_def.target
+        if isinstance(target_name, elements.Access):
+            target_name = target_name.accessors[-1]
+        if target_name in (None, elements.SpecialReference.NONE):
+            display_string = '[- lambda -]'
+        elif isinstance(target_name, ModelEnumElement):
+            # pylint: disable=protected-access
+            display_string = f'[- modifier: <{target_name._value_}> -]'
         else:
-            display_string = f'[-modifier: {modifier_def.target.codeinfo.text}-]'
+            display_string = f'[- modifier: {target_name.codeinfo.text} -]'
         body = modifier_def.definition
         if not is_valid_iterable(body):
             body = (body,)
@@ -418,17 +543,12 @@ class RollitBasedModifier(
                                scope=scope)
 
     def modify(self, *args, context):
-        scope = context.scope
-        with context.new_scope(scope, isolate=True) as call_scope:
-            call_scope.load(self.scope)
-            call_scope.subject = scope.subject
-            call_scope.error = scope.error
-            if args is not None:
-                call_scope.load(dict(zip(self.parameters, args)))
-            with suppress(LeaveException):
-                for statement in self.body:
-                    context(statement)
-            scope.subject = call_scope.subject
+        if args is not None:
+            context.scope.load(dict(zip(self.parameters, args)))
+        context.scope.load(self.scope)
+        with suppress(LeaveException):
+            for statement in self.body:
+                context(statement)
 
     def __repr__(self):
         return str(self)

@@ -66,5 +66,8 @@ class ItemList(tuple):
     def _asdict(self):
         return {'values': tuple(self)}
 
+    def __bool__(self):
+        return True
+
 
 TemporaryInternalElement.register(ItemList)

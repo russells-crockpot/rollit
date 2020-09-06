@@ -60,11 +60,17 @@ def negate(element, codeinfo=None, script=None):
         return element.value
     if isinstance(element, BinaryOp) and element.op == '!=':
         start_pos = element.codeinfo.start_pos if not codeinfo else codeinfo.start_pos
+        lineno = element.codeinfo.lineno if not codeinfo else codeinfo.lineno
         codeinfo_text = element.codeinfo.text
         if script:
             codeinfo_text = script[start_pos:element.codeinfo.end_pos]
         return BinaryOp(element.left,
                         '==',
                         element.right,
-                        codeinfo=CodeInfo(codeinfo_text, start_pos, element.codeinfo.end_pos))
+                        codeinfo=CodeInfo(
+                            text=codeinfo_text,
+                            start_pos=start_pos,
+                            end_pos=element.codeinfo.end_pos,
+                            lineno=lineno,
+                        ))
     return Negation(element, codeinfo=codeinfo)

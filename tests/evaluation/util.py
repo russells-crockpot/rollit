@@ -1,15 +1,16 @@
 # pylint: disable=missing-docstring
 import pytest
 
-from rollit.ast import ModelElement
-from rollit.execution.objects import Dice, Bag
+from rollit.ast import ModelElement, ModelEnumElement
+from rollit.runtime.objects import Dice, Bag
 
 from .conftest import script_tests
 from ..util import reorder_keys
 
 
 def _convert_values(value):
-    if isinstance(value, ModelElement):
+    # if isinstance(value, ModelEnumElement):
+    if isinstance(value, ModelElement) and not isinstance(value, ModelEnumElement):
         value = tuple(value[:-1])
     if isinstance(value, Dice):
         return (value.num_dice, value.sides)

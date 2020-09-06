@@ -1,6 +1,7 @@
 """
 """
 import enum
+import os
 import sys
 from abc import ABCMeta
 from collections import namedtuple
@@ -42,12 +43,10 @@ DeferEvaluation = __create_defer_evaluation()
 """ """
 del __create_defer_evaluation
 
-ElementSpecs = namedtuple('ElementSpecs', ('predicate_info', 'intern_strings', 'new_scope',
-                                           'isolate_scope', 'retain_scope', 'always_use_scope'),
-                          defaults=((), True, False, False, False, False))
+ElementSpecs = namedtuple('ElementSpecs', ('predicate_info', 'intern_strings'), defaults=((), True))
 """ """
 
-CodeInfo = namedtuple('CodeInfo', ('text', 'start_pos', 'end_pos'))
+CodeInfo = namedtuple('CodeInfo', ('text', 'start_pos', 'end_pos', 'lineno'))
 """ """
 
 
@@ -113,29 +112,31 @@ class ModelElement(namedtuple('_ModelElementBase', ('codeinfo',)), metaclass=Mod
         # pylint: disable=no-member
         return self._evaluator(context)
 
-    @staticmethod
-    # pylint: disable=protected-access
-    def _get_test_value(item):
-        if isinstance(item, enum.Enum):
-            return {
-                '_class': type(item).__name__,
-                'value': item._name_,
-            }
-        if isinstance(item, ModelElement):
-            return item._to_test_dict()
-        if isinstance(item, (tuple, list, set)):
-            return tuple(ModelElement._get_test_value(i) for i in item)
-        return item
+    if int(os.environ.get('TESTING_ROLLIT', 0)):
 
-    def _to_test_dict(self):
-        """
-        """
-        rval = self._asdict()
-        rval.pop('codeinfo', None)
-        for k, v in rval.items():
-            rval[k] = self._get_test_value(v)
-        rval['_class'] = type(self).__name__
-        return rval
+        @staticmethod
+        # pylint: disable=protected-access
+        def _get_test_value(item):
+            if isinstance(item, enum.Enum):
+                return {
+                    '_class': type(item).__name__,
+                    'value': item._name_,
+                }
+            if isinstance(item, ModelElement):
+                return item._to_test_dict()
+            if isinstance(item, (tuple, list, set)):
+                return tuple(ModelElement._get_test_value(i) for i in item)
+            return item
+
+        def _to_test_dict(self):
+            """
+            """
+            rval = self._asdict()
+            rval.pop('codeinfo', None)
+            for k, v in rval.items():
+                rval[k] = self._get_test_value(v)
+            rval['_class'] = type(self).__name__
+            return rval
 
 
 class ModelEnumElement(enum.Enum):
@@ -219,11 +220,13 @@ class SequenceValueElement(ModelElement):
     def __repr__(self):
         return f'{type(self).__name__}{super().__repr__()}'
 
-    def _to_test_dict(self):
-        return {
-            '_class': type(self).__name__,
-            'items': tuple(ModelElement._get_test_value(item) for item in self),
-        }
+    if int(os.environ.get('TESTING_ROLLIT', 0)):
+
+        def _to_test_dict(self):
+            return {
+                '_class': type(self).__name__,
+                'items': tuple(ModelElement._get_test_value(item) for item in self),
+            }
 
 
 class ConstantElement(ModelElement):
@@ -242,9 +245,11 @@ class ConstantElement(ModelElement):
     def __bool__(self):
         return True
 
-    @classmethod
-    def _to_test_dict(cls):
-        return {'_class': cls.__name__}
+    if int(os.environ.get('TESTING_ROLLIT', 0)):
+
+        @classmethod
+        def _to_test_dict(cls):
+            return {'_class': cls.__name__}
 
 
 def create_model_element_type(name,

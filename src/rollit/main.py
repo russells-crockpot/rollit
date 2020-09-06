@@ -3,9 +3,13 @@
 """
 import argparse
 import sys
+import traceback
 
-from .execution import ExecutionEnvironment, towers
+from .exceptions import RollitRuntimeError
+from .runtime import Runner, towers
 from .repl.base import Repl
+from .util import format_runtime_error
+
 has_pretty = False
 try:
     from .repl.pretty import PrettyRepl
@@ -30,6 +34,7 @@ def create_argparser():
         default='default',
         choices=['default', 'incremental', 'max', 'min'],
     )
+    argparser.add_argument('-d', '--debug', default=False, action='store_true')
     argparser.add_argument('-i',
                            '--interactive',
                            help='Start in interactive mode.',
@@ -72,24 +77,31 @@ def create_argparser():
     return argparser
 
 
+# pylint: disable=too-complex
 def main():
     args = create_argparser().parse_args()
-    env = ExecutionEnvironment(dice_tower=_TOWER_MAP[args.tower])
-    if args.script_file:
-        if len(args.script_file) > 1:
-            print('Only one rollit script file can be provided at at time!', file=sys.stderr)
-            sys.exit(1)
-        with open(args.script_file[0]) as f:
-            env.run(f.read())
-    if args.command:
-        result = env.run(args.command)
-        if not args.interactive:
-            if result:
-                print(result)
-            return
+    runner = Runner(dice_tower=_TOWER_MAP[args.tower])
+    try:
+        if args.script_file:
+            if len(args.script_file) > 1:
+                print('Only one rollit script file can be provided at at time!', file=sys.stderr)
+                sys.exit(1)
+            with open(args.script_file[0]) as f:
+                runner.run(f.read())
+        if args.command:
+            result = runner.run(args.command)
+            if not args.interactive:
+                if result:
+                    print(result)
+                return
+    except RollitRuntimeError as e:
+        if args.debug:
+            traceback.print_exc()
+        print(format_runtime_error(e), file=sys.stderr)
+        sys.exit(1)
     if args.interactive or not (args.command or args.script_file):
         if has_pretty and not args.ugly:
-            repl = PrettyRepl(env, options=args)
+            repl = PrettyRepl(runner, options=args)
         else:
-            repl = Repl(env, options=args)
+            repl = Repl(runner, options=args)
         repl.run()

@@ -1,14 +1,16 @@
 """
 """
+import sys
 import traceback
 from collections import deque
 
 from abc import ABCMeta, abstractmethod
 
 from ..ast import is_valid_iterable
-from ..exceptions import RollitException
+from ..exceptions import RollitException, RollitRuntimeError
 from ..grammar import ParseError
-from ..execution.objects import Roll
+from ..runtime.objects import Roll
+from ..util import format_runtime_error
 
 try:
     import readline  # pylint: disable=unused-import
@@ -24,8 +26,8 @@ class BaseRepl(metaclass=ABCMeta):
 
     prompt_text = '>>> '
 
-    def __init__(self, execution_env, options=None):
-        self.execution_env = execution_env
+    def __init__(self, runner, options):
+        self.runner = runner
         self.options = options
         self.indent_level = 0
         self.line_tokens = deque()
@@ -39,7 +41,7 @@ class BaseRepl(metaclass=ABCMeta):
     def evaluate(self, user_input):
         """
         """
-        return self.execution_env.run(user_input)
+        return self.runner.run(user_input)
 
     def print_result(self, result):
         """
@@ -72,7 +74,12 @@ class BaseRepl(metaclass=ABCMeta):
     def print_error(self, error):
         """
         """
-        traceback.print_exc()
+        if isinstance(error, RollitRuntimeError):
+            if getattr(self.options, 'debug', False):
+                traceback.print_exc()
+            print(format_runtime_error(error), file=sys.stderr)
+        else:
+            traceback.print_exc()
         # print(f'{type(error).__name__}: {error}', file=sys.stderr)
 
     def run(self):
@@ -84,7 +91,7 @@ class BaseRepl(metaclass=ABCMeta):
                 user_input = self.next_statement()
                 if not user_input.strip().strip('|'):
                     continue
-                results = self.execution_env.run(user_input)
+                results = self.runner.run(user_input)
                 if not is_valid_iterable(results) or isinstance(results, Roll):
                     results = (results,)
                 for result in results:

@@ -29,16 +29,17 @@ name        <- '$'                                      %special_ref
              #/ '^'                                      %special_ref
              / basic_name
 
-bag_info_item       <- ('!' / '^' ) _ @'(' _ws expression _ws @')' _
-                     / @'(' _ws expression _ws @')' _
-                     / '!'
-                     / '^'
-bag_info            <- @'[:' _ws bag_info_item  _ws @':]' _                 %bag_info
-bag_def             <- @'{:' _ws (_ statement _ eos)* _
-                       stmt_or_expr _ws @':}' _
-                     / @'{' _ @':' _ @'}' _
-                     / @'{:' _ws @':}' _
-new_bag             <- bag_info? bag_def                                    %new_bag
+special_entry       <- '^'                                  %special_entry
+                     / '.'                                  %special_entry
+                     / '='                                  %special_entry
+                     / 'clear'                              %special_entry
+                     / ':'                                  %special_entry
+                     / '!'                                  %special_entry
+
+new_bag             <- @'{:' _ws (_ statement _ eos)* _
+                       stmt_or_expr _ws @':}' _             %new_bag
+                     / @'{' _ @':' _ @'}' _                 %new_bag
+                     / @'{:' _ws @':}' _                    %new_bag
 
 enlarge     <- @'{' _ws !(':' / special_accessor)
                expression? _ws '@' _ws expression? _ws @'}' _               %enlarge
@@ -53,9 +54,15 @@ special_accessor    <- '#'                                                  %spe
                      / '.'                                                  %special_accessor
                      / '-'                                                  %special_accessor
 accessor            <- _ws @'.' _ basic_name  _
-                     / _ws @'.' @'{' _ special_accessor _ @'}' _
-                     / _ws @'.' reduce _
-access              <- reduce_expr accessor+                            %access
+                     / _ws @'.' _ @'{' _ special_accessor _ @'}' _
+                     / _ws @'.' _ @'<' _ special_entry _ @'>' _
+                     / _ws @'.' _ @'<' _ expression _ @'>' _                %raw_accessor
+                     / _ws @'.' _ reduce _
+accessing           <- reduce_expr
+                     / @'<' _ special_entry _ @'>' _
+                     / name
+access              <- accessing _ accessor+                                %access
+                     / @'<' _ special_entry _ @'>' _
                      / name
 
 mult_op         <- '*'                          %text
@@ -128,13 +135,17 @@ modifier_call           <- _ws @'->' _ modifier_tail
 modifier_args           <- @'(' _ws (expression _ @',' _ws )*
                             expression ? _  @')' _                          %arg_list
 
-modifier_params         <- (basic_name _ @',' _ws )* basic_name?                %item_list
-modifier_def_body       <- modifier_params _ws @(':'/ ':'? &'[') _ stmt_or_expr
+modifier_params         <- (basic_name _ @',' _ws )* basic_name?            %param_list
+small_modifier_body     <- modifier_params _ @':' _ !'['
+                           _ expression                                     %small_modifier_body
+normal_modifier_body    <- modifier_params _ @(':'?) _ws
+                           @'[' _ block_stmt? _ @']' _                      %normal_modifier_body
 modifier_def_target     <- access
-                         / @'{' _ special_accessor _ @'}' _
-                         / '!'                                                  %special_ref
-                         / '?'                                                  %special_ref
-modifier_def            <- modifier_def_target _ @'<-' _ modifier_def_body      %modifier_def
+                         / @'<' _ special_entry _ @'>' _
+                         / '!'                                              %special_ref
+                         / '?'                                              %special_ref
+modifier_def    <- modifier_def_target _ @'<-' _ws
+                   ( small_modifier_body / normal_modifier_body)            %modifier_def
 
 if_then         <- @'if' _ expression _ @'then' _ws stmt_or_expr            %predicated_statement
 unless          <- @'unless' _ expression _ @'then' _ws stmt_or_expr        %predicated_statement
@@ -179,8 +190,8 @@ statement   <- eos
              / @'oops' _ expression                                             %oops
              / @'clear' _ access                                                %clear
              / @'restart' _  restart_pos
-             / @'[' !':' _ws block_stmt _ws @']' _                              %block
-             / @'[' !':' _ws @']' _                                             %empty_block
+             / @'[' _ws block_stmt _ws @']' _                                   %block
+             / @'[' _ws @']' _                                                  %empty_block
              / @'={' !':' _ access _ @'}' _                                     %reduce_and_assign
              / load
              / modifier_def
