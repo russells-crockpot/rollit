@@ -40,8 +40,10 @@ tests:
         predicate:
           _class: Reference
           value: a
-        then: 4
-        otherwise: 2
+        then:
+        - 4
+        otherwise:
+        - 2
       otherwise: null
   - script: 'until 1 do 2 except when a then 4 otherwise 5'
     result:
@@ -53,8 +55,10 @@ tests:
         predicate:
           _class: Reference
           value: a
-        then: 4
-        otherwise: 2
+        then:
+        - 4
+        otherwise:
+        - 2
       otherwise: 5
   - script: 'until 1 + g do 3'
     result:

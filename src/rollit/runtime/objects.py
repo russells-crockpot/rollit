@@ -4,9 +4,10 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
 
-from ..ast import elements, is_valid_iterable, ModelElement, ModelEnumElement
+from ..ast import elements, ModelElement, ModelEnumElement
 from ..exceptions import RollitTypeError, InvalidNameError
 from .base import NoSubject, NoValue
+from ..util import is_valid_iterable
 
 __all__ = []
 

@@ -41,6 +41,12 @@ def create_temporay_element_type(name, attrs=()):
 PredicatedStatement = create_temporay_element_type('PredicatedStatement',
                                                    ('predicate', 'statement'))
 """ """
+If = type('If', (PredicatedStatement,), {})
+""" """
+Unless = type('Unless', (PredicatedStatement,), {})
+""" """
+Wrapper = create_temporay_element_type('Wrapper', ('rule', 'value'))
+""" """
 Otherwise = create_temporay_element_type('Otherwise')
 """ """
 LoopName = create_temporay_element_type('LoopName')
@@ -49,7 +55,29 @@ LoopBody = create_temporay_element_type('LoopBody')
 """ """
 Always = create_temporay_element_type('Always')
 """ """
-BagInfo = create_temporay_element_type('BagInfo', ('parent', 'isolate'))
+
+
+class _UseOtherwiseType(tuple):
+    __THE_VALUE = None
+
+    def __new__(cls):
+        if not cls.__THE_VALUE:
+            cls.__THE_VALUE = super().__new__(cls)
+        return cls.__THE_VALUE
+
+    def __str__(self):
+        return 'UseOtherwise'
+
+    def __repr__(self):
+        return 'UseOtherwise'
+
+    def __bool__(self):
+        return True
+
+
+TemporaryInternalElement.register(_UseOtherwiseType)
+
+UseOtherwise = _UseOtherwiseType()
 """ """
 
 

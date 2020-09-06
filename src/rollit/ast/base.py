@@ -7,15 +7,9 @@ from abc import ABCMeta
 from collections import namedtuple
 
 __all__ = [
-    'DeferEvaluation',
-    'ElementSpecs',
-    'CodeInfo',
-    'ModelElement',
-    'ModelEnumElement',
-    'SingleValueElement',
-    'SequenceValueElement',
-    'ConstantElement',
-    'create_model_element_type',
+    'DeferEvaluation', 'ElementSpecs', 'CodeInfo', 'ModelElement', 'ModelEnumElement',
+    'SingleValueElement', 'SequenceValueElement', 'ConstantElement', 'PredicatedElementMixIn',
+    'preevaluate_predicate'
 ]
 
 
@@ -157,34 +151,6 @@ ModelElement.register(ModelEnumElement)
 ModelEnumElement.__specs__ = ElementSpecs()
 
 
-class _PredicatedElementMixIn:
-    """
-    """
-
-    @staticmethod
-    def _evaluate_predicate(predicate):
-        if isinstance(predicate, (int, float)):
-            return bool(predicate)
-        if not predicate:
-            return False
-        if isinstance(predicate, ModelElement):
-            return predicate.preevaluate(predicate)
-        return DeferEvaluation
-
-    def __new__(cls, *args, _suppress_evaluation=False, **kwargs):
-        self = super().__new__(cls, *args, **kwargs)
-        if _suppress_evaluation:
-            return self
-        resp = cls._evaluate_predicate(getattr(self, cls.__specs__.predicate_info[0]))
-        if resp is DeferEvaluation:
-            return self
-        if resp:
-            return getattr(self, cls.__specs__.predicate_info[1])
-        if len(cls.__specs__.predicate_info) >= 3:
-            return getattr(self, cls.__specs__.predicate_info[2])
-        return None
-
-
 class SingleValueElement(namedtuple('_SingleValueElementBase', ('value', 'codeinfo')),
                          ModelElement):
     """
@@ -209,7 +175,6 @@ class SingleValueElement(namedtuple('_SingleValueElementBase', ('value', 'codein
         }
 
 
-#FIXME Deal with codeinfo and it's value
 class SequenceValueElement(ModelElement):
     """
     """
@@ -252,27 +217,31 @@ class ConstantElement(ModelElement):
             return {'_class': cls.__name__}
 
 
-def create_model_element_type(name,
-                              attrs=(),
-                              constant=False,
-                              specs=ElementSpecs(),
-                              *,
-                              basic_predicated=False):
+def preevaluate_predicate(predicate):
     """
     """
-    class_attrs = {}
-    if basic_predicated and not specs.predicate_info:
-        specs = specs._replace(predicate_info=tuple(attrs[:3]))
-    if constant:
-        bases = (ConstantElement,)
-    elif not attrs:
-        bases = (SingleValueElement,)
-    else:
-        if 'codeinfo' not in attrs:
-            attrs = tuple((*attrs, 'codeinfo'))
-        if specs.predicate_info:
-            bases = (_PredicatedElementMixIn, namedtuple(f'_{name}Base', attrs), ModelElement)
-        else:
-            bases = (namedtuple(f'_{name}Base', attrs), ModelElement)
-    class_attrs.setdefault('__specs__', specs)
-    return type(name, bases, class_attrs)
+    if isinstance(predicate, (int, float)):
+        return bool(predicate)
+    if not predicate:
+        return False
+    if isinstance(predicate, ModelElement):
+        return predicate.preevaluate(predicate)
+    return DeferEvaluation
+
+
+class PredicatedElementMixIn:
+    """
+    """
+
+    def __new__(cls, *args, _suppress_evaluation=False, **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
+        if _suppress_evaluation:
+            return self
+        resp = preevaluate_predicate(getattr(self, cls.__specs__.predicate_info[0]))
+        if resp is DeferEvaluation:
+            return self
+        if resp:
+            return getattr(self, cls.__specs__.predicate_info[1])
+        if len(cls.__specs__.predicate_info) >= 3:
+            return getattr(self, cls.__specs__.predicate_info[2])
+        return None

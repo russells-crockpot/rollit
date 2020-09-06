@@ -3,10 +3,12 @@
 from collections import namedtuple
 from contextlib import suppress
 
-from .base import create_model_element_type, ElementSpecs, ModelEnumElement, ModelElement, \
-        SingleValueElement
+from .base import (ElementSpecs, ModelEnumElement, ModelElement, SingleValueElement,
+                   ConstantElement, PredicatedElementMixIn)
+from ..util import is_valid_iterable
 
 __all__ = [
+    'create_model_element_type',
     'Access',
     'Assignment',
     'Attempt',
@@ -34,6 +36,32 @@ __all__ = [
     'UntilDo',
     'UseIf',
 ]
+
+
+def create_model_element_type(name,
+                              attrs=(),
+                              constant=False,
+                              specs=ElementSpecs(),
+                              *,
+                              basic_predicated=False):
+    """
+    """
+    class_attrs = {}
+    if basic_predicated and not specs.predicate_info:
+        specs = specs._replace(predicate_info=tuple(attrs[:3]))
+    if constant:
+        bases = (ConstantElement,)
+    elif not attrs:
+        bases = (SingleValueElement,)
+    else:
+        if 'codeinfo' not in attrs:
+            attrs = tuple((*attrs, 'codeinfo'))
+        if specs.predicate_info:
+            bases = (PredicatedElementMixIn, namedtuple(f'_{name}Base', attrs), ModelElement)
+        else:
+            bases = (namedtuple(f'_{name}Base', attrs), ModelElement)
+    class_attrs.setdefault('__specs__', specs)
+    return type(name, bases, class_attrs)
 
 
 class SpecialAccessor(ModelEnumElement):
@@ -204,9 +232,6 @@ ClearValue = create_model_element_type('ClearValue')
 """ """
 
 # Predicates
-IfThen = create_model_element_type('IfThen', ('predicate', 'then', 'otherwise'),
-                                   basic_predicated=True)
-""" """
 UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'),
                                   specs=ElementSpecs(
                                       predicate_info=('predicate', 'use', 'otherwise'),
@@ -215,3 +240,27 @@ UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'),
 
 DiceNode = create_model_element_type('DiceNode', ('number_of_dice', 'sides'))
 """ """
+
+
+class IfThen(
+        create_model_element_type('_IfThenParent', ('predicate', 'then', 'otherwise'),
+                                  basic_predicated=True)):
+    """ """
+
+    def __new__(cls, predicate, then, otherwise, *, codeinfo):
+        if then is None:
+            then = ()
+        elif not is_valid_iterable(then) or not isinstance(then, tuple):
+            then = (then,)
+        if otherwise is None:
+            otherwise = ()
+        elif not is_valid_iterable(otherwise) or not isinstance(otherwise, tuple):
+            otherwise = (otherwise,)
+        #pylint: disable=unexpected-keyword-arg
+        return super().__new__(
+            cls,
+            predicate=predicate,
+            then=then,
+            otherwise=otherwise,
+            codeinfo=codeinfo,
+        )

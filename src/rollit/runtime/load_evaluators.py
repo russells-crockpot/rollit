@@ -3,11 +3,12 @@
 """
 from contextlib import suppress, nullcontext
 
-from ..ast import elements, constants, is_valid_iterable
+from ..ast import elements, constants
 from ..exceptions import RollitTypeError
 from .objects import Roll, Bag, OopsException, RestartException, LeaveException, \
         RollitBasedModifier, Dice
 from ..langref import OPERATORS
+from ..util import is_valid_iterable
 
 __all__ = ()
 

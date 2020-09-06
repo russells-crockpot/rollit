@@ -213,73 +213,82 @@ tests:
       predicate:
         _class: Reference
         value: 'a'
-      then: 2
-      otherwise: null
-  - script: 'if a then 2 otherwise 3'
-    result:
-      _class: IfThen
-      predicate:
-        _class: Reference
-        value: 'a'
-      then: 2
-      otherwise: 3
-  - script: 'if a then 2 otherwise if b then 4'
-    result:
-      _class: IfThen
-      predicate:
-        _class: Reference
-        value: 'a'
-      then: 2
-      otherwise:
-        _class: IfThen
-        predicate:
-          _class: Reference
-          value: 'b'
-        then: 4
-        otherwise: null
-  - script: 'if a then 2 otherwise if b then 4 otherwise 5'
-    result:
-      _class: IfThen
-      predicate:
-        _class: Reference
-        value: 'a'
-      then: 2
-      otherwise:
-        _class: IfThen
-        predicate:
-          _class: Reference
-          value: 'b'
-        then: 4
-        otherwise: 5
-  - script: 'if a then 2 unless b then 4'
-    result:
-      _class: IfThen
-      predicate:
-        _class: Negation
-        value:
-          _class: Reference
-          value: 'a'
       then:
-        _class: IfThen
-        predicate:
-          _class: Reference
-          value: 'b'
-        then: 4
-        otherwise: null
-      otherwise: 2
-  - script: 'if a then 2 unless b then 4 otherwise 3'
+      - 2
+      otherwise: []
+  - script: 'if b then 2 otherwise 3'
     result:
       _class: IfThen
       predicate:
-        _class: Negation
-        value:
-          _class: Reference
-          value: 'a'
+        _class: Reference
+        value: 'b'
       then:
-        _class: IfThen
+      - 2
+      otherwise:
+      - 3
+  - script: 'if c then 2 otherwise if b then 4'
+    result:
+      _class: IfThen
+      predicate:
+        _class: Reference
+        value: 'c'
+      then:
+      - 2
+      otherwise:
+      - _class: IfThen
         predicate:
           _class: Reference
           value: 'b'
-        then: 4
-        otherwise: 3
-      otherwise: 2
+        then:
+        - 4
+        otherwise: []
+  - script: 'if d then 2 otherwise if b then 4 otherwise 5'
+    result:
+      _class: IfThen
+      predicate:
+        _class: Reference
+        value: 'd'
+      then:
+      - 2
+      otherwise:
+      - _class: IfThen
+        predicate:
+          _class: Reference
+          value: 'b'
+        then:
+        - 4
+        otherwise:
+        - 5
+  - script: 'if e then 2 unless b then 4'
+    result:
+      _class: IfThen
+      predicate:
+        _class: Reference
+        value: 'b'
+      then:
+      - 4
+      otherwise:
+      - _class: IfThen
+        predicate:
+          _class: Reference
+          value: 'e'
+        then:
+        - 2
+        otherwise: []
+  - script: 'if f then 2 unless b then 4 otherwise 3'
+    result:
+      _class: IfThen
+      predicate:
+        _class: Reference
+        value: 'b'
+      then:
+      - 4
+      otherwise:
+      - _class: IfThen
+        predicate:
+          _class: Reference
+          value: 'f'
+        then:
+        - 2
+        otherwise:
+        - 3

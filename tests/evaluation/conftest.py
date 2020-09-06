@@ -8,9 +8,10 @@ from contextlib import suppress
 
 import pytest
 
+from rollit.ast import actions
 from rollit.runtime import Runner
 from rollit.runtime.towers import IncrementalTower
-from rollit.ast import actions, is_valid_iterable
+from rollit.util import is_valid_iterable
 
 try:
     from ruamel import yaml

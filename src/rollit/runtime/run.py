@@ -3,7 +3,8 @@
 import inspect
 
 from .. import grammar
-from ..ast import actions, flatten_tuple, ModelElement
+from ..ast import actions, ModelElement
+from ..ast.util import flatten_tuple
 from .base import DEFAULT_SEARCH_PATH
 from .context import RuntimeContext
 from .towers import DefaultTower

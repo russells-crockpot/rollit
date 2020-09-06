@@ -47,10 +47,14 @@ tests:
       predicate:
         _class: Reference
         value: 'b'
-      otherwise: 5
+      then:
+      - 4
+      otherwise:
+      - 5
   - script: 'until 1 do 2 except when 3 then 4'
     result:
       name: null
       until: 1
-      do: 4
+      do:
+      - 4
       otherwise: null

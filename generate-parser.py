@@ -15,12 +15,12 @@ default_grammar_file = pathlib.Path(__file__).parent / 'grammar.peg'
 def create_arg_parser():
     argparser = argparse.ArgumentParser(
         __file__, description='Takes the grammar file and saves it to a python module.')
-    argparser.add_argument('--skip-yapf', action='store_true', default=False)
     argparser.add_argument('-o',
                            '--output',
                            help='Where to save the generated file to.',
                            default=default_out_file)
-    argparser.add_argument('grammar',
+    argparser.add_argument('-g',
+                           '--grammar',
                            help='The grammar file to use.',
                            default=default_grammar_file,
                            type=pathlib.Path)

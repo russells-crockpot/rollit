@@ -9,6 +9,7 @@ __all__ = [
     'pprint_model',
     'unwrap_func',
     'format_runtime_error',
+    'is_valid_iterable',
 ]
 
 
@@ -91,3 +92,9 @@ def format_runtime_error(error):
         f'  Code Fragment: {error.codeinfo.text}',
         f'  Line Number: {error.codeinfo.lineno}',
     ))
+
+
+def is_valid_iterable(node):
+    """
+    """
+    return isinstance(node, (list, tuple)) and not isinstance(node, ModelElement)

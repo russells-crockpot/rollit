@@ -7,32 +7,38 @@ import functools
 from contextlib import suppress
 
 from . import constants, elements, internal, util
-from .base import CodeInfo
+from .base import CodeInfo, preevaluate_predicate, DeferEvaluation
 from .. import langref
 from ..exceptions import InvalidNameError
 from ..grammar import TreeNode
+from ..util import is_valid_iterable
 
 __all__ = ()
 
 
-# pylint: disable=too-many-return-statements
+# pylint: disable=too-many-return-statements, too-complex
 def _unwrap_node(node):
     if node is None:
         return None
-    if util.is_valid_iterable(node):
-        items = type(node)(
-            nd for nd in (_unwrap_node(n) for n in node) if nd or isinstance(nd, (int, float)))
-        with suppress(TypeError):
-            if len(items) == 1 and util.is_valid_iterable(node):
-                return items[0]
-        return items
+    if is_valid_iterable(node):
+        items = []
+        for child in node:
+            if child is None:
+                continue
+            if isinstance(child, TreeNode):
+                child = _unwrap_node(child)
+            if isinstance(child, (int, float)) or child:
+                items.append(child)
+        if len(items) == 1:
+            return items[0]
+        return tuple(items)
     if not isinstance(node, TreeNode):
         return node
     if not node.elements:
         return node.text
     elements = _unwrap_node(node.elements)
     with suppress(TypeError):
-        if len(elements) == 1 and util.is_valid_iterable(node):
+        if len(elements) == 1 and is_valid_iterable(node):
             return elements[0]
     return elements
 
@@ -85,11 +91,13 @@ def binary_op(text, start, end, values, codeinfo):
     if isinstance(left, (int, float)) and isinstance(right, (int, float)):
         return constants.OPERATOR_MAP[op](left, right)
     if isinstance(left, elements.StringLiteral) and isinstance(right, elements.StringLiteral):
-        #TODO they maybe chained
-        return elements.StringLiteral((left, right),
-                                      codeinfo=CodeInfo(
-                                          text[left.codeinfo.start_pos:right.codeinfo.end_pos],
-                                          left.codeinfo.start_pos, right.codeinfo.end_pos))
+        codeinfo = CodeInfo(
+            text=text[left.codeinfo.start_pos:right.codeinfo.end_pos],
+            start_pos=left.codeinfo.start_pos,
+            end_pos=right.codeinfo.end_pos,
+            lineno=left.codeinfo.lineno,
+        )
+        return elements.StringLiteral((left, right), codeinfo=codeinfo)
     return elements.BinaryOp(left, op, right, codeinfo=codeinfo)
 
 
@@ -162,13 +170,13 @@ def negate(text, start, end, values, codeinfo):
 @add_codeinfo
 def normal_modifier_body(text, start, end, values, codeinfo):
     params = body = ()
-    if values and util.is_valid_iterable(values[0]):
+    if values and is_valid_iterable(values[0]):
         values = values[0]
     if values and isinstance(values[0], internal.ItemList):
         params = tuple(values.pop(0))
     if values:
         body = values[0]
-        if not util.is_valid_iterable(body):
+        if not is_valid_iterable(body):
             body = (body,)
         else:
             body = util.flatten_tuple(body)
@@ -236,7 +244,7 @@ def modifier_call(text, start, end, values, codeinfo):
         return elements.ModifierCall(modifier=values[0], args=(), codeinfo=codeinfo)
     return elements.ModifierCall(
         modifier=values[0],
-        args=util.to_tuple(values[-1]),
+        args=util.ensure_tuple(values[-1]),
         codeinfo=codeinfo,
     )
 
@@ -247,7 +255,7 @@ def modify(text, start, end, values, codeinfo):
     (subject, first_call), *other_calls = values
     calls = [first_call]
     if other_calls:
-        if util.is_valid_iterable(other_calls[0]):
+        if is_valid_iterable(other_calls[0]):
             calls += other_calls[0]
         else:
             calls.append(other_calls[0])
@@ -274,7 +282,7 @@ def raw_accessor(text, start, end, values, codeinfo):
 @add_codeinfo
 def access(text, start, end, values, codeinfo):
     return elements.Access(accessing=values[0],
-                           accessors=util.to_tuple(values[-1]),
+                           accessors=util.ensure_tuple(values[-1]),
                            codeinfo=codeinfo)
 
 
@@ -337,12 +345,6 @@ def leave(text, start, end, values, codeinfo):
 
 @elements_to_values
 @add_codeinfo
-def predicated_statement(text, start, end, values, codeinfo):
-    return internal.PredicatedStatement(*values, codeinfo=codeinfo)
-
-
-@elements_to_values
-@add_codeinfo
 def otherwise(text, start, end, values, codeinfo):
     return internal.Otherwise(values[-1], codeinfo=codeinfo)
 
@@ -372,7 +374,7 @@ def load_from_into(text, start, end, values, codeinfo):
     if to_load == '*':
         to_load = elements.SpecialReference.ALL
     items = []
-    if util.is_valid_iterable(load_from):
+    if is_valid_iterable(load_from):
         for item in util.flatten_tuple(load_from):
             items.append(
                 elements.Load(
@@ -397,7 +399,7 @@ def load_from_into(text, start, end, values, codeinfo):
 @add_codeinfo
 def load_from(text, start, end, values, codeinfo):
     to_load, load_from = values
-    if util.is_valid_iterable(to_load):
+    if is_valid_iterable(to_load):
         to_load = util.flatten_tuple(to_load)
     else:
         to_load = (to_load,)
@@ -432,7 +434,7 @@ def load_into(text, start, end, values, codeinfo):
 @elements_to_values
 @add_codeinfo
 def load(text, start, end, values, codeinfo):
-    if util.is_valid_iterable(values[0]):
+    if is_valid_iterable(values[0]):
         values = util.flatten_tuple(values[0])
     items = []
     for item in values:
@@ -461,57 +463,69 @@ def restart(text, start, end, values, codeinfo):
     )
 
 
-def _process_if_stmt(predicate, then, otherwise, codeinfo):
-    rval = elements.IfThen(
-        predicate=predicate,
-        then=then,
-        otherwise=otherwise,
+@elements_to_values
+@add_codeinfo
+def unless(text, start, end, values, codeinfo):
+    preeval_res = preevaluate_predicate(values[0])
+    if preeval_res is DeferEvaluation:
+        return internal.Unless(*values, codeinfo=codeinfo)
+    if preeval_res:
+        return internal.Wrapper('unless', values[-1], codeinfo=codeinfo)
+    return internal.UseOtherwise
+
+
+@elements_to_values
+@add_codeinfo
+def if_(text, start, end, values, codeinfo):
+    preeval_res = preevaluate_predicate(values[0])
+    if preeval_res is DeferEvaluation:
+        return internal.If(*values, codeinfo=codeinfo)
+    if preeval_res:
+        return internal.Wrapper('if', values[-1], codeinfo=codeinfo)
+    return internal.UseOtherwise
+
+
+@elements_to_values
+@add_codeinfo
+def predicated_statement(text, start, end, values, codeinfo):
+    return internal.PredicatedStatement(*values, codeinfo=codeinfo)
+
+
+def _create_if_then_element(predicated, otherwise, codeinfo):
+    if predicated is internal.UseOtherwise:
+        return otherwise
+    if isinstance(predicated, internal.Wrapper):
+        return predicated.value
+    if codeinfo == 'from-predicated':
+        codeinfo = predicated.codeinfo
+    return elements.IfThen(
+        predicate=predicated.predicate,
+        then=util.ensure_tuple(predicated.statement),
+        otherwise=util.ensure_tuple(otherwise),
         codeinfo=codeinfo,
     )
-    if rval == then:
-        return rval
-    if rval == otherwise:
-        return internal.Otherwise(rval, codeinfo=codeinfo)
-    return rval
 
 
 @elements_to_values
 @add_codeinfo
 def if_stmt(text, start, end, values, codeinfo):
     if_ = values.pop(0)
-    otherwise = unlesses = None
-    with suppress(IndexError):
-        otherwise = values.pop(-1)
-        if isinstance(otherwise, internal.Otherwise):
-            otherwise = otherwise.value
-            if values:
-                unlesses = util.to_tuple(values[0])
-        else:
-            unlesses = util.to_tuple(otherwise)
-            otherwise = None
-    rval = _process_if_stmt(if_.predicate, if_.statement, otherwise, codeinfo=codeinfo)
-    if rval == if_.statement:
-        return rval
-    if unlesses:
-        previous = otherwise
-        for unless in unlesses:
-            previous = _process_if_stmt(unless.predicate, unless.statement, previous,
-                                        unless.codeinfo)
-            if previous == unless.statement:
-                return previous
-            if isinstance(previous, internal.Otherwise):
-                previous = previous[0]
-        if not rval or isinstance(rval, internal.Otherwise):
-            return previous
-        rval = elements.IfThen(
-            predicate=util.negate(if_.predicate, codeinfo, text),
-            then=previous,
-            otherwise=if_.statement,
-            codeinfo=codeinfo,
-        )
-    if isinstance(rval, internal.Otherwise):
-        return rval.value
-    return rval
+    if not values:
+        return _create_if_then_element(if_, (), codeinfo)
+    otherwise = values.pop(-1)
+    unlesses = ()
+    if isinstance(otherwise, internal.Otherwise):
+        if not values:
+            return _create_if_then_element(if_, otherwise.value, codeinfo)
+        unlesses = util.ensure_tuple(values[0])
+        otherwise = otherwise.value
+    else:
+        unlesses = util.ensure_tuple(otherwise)
+        otherwise = ()
+    stmt = _create_if_then_element(if_, otherwise, codeinfo)
+    for unless in reversed(unlesses):
+        stmt = _create_if_then_element(unless, stmt, 'from-predicated')
+    return stmt
 
 
 @elements_to_values
@@ -537,7 +551,7 @@ def until_do(text, start, end, values, codeinfo):
     if values and isinstance(values[-1], internal.Otherwise):
         otherwise = values.pop(-1).value
     if values:
-        for except_when in util.to_tuple(values[0]):
+        for except_when in util.ensure_tuple(values[0]):
             do = elements.IfThen(
                 predicate=except_when.predicate,
                 then=except_when.statement,
@@ -571,7 +585,7 @@ def for_every(text, start, end, values, codeinfo):
 @elements_to_values
 @add_codeinfo
 def block(text, start, end, values, codeinfo):
-    if util.is_valid_iterable(values[0]):
+    if is_valid_iterable(values[0]):
         return util.flatten_tuple(values[0])
     return values[0]
 
@@ -604,7 +618,7 @@ def attempt(text, start, end, values, codeinfo):
         always = None
     else:
         always = always[0]
-    if buts and util.is_valid_iterable(buts[0]):
+    if buts and is_valid_iterable(buts[0]):
         buts = buts[0]
     return elements.Attempt(
         attempt=attempt,

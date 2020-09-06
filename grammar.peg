@@ -7,8 +7,15 @@ comment         <- '//' [^\n\r\f]*      %ignore
 _               <- [ \t]*               %ignore
 eol             <- comment+
                  / [\n\r\f]+            %ignore
+
+keyword <- 'leave'
+         / 'restart'
+
 eos             <- eol
                  / '|'+                 %ignore
+                 / _ &']'
+                 / _ &':}'
+                 / _ &'but'
 _ws             <- [\n\r\f \t]*         %ignore
 line_joining    <- '%>' _ [\n\r\f]+     %ignore
 
@@ -20,13 +27,13 @@ number  <- float / int
 string_escape   <- "\\" [\\runftvb']
 string          <- "'" (string_escape / [^'])* "'"      %string
 
-basic_name  <- [a-zA-Z_] [a-zA-Z_0-9]*                  %reference
-name        <- '$'                                      %special_ref
-             / '?'                                      %special_ref
-             / '~'                                      %special_ref
-             / '!'                                      %special_ref
-             / '#'                                      %special_ref
-             #/ '^'                                      %special_ref
+basic_name  <- !(keyword (_/eos)) [a-zA-Z_] [a-zA-Z_0-9]*   %reference
+name        <- '$'                                          %special_ref
+             / '?'                                          %special_ref
+             / '~'                                          %special_ref
+             / '!'                                          %special_ref
+             / '#'                                          %special_ref
+             #/ '^'                                          %special_ref
              / basic_name
 
 special_entry       <- '^'                                  %special_entry
@@ -36,8 +43,8 @@ special_entry       <- '^'                                  %special_entry
                      / ':'                                  %special_entry
                      / '!'                                  %special_entry
 
-new_bag             <- @'{:' _ws (_ statement _ eos)* _
-                       stmt_or_expr _ws @':}' _             %new_bag
+new_bag             <- @'{:' _ws (_ statement _ !':}')* _
+                       statement _ws @':}' _                %new_bag
                      / @'{' _ @':' _ @'}' _                 %new_bag
                      / @'{:' _ws @':}' _                    %new_bag
 
@@ -139,7 +146,7 @@ modifier_params         <- (basic_name _ @',' _ws )* basic_name?            %par
 small_modifier_body     <- modifier_params _ @':' _ !'['
                            _ expression                                     %small_modifier_body
 normal_modifier_body    <- modifier_params _ @(':'?) _ws
-                           @'[' _ block_stmt? _ @']' _                      %normal_modifier_body
+                           @'[' _ block_body? _ @']' _                      %normal_modifier_body
 modifier_def_target     <- access
                          / @'<' _ special_entry _ @'>' _
                          / '!'                                              %special_ref
@@ -147,9 +154,9 @@ modifier_def_target     <- access
 modifier_def    <- modifier_def_target _ @'<-' _ws
                    ( small_modifier_body / normal_modifier_body)            %modifier_def
 
-if_then         <- @'if' _ expression _ @'then' _ws stmt_or_expr            %predicated_statement
-unless          <- @'unless' _ expression _ @'then' _ws stmt_or_expr        %predicated_statement
-
+then            <- @'then' _ws stmt_or_expr
+if_then         <- @'if' _ expression _ then                                %if_
+unless          <- @'unless' _ expression _ then                            %unless
 otherwise       <- @'otherwise' _ws stmt_or_expr                            %otherwise
 
 basic_load_list     <- (basic_name _ @',' _ws )* basic_name?
@@ -163,23 +170,19 @@ load                <- @'load' _ '*' _ load_from _ load_into?               %loa
                      / @'load' _ basic_load_list                            %load
 
 
-
-restart_pos     <- 'before' _ name?                     %restart
-                 / 'at' _ name?                         %restart
-                 / 'after' _ name?                      %restart
-
-except_when     <- @'except' _ @'when' _ expression _
-                   @'then' _ws stmt_or_expr             %predicated_statement
-
+except_when     <- @'except' _ @'when' _ expression _ then                  %predicated_statement
+restart_pos     <- 'before' _ name?                                         %restart
+                 / 'at' _ name?                                             %restart
+                 / 'after' _ name?                                          %restart
 stmt_or_expr    <- statement / expression
-block_stmt      <- (statement _ !']')* _ (expression _ &']' / statement)
+block_body      <- (statement _ !']')* _ statement
 
 loop_name   <- @'@' _ basic_name                    %loop_name
 loop_body   <- @'do' @_ws stmt_or_expr              %loop_body
 
 but_if_stmt <- expression _ &'but' / stmt_or_expr
 but_if      <- @'but' !'always' _ @'if' _ (expression / '*' ) _
-               @'occurs' _ @'then' _ws but_if_stmt                      %but_if
+               @'occurs' _ then                                         %but_if
 always      <- @'but' _ @'always' _ws stmt_or_expr                      %always
 attempt     <- @'attempt' _ws but_if_stmt _ws always                    %attempt
              / @'attempt' _ws but_if_stmt _ws but_if+ (_ws always)?     %attempt
@@ -190,7 +193,7 @@ statement   <- eos
              / @'oops' _ expression                                             %oops
              / @'clear' _ access                                                %clear
              / @'restart' _  restart_pos
-             / @'[' _ws block_stmt _ws @']' _                                   %block
+             / @'[' _ws block_body _ws @']' _                                   %block
              / @'[' _ws @']' _                                                  %empty_block
              / @'={' !':' _ access _ @'}' _                                     %reduce_and_assign
              / load

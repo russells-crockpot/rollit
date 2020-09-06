@@ -9,7 +9,8 @@ from contextlib import suppress
 import pytest
 
 from rollit import grammar
-from rollit.ast import actions, is_valid_iterable
+from rollit.ast import actions
+from rollit.util import is_valid_iterable
 
 try:
     from ruamel import yaml
