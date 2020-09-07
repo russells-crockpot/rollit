@@ -11,7 +11,7 @@ from .base import CodeInfo, preevaluate_predicate, DeferEvaluation
 from .. import langref
 from ..exceptions import InvalidNameError
 from ..grammar import TreeNode
-from ..util import is_valid_iterable
+from ..util import is_valid_iterable, ensure_tuple
 
 __all__ = ()
 
@@ -244,7 +244,7 @@ def modifier_call(text, start, end, values, codeinfo):
         return elements.ModifierCall(modifier=values[0], args=(), codeinfo=codeinfo)
     return elements.ModifierCall(
         modifier=values[0],
-        args=util.ensure_tuple(values[-1]),
+        args=ensure_tuple(values[-1]),
         codeinfo=codeinfo,
     )
 
@@ -282,7 +282,7 @@ def raw_accessor(text, start, end, values, codeinfo):
 @add_codeinfo
 def access(text, start, end, values, codeinfo):
     return elements.Access(accessing=values[0],
-                           accessors=util.ensure_tuple(values[-1]),
+                           accessors=ensure_tuple(values[-1]),
                            codeinfo=codeinfo)
 
 
@@ -485,8 +485,8 @@ def _create_if_then_element(predicated, otherwise, codeinfo):
         codeinfo = predicated.codeinfo
     return elements.IfThen(
         predicate=predicated.predicate,
-        then=util.ensure_tuple(predicated.statement),
-        otherwise=util.ensure_tuple(otherwise),
+        then=ensure_tuple(predicated.statement),
+        otherwise=ensure_tuple(otherwise),
         codeinfo=codeinfo,
     )
 
@@ -502,10 +502,10 @@ def if_stmt(text, start, end, values, codeinfo):
     if isinstance(otherwise, internal.Otherwise):
         if not values:
             return _create_if_then_element(if_, otherwise.value, codeinfo)
-        unlesses = util.ensure_tuple(values[0])
+        unlesses = ensure_tuple(values[0])
         otherwise = otherwise.value
     else:
-        unlesses = util.ensure_tuple(otherwise)
+        unlesses = ensure_tuple(otherwise)
         otherwise = ()
     stmt = _create_if_then_element(if_, otherwise, codeinfo)
     for unless in reversed(unlesses):
@@ -553,7 +553,7 @@ def until_do(text, start, end, values, codeinfo):
     if values and isinstance(values[-1], internal.Otherwise):
         otherwise = values.pop(-1).value
     if values:
-        for except_when in util.ensure_tuple(values[0]):
+        for except_when in ensure_tuple(values[0]):
             do = elements.IfThen(
                 predicate=except_when.predicate,
                 then=except_when.statement,
@@ -582,7 +582,7 @@ def for_every(text, start, end, values, codeinfo):
         name=loop_name,
         item_name=item_name,
         iterable=values[1],
-        do=util.ensure_tuple(values[-1][0]),
+        do=ensure_tuple(values[-1][0]),
         codeinfo=codeinfo,
     )
 
