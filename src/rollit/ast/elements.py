@@ -1,5 +1,6 @@
 """
 """
+import enum
 from collections import namedtuple
 from contextlib import suppress
 
@@ -27,6 +28,8 @@ __all__ = [
     'Negation',
     'NewBag',
     'Oops',
+    'OverloadableOperator',
+    'OverloadOperator',
     'Reduce',
     'Restart',
     'RestartLocationSpecifier',
@@ -62,6 +65,32 @@ def create_model_element_type(name,
             bases = (namedtuple(f'_{name}Base', attrs), ModelElement)
     class_attrs.setdefault('__specs__', specs)
     return type(name, bases, class_attrs)
+
+
+class OverloadableOperator(ModelEnumElement):
+    """
+    """
+    MULTIPLY = '*'
+    TRUEDIV = '%/'
+    FLOORDIV = '/'
+    MODULO = '%'
+    ADD = '+'
+    SUBTRACT = '-'
+    OR = 'or'
+    AND = 'and'
+    EQUALS = '=='
+    NOT_EQUALS = '!='
+    GREATER_THAN_EQUALS = '<='
+    LESS_THAN_EQUALS = '>='
+    LESS_THAN = '<'
+    GREATER_THAN = '>'
+    ISA = 'isa'
+    EXPAND = '@'
+    AMPERSAND = '&'
+    HAS = 'has'
+    LENGTH = '#'
+    REDUCE = '{}'
+    SUBJECT = '?'
 
 
 class SpecialAccessor(ModelEnumElement):
@@ -181,6 +210,15 @@ class Reference(create_model_element_type('BaseReference')):
 
 Reference.register(SpecialReference)
 
+
+class OperatorSide(enum.Enum):
+    """
+    """
+    LEFT = enum.auto()
+    RIGHT = enum.auto()
+    NA = enum.auto()
+
+
 # Loops
 UntilDo = create_model_element_type('UntilDo', ('name', 'until', 'do', 'otherwise'))
 """ """
@@ -222,12 +260,13 @@ Enlarge = create_model_element_type('Enlarge', ('size', 'value'))
 """ """
 Reduce = create_model_element_type('Reduce')
 """ """
-RawAccessor = create_model_element_type('RawAccessor')
-""" """
 
 NewBag = create_model_element_type('NewBag')
 """ """
-
+RawAccessor = create_model_element_type('RawAccessor')
+""" """
+OverloadOperator = create_model_element_type('OverloadOperator', ('operator', 'side'))
+""" """
 ClearValue = create_model_element_type('ClearValue')
 """ """
 

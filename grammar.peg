@@ -52,23 +52,51 @@ enlarge     <- @'{' _ws !(':' / special_accessor)
 reduce      <- @'{' _ws !(':' / special_accessor)
                expression _ws @'}' _                                        %reduce
 
+two_sided_op    <- '*'
+                 / '%/'
+                 / '/'
+                 / '%'
+                 / '+'
+                 / '-'
+                 / 'or'
+                 / 'and'
+                 / '=='
+                 / '!='
+                 / '<='
+                 / '>='
+                 / '<'
+                 / '>'
+                 / 'isa'
+                 / '@'
+                 / '&'
+one_sided_op    <- 'has'
+                 / '#'
+                 / '{}'
+                 / '?'
+
+overload_op     <- @'<[' _ two_sided_op _ @']' _                            %left_op_overload
+                 / @'[' _ two_sided_op _ @']>' _                            %right_op_overload
+                 / @'[' _ one_sided_op _ @']' _                             %one_sided_op_overload
+
 special_accessor    <- '#'                                                  %special_accessor
                      / '*'                                                  %special_accessor
                      / '+'                                                  %special_accessor
                      / '='                                                  %special_accessor
                      / '^'                                                  %special_accessor
-                     / '.'                                                  %special_accessor
-                     / '-'                                                  %special_accessor
-accessor            <- _ws @'.' _ basic_name  _
-                     / _ws @'.' _ @'{' _ special_accessor _ @'}' _
-                     / _ws @'.' _ @'<' _ special_entry _ @'>' _
-                     / _ws @'.' _ @'<' _ expression _ @'>' _                %raw_accessor
-                     / _ws @'.' _ reduce _
+
+accessor            <- basic_name  _
+                     / @'{' _ special_accessor _ @'}' _
+                     / @'<' !'[' _ special_entry _  @'>' _
+                     / @'<' !'[' _ expression _  @'>' _                     %raw_accessor
+                     / overload_op
+                     / reduce _
+
 accessing           <- reduce_expr
-                     / @'<' _ special_entry _ @'>' _
+                     / @'<' !'[' _ special_entry _ @'>' _
+                     / overload_op
                      / name
-access              <- accessing _ accessor+                                %access
-                     / @'<' _ special_entry _ @'>' _
+access              <- accessing (_ws @'.' accessor)+                       %access
+                     / @'<' !'[' _ special_entry _ @'>' _
                      / name
 
 mult_op         <- '*'                          %text

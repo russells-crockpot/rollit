@@ -274,6 +274,30 @@ def arg_list(text, start, end, values):
 
 @elements_to_values
 @add_codeinfo
+def left_op_overload(text, start, end, values, codeinfo):
+    return elements.OverloadOperator(operator=elements.OverloadableOperator(values[0]),
+                                     side=elements.OperatorSide.LEFT,
+                                     codeinfo=codeinfo)
+
+
+@elements_to_values
+@add_codeinfo
+def right_op_overload(text, start, end, values, codeinfo):
+    return elements.OverloadOperator(operator=elements.OverloadableOperator(values[0]),
+                                     side=elements.OperatorSide.RIGHT,
+                                     codeinfo=codeinfo)
+
+
+@elements_to_values
+@add_codeinfo
+def one_sided_op_overload(text, start, end, values, codeinfo):
+    return elements.OverloadOperator(operator=elements.OverloadableOperator(values[0]),
+                                     side=elements.OperatorSide.NA,
+                                     codeinfo=codeinfo)
+
+
+@elements_to_values
+@add_codeinfo
 def raw_accessor(text, start, end, values, codeinfo):
     return elements.RawAccessor(values[0], codeinfo=codeinfo)
 
