@@ -5,7 +5,7 @@ from collections import namedtuple
 from contextlib import suppress, nullcontext
 
 from ..ast import elements, constants
-from ..exceptions import RollitTypeError, NoSuchLoopError
+from ..exceptions import RollitTypeError, NoSuchLoopError, RollitReferenceError
 from .objects import Roll, Bag, OopsException, RestartException, LeaveException, \
         RollitBasedModifier, Dice
 from ..langref import OPERATORS
@@ -219,7 +219,21 @@ def _(self, context):
 
 @elements.Load.evaluator
 def _(self, context):
-    raise NotImplementedError()
+    try:
+        load_from = context(self.load_from)
+    except RollitReferenceError:
+        load_from = context.get_library(self.load_from.value)
+    try:
+        load_into = context(self.into)
+    except RollitReferenceError:
+        load_into = Bag(context)
+        context[self.into.value] = load_into
+    if self.to_load == elements.SpecialReference.ALL:
+        load_into.load(load_from)
+    else:
+        with context.now_access(load_into):
+            for ref in self.to_load:
+                context(elements.Assignment(ref, load_from[ref.value], codeinfo=ref.codeinfo))
 
 
 @elements.Restart.evaluator

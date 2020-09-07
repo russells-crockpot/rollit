@@ -49,6 +49,7 @@ class Runner:
     def load_library(self, name, context):
         """
         """
+        return self._library_loader.get_library(name, context)
 
     @contextmanager
     def brief_context(self):

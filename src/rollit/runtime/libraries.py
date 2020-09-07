@@ -10,8 +10,7 @@ from ..util import ensure_tuple
 from .objects import PythonBasedModifier, ObjectPlaceholder, BagPlaceholder, Roll, Dice, Bag
 
 __all__ = [
-    'stdlib',
-    'runtime',
+    'LibraryLoader',
 ]
 
 
@@ -48,7 +47,7 @@ def _bottom(*args, subject, context):
     return Roll(sorted(subject)[0:num])
 
 
-stdlib = BagPlaceholder({
+root = BagPlaceholder({
     'print': _print,
     'top': _top,
     'bottom': _bottom,
@@ -112,7 +111,7 @@ class LibraryLoader:
         self.paths = paths
         self._runner = runner
         self.libraries = {
-            'stdlib': self.LibraryInfo('stdlib', __file__, 'python', stdlib),
+            '~': self.LibraryInfo('~', __file__, 'python', root),
             'runtime': self.LibraryInfo('runtime', __file__, 'python', runtime),
         }
 
