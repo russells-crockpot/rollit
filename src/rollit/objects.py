@@ -4,12 +4,82 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
 
-from ..ast import elements, ModelElement, ModelEnumElement
-from ..exceptions import RollitTypeError, InvalidNameError
-from .base import NoSubject, NoValue
-from ..util import is_valid_iterable
+from .ast import elements, ModelElement, ModelEnumElement
+from .exceptions import RollitTypeError, InvalidNameError
+from .util import is_valid_iterable
 
-__all__ = []
+__all__ = [
+    'RollitNonErrorException',
+    'LeaveException',
+    'RestartException',
+    'OopsException',
+    'Dice',
+    'Roll',
+    'BagSpecialEntries',
+    'Bag',
+    'Modifier',
+    'RollitBasedModifier',
+    'NoSubject',
+    'NoValue',
+]
+
+
+def __create_no_value():
+
+    class _NoValueBase(tuple):
+        __the_object = None
+
+        def __new__(cls):
+            if not cls.__the_object:
+                cls.__the_object = super().__new__(cls)
+            return cls.__the_object
+
+        def __bool__(self):
+            return False
+
+        @staticmethod
+        def __str__():
+            return 'NoValue'
+
+        @staticmethod
+        def __repr__():
+            return 'NoValue'
+
+    return _NoValueBase()
+
+
+NoValue = __create_no_value()
+""" """
+del __create_no_value
+
+
+def __create_no_subject():
+
+    class _NoSubjectBase(tuple):
+        __the_object = None
+
+        def __new__(cls):
+            if not cls.__the_object:
+                cls.__the_object = super().__new__(cls)
+            return cls.__the_object
+
+        def __bool__(self):
+            return False
+
+        @staticmethod
+        def __str__():
+            return 'NoSubject'
+
+        @staticmethod
+        def __repr__():
+            return 'NoSubject'
+
+    return _NoSubjectBase()
+
+
+NoSubject = __create_no_subject()
+""" """
+del __create_no_subject
 
 
 class RollitNonErrorException(BaseException):
@@ -48,57 +118,6 @@ class OopsException(RollitNonErrorException):
     #pylint: disable=super-init-not-called
     def __init__(self, value):
         self.value = value
-
-
-class ObjectPlaceholder(metaclass=ABCMeta):
-    """
-    """
-    __slots__ = ('_preloaders', '_postloaders')
-
-    def __init__(self):
-        self._preloaders = []
-        self._postloaders = []
-
-    #TODO handle modifiers
-    def _run_load_op(self, context, op, obj):
-        if not op:
-            return
-        if is_valid_iterable(op):
-            for item in op:
-                self._run_load_op(context, item, obj)
-        elif isinstance(op, ModelElement):
-            context(op)
-        elif callable(op):
-            op(obj, context)
-        else:
-            raise TypeError()
-
-    def resolve(self, context):
-        """
-        """
-        for op in self._preloaders:
-            self._run_load_op(context, op, self)
-        obj = self.get_object(context)
-        for op in self._postloaders:
-            self._run_load_op(context, op, obj)
-        return obj
-
-    @abstractmethod
-    def get_object(self, context):
-        """
-        """
-
-    def preloader(self, func):
-        """
-        """
-        self._preloaders.append(func)
-        return func
-
-    def postloader(self, func):
-        """
-        """
-        self._postloaders.append(func)
-        return func
 
 
 class Dice:
@@ -501,29 +520,6 @@ class Bag:
         return True
 
 
-class BagPlaceholder(ObjectPlaceholder):
-    """
-    """
-    __slots__ = ('_entries', '_raw')
-
-    def __init__(self, entries, raw=False):
-        super().__init__()
-        self._entries = entries
-        self._raw = raw
-
-    def get_object(self, context):
-        bag = Bag(context)
-        for k, v in self._entries.items():
-            if self._raw is True:
-                bag.raw_set(k, v)
-            else:
-                bag[k] = v
-        if isinstance(self._raw, dict):
-            for k, v in self._raw.items():
-                bag.raw_set(k, v)
-        return bag
-
-
 class Modifier(metaclass=ABCMeta):
     """
     """
@@ -554,32 +550,6 @@ class Modifier(metaclass=ABCMeta):
 
     def __str__(self):
         return self.display_string
-
-
-class PythonBasedModifier(Modifier):
-    """
-    """
-    __slots__ = (
-        '_display_string',
-        'func',
-    )
-
-    def __init__(self, func):
-        self.func = func
-        self._display_string = f'[-built-in modifier: {self.func.__name__.lstrip("_")}-]'
-
-    def modify(self, *args, context):
-        val = self.func(*args, subject=context.scope.subject, context=context)
-        if val not in (None, NoSubject):
-            context.scope.subject = val
-
-    @property
-    def display_string(self):
-        return self._display_string
-
-    @display_string.setter
-    def display_string(self, value):
-        self._display_string = value
 
 
 class RollitBasedModifier(

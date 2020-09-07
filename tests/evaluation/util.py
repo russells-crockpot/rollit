@@ -2,7 +2,7 @@
 import pytest
 
 from rollit.ast import ModelElement, ModelEnumElement
-from rollit.runtime.objects import Dice, Bag
+from rollit.objects import Dice, Bag
 
 from .conftest import script_tests
 from ..util import reorder_keys

@@ -6,9 +6,9 @@ from contextlib import suppress, nullcontext
 
 from ..ast import elements, constants
 from ..exceptions import RollitTypeError, NoSuchLoopError, RollitReferenceError
-from .objects import Roll, Bag, OopsException, RestartException, LeaveException, \
-        RollitBasedModifier, Dice
 from ..langref import OPERATORS
+from ..objects import Roll, Bag, OopsException, RestartException, LeaveException, \
+        RollitBasedModifier, Dice
 from ..util import is_valid_iterable
 
 __all__ = ()
@@ -248,9 +248,11 @@ class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier', 'co
 
     def __exit__(self, exc_type, exc, traceback):
         if exc and isinstance(exc, RestartException):
-            if self.location_specifier == exc.location_specifier \
-                    and exc.name in (elements.SpecialReference.NONE, self.name):
-                return True
+            if exc.name in (elements.SpecialReference.NONE, self.name):
+                return self.location_specifier == exc.location_specifier
+            if exc.name == elements.SpecialReference.PARENT:
+                exc.name = elements.SpecialReference.NONE
+                raise exc from None
             if exc.name not in self.context.scope.loops:
                 raise NoSuchLoopError(exc.name)
         return False

@@ -3,10 +3,9 @@
 
 from ..ast import elements
 from ..exceptions import RollitSyntaxError, RollitReferenceError
-from .objects import Bag
-from .base import NoSubject
+from ..objects import Bag, NoSubject
 
-__all__ = []
+__all__ = ['Scope']
 
 
 class Scope:

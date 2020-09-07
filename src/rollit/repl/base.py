@@ -8,13 +8,13 @@ from abc import ABCMeta, abstractmethod
 
 from ..exceptions import RollitException, RollitRuntimeError
 from ..grammar import ParseError
-from ..runtime.objects import Roll
+from ..objects import Roll
 from ..util import format_runtime_error, is_valid_iterable
 
-# try:
-# import readline  # pylint: disable=unused-import
-# except ImportError:
-# pass
+try:
+    import readline  # pylint: disable=unused-import
+except ImportError:
+    pass
 
 __all__ = ['BaseRepl', 'Repl']
 

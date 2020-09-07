@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 """
 """
 import os
@@ -7,22 +8,25 @@ from collections import namedtuple
 
 from ..exceptions import RollitTypeError, LibraryNotFoundError
 from ..util import ensure_tuple
-from .objects import PythonBasedModifier, ObjectPlaceholder, BagPlaceholder, Roll, Dice, Bag
+from ..objects import Roll, Dice, Bag
+from .. import lai
 
 __all__ = [
     'LibraryLoader',
 ]
 
+_rootlib = lai.PythonBasedLibrary('~')
 
-@PythonBasedModifier
+
+@_rootlib.modifier('print')
 # pylint: disable=useless-return
-def _print(*args, subject, context):
+def _(*args, subject, context):
     print(subject, *args)
     return None
 
 
-@PythonBasedModifier
-def _top(*args, subject, context):
+@_rootlib.modifier('top')
+def _(*args, subject, context):
     if not args:
         num = 1
     else:
@@ -34,8 +38,8 @@ def _top(*args, subject, context):
     return Roll(sorted(subject, reverse=True)[0:num])
 
 
-@PythonBasedModifier
-def _bottom(*args, subject, context):
+@_rootlib.modifier('bottom')
+def _(*args, subject, context):
     if not args:
         num = 1
     else:
@@ -47,22 +51,16 @@ def _bottom(*args, subject, context):
     return Roll(sorted(subject)[0:num])
 
 
-root = BagPlaceholder({
-    'print': _print,
-    'top': _top,
-    'bottom': _bottom,
-})
+_runtime = lai.PythonBasedLibrary('runtime')
 
 
-@PythonBasedModifier
-# pylint: disable=protected-access
-def _loops(*args, subject, context):
+@_runtime.modifier('loops')
+def _(*args, subject, context):
     return Roll(context.scope.loops)
 
 
-@PythonBasedModifier
-# pylint: disable=protected-access
-def _in_scope(*args, subject, context):
+@_runtime.modifier('scope_entries')
+def _(*args, subject, context):
     scopes = []
     scope = context.scope
     while scope.parent:
@@ -77,9 +75,8 @@ def _in_scope(*args, subject, context):
     return bag
 
 
-@PythonBasedModifier
-# pylint: disable=protected-access
-def _names_in_scope(*args, subject, context):
+@_runtime.modifier('names_in_scope')
+def _(*args, subject, context):
     names = set()
     scope = context.scope
     while scope.parent:
@@ -91,11 +88,10 @@ def _names_in_scope(*args, subject, context):
     return names
 
 
-runtime = BagPlaceholder({
-    'in_scope': _in_scope,
-    'names_in_scope': _names_in_scope,
-    'loops': _loops,
-})
+_BUILTIN_LIBS = (
+    _rootlib,
+    _runtime,
+)
 
 
 class LibraryLoader:
@@ -103,17 +99,20 @@ class LibraryLoader:
     """
     __slots__ = ('libraries', '_paths', '_runner')
     _FILE_SUFFIX_PAT = re.compile(r'\.(py[coz]?|rollit)', re.I)
-    LibraryInfo = namedtuple('LibraryInfo', ('name', 'file', 'type', 'content'))
+    LibraryInfo = namedtuple('LibraryInfo', ('name', 'file', 'type', 'content', 'isolate'))
     """ """
 
     def __init__(self, paths, runner):
         self._paths = None
         self.paths = paths
         self._runner = runner
-        self.libraries = {
-            '~': self.LibraryInfo('~', __file__, 'python', root),
-            'runtime': self.LibraryInfo('runtime', __file__, 'python', runtime),
-        }
+        self.libraries = {}
+        for lib in _BUILTIN_LIBS:
+            self._add_from_lai_lib(lib, __file__)
+
+    def _add_from_lai_lib(self, lib, path):
+        info = self.LibraryInfo(lib.name, path, 'python', lib.to_placeholder(), lib.isolate)
+        self.libraries[info.name] = info
 
     @property
     def paths(self):
@@ -131,7 +130,7 @@ class LibraryLoader:
         self.load_library(library_name)
         info = self.libraries[library_name]
         if info.type == 'python':
-            if isinstance(info.content, ObjectPlaceholder):
+            if isinstance(info.content, lai.ObjectPlaceholder):
                 return info.content.resolve(context)
             raise TypeError(f'Expected and ObjectPlaceholder but got {type(info.content)}')
         if info.type == 'rollit':

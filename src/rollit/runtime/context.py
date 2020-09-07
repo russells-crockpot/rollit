@@ -5,8 +5,8 @@ from contextlib import contextmanager, suppress
 from ..ast import elements, ModelElement, ModelEnumElement
 from ..exceptions import RollitTypeError, CannotReduceError, InvalidNameError, RollitRuntimeError, \
         RollitReferenceError
+from ..objects import Bag
 from .base import is_atom
-from .objects import Bag
 from .scope import Scope
 
 __all__ = ['RuntimeContext']
