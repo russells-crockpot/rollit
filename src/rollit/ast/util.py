@@ -2,12 +2,11 @@
 """
 from .base import CodeInfo
 from .elements import StringLiteral, BinaryOp, Negation, SpecialReference
-from ..util import is_valid_iterable
+from ..util import is_valid_iterable, ensure_tuple
 
 __all__ = [
     'was_evaluated',
     'flatten_tuple',
-    'ensure_tuple',
     'negate',
 ]
 
@@ -27,16 +26,6 @@ def flatten_tuple(item):
     if item and is_valid_iterable(item[0]):
         item = (*item[0], item[1])
     return tuple(item)
-
-
-def ensure_tuple(item):
-    """
-    """
-    if is_valid_iterable(item):
-        if isinstance(item, tuple):
-            return item
-        return tuple(item)
-    return (item,)
 
 
 # pylint: disable=too-many-function-args

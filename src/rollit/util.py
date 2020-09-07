@@ -10,6 +10,7 @@ __all__ = [
     'unwrap_func',
     'format_runtime_error',
     'is_valid_iterable',
+    'ensure_tuple',
 ]
 
 
@@ -98,3 +99,13 @@ def is_valid_iterable(node):
     """
     """
     return isinstance(node, (list, tuple)) and not isinstance(node, ModelElement)
+
+
+def ensure_tuple(item):
+    """
+    """
+    if is_valid_iterable(item):
+        if isinstance(item, tuple):
+            return item
+        return tuple(item)
+    return (item,)

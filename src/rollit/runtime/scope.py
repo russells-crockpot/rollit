@@ -1,9 +1,8 @@
 """
 """
-from collections import ChainMap
 
 from ..ast import elements
-from ..exceptions import NoSuchLoopError, RollitSyntaxError, RollitReferenceError
+from ..exceptions import RollitSyntaxError, RollitReferenceError
 from .objects import Bag
 from .base import NoSubject
 
@@ -40,12 +39,12 @@ class Scope:
                 raise ValueError('A scope with no parent MUST have a context')
             self._context = context
             self._variables = Bag(self.context)
-            self._loops = ChainMap()
+            self._loops = []
             self.error = error
             self.subject = subject
         else:
             self._variables = Bag(self.context)
-            self._loops = self.parent._loops.new_child()
+            self._loops = self.parent._loops[:]
             self.subject = subject if subject is not NoSubject else self.parent.subject
             self.error = error if error is not None else self.parent.error
             self._loop = loop if loop is not None else self.parent._loop
@@ -58,29 +57,10 @@ class Scope:
             return self._context
         return self.root._context
 
-    def add_loop(self, name, loop):
+    def add_loop(self, name):
         """
         """
-        self._loops[name] = loop
-
-    def get_loop(self, name):
-        """
-        """
-        if name in (elements.SpecialReference.NONE, '!', None, ''):
-            return self.current_loop
-        if name in (elements.SpecialAccessor.PARENT, '^'):
-            parent = self.parent
-            while parent and parent.current_loop == self.current_loop:
-                parent = parent.parent
-            if not parent or not parent.current_loop:
-                raise NoSuchLoopError('^') from None
-            return parent.current_loop
-        if name in (elements.SpecialReference.ROOT, '~'):
-            return self.root_loop
-        try:
-            return self._loops[name]
-        except KeyError:
-            raise NoSuchLoopError(name)
+        self._loops.append(name)
 
     def load(self, bag):
         """
@@ -135,10 +115,11 @@ class Scope:
         """
         return tuple(self._variables._entries.keys())
 
-    def loop_names(self):
+    @property
+    def loops(self):
         """
         """
-        return tuple(self._loops.keys())
+        return self._loops
 
     @property
     def error(self):

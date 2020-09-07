@@ -5,7 +5,7 @@ from collections import namedtuple
 from contextlib import suppress, nullcontext
 
 from ..ast import elements, constants
-from ..exceptions import RollitTypeError
+from ..exceptions import RollitTypeError, NoSuchLoopError
 from .objects import Roll, Bag, OopsException, RestartException, LeaveException, \
         RollitBasedModifier, Dice
 from ..langref import OPERATORS
@@ -227,25 +227,29 @@ def _(self, context):
     raise RestartException(*self)
 
 
-class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier'))):
+class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier', 'context'))):
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc, traceback):
-        if exc and isinstance(exc, RestartException) \
-                and self.location_specifier == exc.location_specifier \
-                and exc.name in (elements.SpecialReference.NONE, self.name):
-            return True
+        if exc and isinstance(exc, RestartException):
+            if self.location_specifier == exc.location_specifier \
+                    and exc.name in (elements.SpecialReference.NONE, self.name):
+                return True
+            if exc.name not in self.context.scope.loops:
+                raise NoSuchLoopError(exc.name)
         return False
 
 
 @elements.ForEvery.evaluator
 def _(self, context):
-    with _SupressOn(self.name, elements.RestartLocationSpecifier.AFTER):
+    with _SupressOn(self.name, elements.RestartLocationSpecifier.AFTER, context):
         while True:
-            with _SupressOn(self.name, elements.RestartLocationSpecifier.BEFORE):
+            with _SupressOn(self.name, elements.RestartLocationSpecifier.BEFORE, context):
                 with context.new_scope() as scope:
+                    if self.name:
+                        scope.add_loop(self.name)
                     iterable = context(self.iterable)
                     if isinstance(iterable, Dice):
                         iterable = context.reduce(iterable)
@@ -253,7 +257,7 @@ def _(self, context):
                         raise RollitTypeError(f'Only bags and rolls are iterable. Got: {iterable}')
                     for item in iterable:
                         scope[self.item_name] = item
-                        with _SupressOn(self.name, elements.RestartLocationSpecifier.AT):
+                        with _SupressOn(self.name, elements.RestartLocationSpecifier.AT, context):
                             for stmt in self.do:
                                 context(stmt)
                     return
@@ -269,7 +273,9 @@ def _(self, context):
             return True
         return False
 
-    with context.new_scope():
+    with context.new_scope() as scope:
+        if self.name:
+            scope.add_loop(self.name)
         if _before():
             return
         do = self.do
@@ -283,6 +289,8 @@ def _(self, context):
                     context(stmt)
             except RestartException as e:
                 if e.name and e.name not in (elements.SpecialReference.NONE, self.name):
+                    if e.name not in context.scope.loops:
+                        raise NoSuchLoopError(e.name)
                     raise
                 if e.location_specifier == elements.RestartLocationSpecifier.AT:
                     ignore_predicate = True

@@ -1,12 +1,14 @@
 """
 """
 import inspect
+from contextlib import contextmanager
 
 from .. import grammar
 from ..ast import actions, ModelElement
 from ..ast.util import flatten_tuple
-from .base import DEFAULT_SEARCH_PATH
+from .base import DEFAULT_SEARCH_PATHS
 from .context import RuntimeContext
+from .libraries import LibraryLoader
 from .towers import DefaultTower
 
 __all__ = ['Runner']
@@ -17,37 +19,39 @@ class Runner:
     """
 
     def __init__(self,
-                 search_path=DEFAULT_SEARCH_PATH,
+                 search_paths=DEFAULT_SEARCH_PATHS,
                  *,
                  dice_tower=DefaultTower,
                  parser_options=None):
         if inspect.isclass(dice_tower):
             dice_tower = dice_tower()
         self.dice_tower = dice_tower
-        self._context = RuntimeContext(runner=self)
-        self._search_path = search_path
-        self._libraries = {}
+        self._library_loader = LibraryLoader(search_paths, self)
+        self._default_context = RuntimeContext(runner=self)
+
+    def parse(self, script):
+        """
+        """
+        return grammar.parse(script, actions=actions)
 
     def run(self, script):
         """
         """
-        script_model = grammar.parse(script, actions=actions)
+        script_model = self.parse(script)
         if not isinstance(script_model, ModelElement) \
                 and isinstance(script_model, (tuple, list)) and len(script_model) == 1:
             script_model = script_model[0]
         if not isinstance(script_model, ModelElement) \
                 and isinstance(script_model, (tuple, list)):
-            return tuple(self._context(item) for item in flatten_tuple(script_model))
-        return self._context(script_model)
+            return tuple(self._default_context(item) for item in flatten_tuple(script_model))
+        return self._default_context(script_model)
 
-    def current_variable_names(self):
+    def load_library(self, name, context):
         """
         """
-        # pylint: disable=protected-access
-        self._context._scope.variable_names()
 
-    def current_loop_names(self):
+    @contextmanager
+    def brief_context(self):
         """
         """
-        # pylint: disable=protected-access
-        self._context._scope.loop_names()
+        yield RuntimeContext(runner=self)

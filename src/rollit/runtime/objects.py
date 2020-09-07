@@ -50,6 +50,57 @@ class OopsException(RollitNonErrorException):
         self.value = value
 
 
+class ObjectPlaceholder(metaclass=ABCMeta):
+    """
+    """
+    __slots__ = ('_preloaders', '_postloaders')
+
+    def __init__(self):
+        self._preloaders = []
+        self._postloaders = []
+
+    #TODO handle modifiers
+    def _run_load_op(self, context, op, obj):
+        if not op:
+            return
+        if is_valid_iterable(op):
+            for item in op:
+                self._run_load_op(context, item, obj)
+        elif isinstance(op, ModelElement):
+            context(op)
+        elif callable(op):
+            op(obj, context)
+        else:
+            raise TypeError()
+
+    def resolve(self, context):
+        """
+        """
+        for op in self._preloaders:
+            self._run_load_op(context, op, self)
+        obj = self.get_object(context)
+        for op in self._postloaders:
+            self._run_load_op(context, op, obj)
+        return obj
+
+    @abstractmethod
+    def get_object(self, context):
+        """
+        """
+
+    def preloader(self, func):
+        """
+        """
+        self._preloaders.append(func)
+        return func
+
+    def postloader(self, func):
+        """
+        """
+        self._postloaders.append(func)
+        return func
+
+
 class Dice:
     """
     """
@@ -450,13 +501,27 @@ class Bag:
         return True
 
 
-class PythonBasedLibrary(Bag):
+class BagPlaceholder(ObjectPlaceholder):
     """
     """
+    __slots__ = ('_entries', '_raw')
 
-    def __init__(self, entries, context=None):
-        super().__init__(context)
-        self._entries.update(entries)
+    def __init__(self, entries, raw=False):
+        super().__init__()
+        self._entries = entries
+        self._raw = raw
+
+    def get_object(self, context):
+        bag = Bag(context)
+        for k, v in self._entries.items():
+            if self._raw is True:
+                bag.raw_set(k, v)
+            else:
+                bag[k] = v
+        if isinstance(self._raw, dict):
+            for k, v in self._raw.items():
+                bag.raw_set(k, v)
+        return bag
 
 
 class Modifier(metaclass=ABCMeta):

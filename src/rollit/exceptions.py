@@ -103,3 +103,14 @@ class RollitIndexError(RollitRuntimeError):
 class NoneError(RollitRuntimeError):
     """
     """
+
+
+class LibraryNotFoundError(RollitRuntimeError):
+    """
+    """
+    name = None
+    """ """
+
+    def __init__(self, name, *args, **kwargs):
+        self.name = name
+        super().__init__(f'Could not locate a library named {self.name}', *args, **kwargs)

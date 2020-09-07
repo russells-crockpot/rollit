@@ -3,9 +3,9 @@
 
 from ..langref import ATOM_TYPES
 
-__all__ = ['DEFAULT_SEARCH_PATH', 'NoSubject', 'NoValue', 'is_atom']
+__all__ = ['DEFAULT_SEARCH_PATHS', 'NoSubject', 'NoValue', 'is_atom']
 
-DEFAULT_SEARCH_PATH = ('.',)
+DEFAULT_SEARCH_PATHS = ('.',)
 """ """
 
 
