@@ -99,7 +99,7 @@ class Roll(list):
     """
     """
 
-    def __init__(self, results):
+    def __init__(self, results=()):
         super().__init__(results)
         self._value = None
 

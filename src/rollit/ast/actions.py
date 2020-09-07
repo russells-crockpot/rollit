@@ -573,11 +573,14 @@ def for_every(text, start, end, values, codeinfo):
     loop_name = None
     if isinstance(values[0], internal.LoopName):
         loop_name = values.pop(0)[0]
+    item_name = values[0]
+    if isinstance(item_name, elements.Reference):
+        item_name = item_name.value
     return elements.ForEvery(
         name=loop_name,
-        item_name=values[0],
+        item_name=item_name,
         iterable=values[1],
-        do=values[-1][0],
+        do=util.ensure_tuple(values[-1][0]),
         codeinfo=codeinfo,
     )
 

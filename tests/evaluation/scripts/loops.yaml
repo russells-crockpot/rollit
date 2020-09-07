@@ -2,6 +2,7 @@ name: loops
 categories:
 - loops
 tests:
+
 - name: until_do
   categories:
   - until_do
@@ -20,10 +21,21 @@ tests:
     - ['until c >= 4 do [ c += 1 | ~.d = c + 1 ]', null]
     - ['c', 4]
     - ['d', 5]
-#FIXME
-#   - statements:
-#     - ['d = 2', null]
-#     - ['e = 1', null]
-#     - ['until d >= 4 do [ d += 1 | $.e = d]', null]
-#     - ['d', 4]
-#     - ['e', 1]
+  - statements:
+    - ['d = 2', null]
+    - ['e = 1', null]
+    - ['until d >= 4 do [ d += 1 | $.e = d]', null]
+    - ['d', 4]
+    - ['e', 1]
+
+- name: for_every
+  categories:
+  - for_every
+  tests:
+  - statements:
+    - ['a = {3d6}', null]
+    - ['a', [1, 2, 3]]
+    - ['b = 0', null]
+    - ['for every i that a has do b += i', null]
+    - ['b', 6]
+    - ['b == a.{=}', true]

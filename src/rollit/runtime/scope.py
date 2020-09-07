@@ -133,7 +133,7 @@ class Scope:
     def variable_names(self):
         """
         """
-        return tuple(self._variables.keys())
+        return tuple(self._variables._entries.keys())
 
     def loop_names(self):
         """

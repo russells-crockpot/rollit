@@ -5,7 +5,7 @@ from contextlib import contextmanager, suppress
 from ..ast import elements, ModelElement, ModelEnumElement
 from ..exceptions import RollitTypeError, CannotReduceError, InvalidNameError, RollitRuntimeError, \
         RollitReferenceError
-from . import stdlib
+from . import libraries
 from .base import is_atom
 from .objects import Bag
 from .scope import Scope
@@ -25,7 +25,7 @@ class RuntimeContext:
     def __init__(self, runner):
         self._runner = runner
         self._accessing = self._root_scope = self._scope = Scope(context=self)
-        self._root_scope.load(stdlib.the_library)
+        self._root_scope.load(libraries.stdlib)
 
     @property
     def root_scope(self):

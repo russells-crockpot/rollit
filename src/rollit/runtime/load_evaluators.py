@@ -1,6 +1,7 @@
 #pylint: disable=too-many-function-args
 """
 """
+from collections import namedtuple
 from contextlib import suppress, nullcontext
 
 from ..ast import elements, constants
@@ -221,14 +222,41 @@ def _(self, context):
     raise NotImplementedError()
 
 
-@elements.ForEvery.evaluator
-def _(self, context):
-    raise NotImplementedError()
-
-
 @elements.Restart.evaluator
 def _(self, context):
     raise RestartException(*self)
+
+
+class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier'))):
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        if exc and isinstance(exc, RestartException) \
+                and self.location_specifier == exc.location_specifier \
+                and exc.name in (elements.SpecialReference.NONE, self.name):
+            return True
+        return False
+
+
+@elements.ForEvery.evaluator
+def _(self, context):
+    with context.new_scope() as scope:
+        with _SupressOn(self.name, elements.RestartLocationSpecifier.AFTER):
+            while True:
+                with _SupressOn(self.name, elements.RestartLocationSpecifier.BEFORE):
+                    iterable = context(self.iterable)
+                    if isinstance(iterable, Dice):
+                        iterable = context.reduce(iterable)
+                    if not isinstance(iterable, (Bag, Roll)):
+                        raise RollitTypeError(f'Only bags and rolls are iterable. Got: {iterable}')
+                    for item in iterable:
+                        scope[self.item_name] = item
+                        with _SupressOn(self.name, elements.RestartLocationSpecifier.AT):
+                            for stmt in self.do:
+                                context(stmt)
+                return
 
 
 @elements.UntilDo.evaluator
