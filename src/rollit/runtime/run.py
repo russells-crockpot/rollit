@@ -34,17 +34,21 @@ class Runner:
         """
         return grammar.parse(script, actions=actions)
 
-    def run(self, script):
+    def run(self, script_or_model, *, context=None):
         """
         """
-        script_model = self.parse(script)
-        if not isinstance(script_model, ModelElement) \
-                and isinstance(script_model, (tuple, list)) and len(script_model) == 1:
-            script_model = script_model[0]
-        if not isinstance(script_model, ModelElement) \
-                and isinstance(script_model, (tuple, list)):
-            return tuple(self._default_context(item) for item in flatten_tuple(script_model))
-        return self._default_context(script_model)
+        if context is None:
+            context = self._default_context
+        model = script_or_model
+        if isinstance(script_or_model, (bytes, str)):
+            model = self.parse(script_or_model)
+        if not isinstance(model, ModelElement) \
+                and isinstance(model, (tuple, list)) and len(model) == 1:
+            model = model[0]
+        if not isinstance(model, ModelElement) \
+                and isinstance(model, (tuple, list)):
+            return tuple(context(item) for item in flatten_tuple(model))
+        return context(model)
 
     def load_library(self, name, context):
         """

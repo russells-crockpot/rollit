@@ -136,7 +136,7 @@ class LibraryLoader:
             raise TypeError(f'Expected and ObjectPlaceholder but got {type(info.content)}')
         if info.type == 'rollit':
             with self._runner.brief_context() as ctx:
-                ctx(info.content)
+                self._runner.run(info.content, context=ctx)
                 # pylint: disable=protected-access
                 return ctx.root_scope._variables
         raise ValueError(f'Unknown library type: {info.type}')
@@ -179,7 +179,7 @@ class LibraryLoader:
         for base_path in self.paths:
             if suffix:
                 base_path /= suffix
-            for filename in base_path.iter_dir():
+            for filename in base_path.iterdir():
                 if filename.stem == name and self._FILE_SUFFIX_PAT.fullmatch(filename.suffix):
                     return str(filename)
         return None
