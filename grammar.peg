@@ -33,7 +33,6 @@ name        <- '$'                                          %special_ref
              / '~'                                          %special_ref
              / '!'                                          %special_ref
              / '#'                                          %special_ref
-             #/ '^'                                          %special_ref
              / basic_name
 
 special_entry       <- '^'                                  %special_entry
@@ -78,6 +77,8 @@ mult_op         <- '*'                          %text
                  / '%' !'>'                     %text
 add_op          <- '+'                          %text
                  / '-'                          %text
+anor_op         <- 'or'                         %text
+                 / 'and' !(_ 'always')          %text
 comp_op         <- '=='                         %text
                  / '!='                         %text
                  / '<='                         %text
@@ -85,8 +86,6 @@ comp_op         <- '=='                         %text
                  / '<'                          %text
                  / '>'                          %text
                  / 'has' !(_ 'do')              %text
-                 / 'and' !(_ 'always')          %text
-                 / 'or'                         %text
                  / 'isa'                        %text
 assign_op       <- '+='                         %text
                  / '-='                         %text
@@ -100,16 +99,19 @@ assign_op       <- '+='                         %text
 
 expression <- use_if
 
-use_if <- @'use' _ expression _ @'if' _ comparison _
+use_if <- @'use' _ expression _ @'if' _ anor _
           @'otherwise' _ expression                     %use_if
-        / @'not' _ comparison                           %negate
-        / comparison
+        / @'not' _ anor                           %negate
+        / anor
+
+anor        <- comparison _ anor_op _ anor              %binary_op
+             / comparison
 
 
 comparison  <- roll_math _ comp_op _ comparison         %binary_op
              / roll_math
 
-roll_math   <- add_math _ '&' !'=' _ roll_math      %binary_op
+roll_math   <- add_math _ '&' !'=' _ roll_math          %binary_op
              / add_math
 
 add_math    <- mult_math _ add_op !'=' _ add_math       %binary_op
@@ -118,7 +120,7 @@ add_math    <- mult_math _ add_op !'=' _ add_math       %binary_op
 mult_math <- modify _ mult_op !'=' _  mult_math         %binary_op
            / modify
 
-modify  <- first_modifier_call modifier_call*      %modify
+modify  <- first_modifier_call modifier_call*           %modify
          / dice
 
 dice    <- !(name/string) reduce_expr _ @`d` _
