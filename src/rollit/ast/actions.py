@@ -448,21 +448,6 @@ def load(text, start, end, values, codeinfo):
     return items[0] if len(items) == 1 else tuple(items)
 
 
-# pylint: disable=protected-access
-@elements_to_values
-@add_codeinfo
-def restart(text, start, end, values, codeinfo):
-    location_specifier = elements.RestartLocationSpecifier(values[0])
-    target = elements.SpecialReference.NONE
-    with suppress(IndexError):
-        target = values[1]
-    return elements.Restart(
-        location_specifier=location_specifier,
-        target=target,
-        codeinfo=codeinfo,
-    )
-
-
 @elements_to_values
 @add_codeinfo
 def unless(text, start, end, values, codeinfo):
@@ -528,10 +513,27 @@ def if_stmt(text, start, end, values, codeinfo):
     return stmt
 
 
+# pylint: disable=protected-access
+@elements_to_values
+@add_codeinfo
+def restart(text, start, end, values, codeinfo):
+    location_specifier = elements.RestartLocationSpecifier(values[0])
+    target = elements.SpecialReference.NONE
+    with suppress(IndexError):
+        target = values[1]
+    if isinstance(target, elements.Reference) and not isinstance(target, elements.SpecialReference):
+        target = target.value
+    return elements.Restart(
+        location_specifier=location_specifier,
+        target=target,
+        codeinfo=codeinfo,
+    )
+
+
 @elements_to_values
 @add_codeinfo
 def loop_name(text, start, end, values, codeinfo):
-    return internal.LoopName(values[0], codeinfo=codeinfo)
+    return internal.LoopName(values[0].value, codeinfo=codeinfo)
 
 
 @elements_to_values

@@ -17,9 +17,7 @@ tests:
   - script: 'until @name 1 do 2'
     result:
       _class: UntilDo
-      name:
-        _class: Reference
-        value: 'name'
+      name: 'name'
       until: 1
       do: 2
       otherwise: null
@@ -213,9 +211,7 @@ tests:
   - script: 'until @name test > 25 do test = test & 1d6 otherwise test = {@0}'
     result:
       _class: UntilDo
-      name:
-        _class: Reference
-        value: 'name'
+      name: 'name'
       until:
         _class: BinaryOp
         left:
@@ -339,27 +335,21 @@ tests:
       location_specifier:
         _class: RestartLocationSpecifier
         value: 'BEFORE'
-      target:
-        _class: Reference
-        value: 'test'
+      target: 'test'
   - script: 'restart at test'
     result:
       _class: Restart
       location_specifier:
         _class: RestartLocationSpecifier
         value: 'AT'
-      target:
-        _class: Reference
-        value: 'test'
+      target: 'test'
   - script: 'restart after test'
     result:
       _class: Restart
       location_specifier:
         _class: RestartLocationSpecifier
         value: 'AFTER'
-      target:
-        _class: Reference
-        value: 'test'
+      target: 'test'
 
 - name: for_every
   categories:
@@ -369,47 +359,23 @@ tests:
     result:
       _class: ForEvery
       name: null
-      item_name:
-        _class: Reference
-        value: 'item'
+      item_name: 'item'
       iterable: 2
-      do: 3
+      do:
+      - 3
   - script: 'for every @ loop_name item that 2 has do 3'
     result:
       _class: ForEvery
-      name:
-        _class: Reference
-        value: 'loop_name'
-      item_name:
-        _class: Reference
-        value: 'item'
+      name: 'loop_name'
+      item_name: 'item'
       iterable: 2
-      do: 3
+      do:
+      - 3
   - script: 'for every @ loop_name item that {1d6} has do 3'
     result:
       _class: ForEvery
-      name:
-        _class: Reference
-        value: 'loop_name'
-      item_name:
-        _class: Reference
-        value: 'item'
-      iterable:
-        _class: Reduce
-        value:
-          _class: DiceNode
-          number_of_dice: 1
-          sides: 6
-      do: 3
-  - script: 'for every @ loop_name item that {1d6} has do restart after'
-    result:
-      _class: ForEvery
-      name:
-        _class: Reference
-        value: 'loop_name'
-      item_name:
-        _class: Reference
-        value: 'item'
+      name: 'loop_name'
+      item_name: 'item'
       iterable:
         _class: Reduce
         value:
@@ -417,7 +383,20 @@ tests:
           number_of_dice: 1
           sides: 6
       do:
-        _class: Restart
+      - 3
+  - script: 'for every @ loop_name item that {1d6} has do restart after'
+    result:
+      _class: ForEvery
+      name: 'loop_name'
+      item_name: 'item'
+      iterable:
+        _class: Reduce
+        value:
+          _class: DiceNode
+          number_of_dice: 1
+          sides: 6
+      do:
+      - _class: Restart
         location_specifier:
           _class: RestartLocationSpecifier
           value: 'AFTER'
@@ -427,12 +406,8 @@ tests:
   - script: 'for every @ loop_name item that {1d6} has do leave'
     result:
       _class: ForEvery
-      name:
-        _class: Reference
-        value: 'loop_name'
-      item_name:
-        _class: Reference
-        value: 'item'
+      name: 'loop_name'
+      item_name: 'item'
       iterable:
         _class: Reduce
         value:
@@ -440,4 +415,4 @@ tests:
           number_of_dice: 1
           sides: 6
       do:
-        _class: Leave
+      - _class: Leave

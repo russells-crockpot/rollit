@@ -242,10 +242,10 @@ class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier'))):
 
 @elements.ForEvery.evaluator
 def _(self, context):
-    with context.new_scope() as scope:
-        with _SupressOn(self.name, elements.RestartLocationSpecifier.AFTER):
-            while True:
-                with _SupressOn(self.name, elements.RestartLocationSpecifier.BEFORE):
+    with _SupressOn(self.name, elements.RestartLocationSpecifier.AFTER):
+        while True:
+            with _SupressOn(self.name, elements.RestartLocationSpecifier.BEFORE):
+                with context.new_scope() as scope:
                     iterable = context(self.iterable)
                     if isinstance(iterable, Dice):
                         iterable = context.reduce(iterable)
@@ -256,7 +256,7 @@ def _(self, context):
                         with _SupressOn(self.name, elements.RestartLocationSpecifier.AT):
                             for stmt in self.do:
                                 context(stmt)
-                return
+                    return
 
 
 @elements.UntilDo.evaluator

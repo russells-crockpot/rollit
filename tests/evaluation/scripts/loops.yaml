@@ -27,6 +27,12 @@ tests:
     - ['until d >= 4 do [ d += 1 | $.e = d]', null]
     - ['d', 4]
     - ['e', 1]
+  #- statements:
+    #- ['e = 2', null]
+    #- ['z = 1', null]
+    #- ['until e >= 4 do [ e += 1 | $.z = e] except when e == 3 then h = 1', null]
+    #- ['e', 4]
+    #- ['z', 1]
 
 - name: for_every
   categories:
@@ -34,8 +40,27 @@ tests:
   tests:
   - statements:
     - ['a = {3d6}', null]
-    - ['a', [1, 2, 3]]
     - ['b = 0', null]
     - ['for every i that a has do b += i', null]
     - ['b', 6]
     - ['b == a.{=}', true]
+  - statements:
+    - ['b = {3d6}', null]
+    - ['z = 0', null]
+    - ['for every i that b has do [z += i | if i == 2 then restart after]', null]
+    - ['z', 3]
+  - statements:
+    - ['c = {3d6}', null]
+    - ['z = 0', null]
+    - ['for every i that c has do [z += i | if i == 2 and z < 6 then restart after]', null]
+    - ['z', 3]
+  - statements:
+    - ['d = {3d6}', null]
+    - ['z = 0', null]
+    - ['for every i that d has do [z += i | if i == 2 and z < 6 then restart at]', null]
+    - ['z', 6]
+  - statements:
+    - ['e = {3d6}', null]
+    - ['z = 0', null]
+    - ['for every i that e has do [z += i | if i == 2 and z < 6 then restart before]', null]
+    - ['z', 9]

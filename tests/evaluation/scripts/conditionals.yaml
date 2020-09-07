@@ -1,0 +1,86 @@
+name: conditionals
+categories:
+- conditionals
+tests:
+- name: comparisons
+  categories:
+  - comparisons
+  tests:
+  - statements:
+    - ['a = 1', null]
+    - ['a == 1', true]
+    - ['a != 1', false]
+    - ['a > 1', false]
+    - ['a >= 1', true]
+    - ['a < 1', false]
+    - ['a <= 1', true]
+    - ['a and 1', true]
+    - ['a and 0', false]
+    - ['a or 1', true]
+    - ['a or 0', true]
+  - statements:
+    - ['b = 0', null]
+    - ['b == 1', false]
+    - ['b != 1', true]
+    - ['b > 1', false]
+    - ['b >= 1', false]
+    - ['b < 1', true]
+    - ['b <= 1', true]
+    - ['b and 1', false]
+    - ['b and 0', false]
+    - ['b or 1', true]
+    - ['b or 0', false]
+  - statements:
+    - ['c = 2', null]
+    - ['c == 1', false]
+    - ['c != 1', true]
+    - ['c > 1', true]
+    - ['c >= 1', true]
+    - ['c < 1', false]
+    - ['c <= 1', false]
+    - ['c and 1', true]
+    - ['c and 0', false]
+    - ['c or 1', true]
+    - ['c or 0', true]
+  - statements:
+    - ['{3d6} has 1', true]
+    - ['{3d6} has 1', false]
+
+- name: if_then
+  categories:
+  - if_then
+  tests:
+  - statements:
+    - ['a = 1', null]
+    - ['if a then b = 2', null]
+    - ['b', 2]
+  - statements:
+    - ['b = 0', null]
+    - ['c = 5', null]
+    - ['if b then c = 2', null]
+    - ['c', 5]
+  - statements:
+    - ['d = 1', null]
+    - ['b = 3', null]
+    - ['if d then b = 2', null]
+    - ['b', 2]
+  - statements:
+    - ['e = 0', null]
+    - ['if e then b = 2 otherwise b = 3', null]
+    - ['b', 3]
+  - statements:
+    - ['f = 0', null]
+    - ['if f then b = 2 otherwise b = 3', null]
+    - ['b', 3]
+  - statements:
+    - ['g = 1', null]
+    - ['if g >= 1 then b = 2 unless g == 1 then b = 4 otherwise b = 3', null]
+    - ['b', 4]
+  - statements:
+    - ['h = 2', null]
+    - ['if h >= 1 then b = 2 unless h == 1 then b = 4 otherwise b = 3', null]
+    - ['b', 2]
+  - statements:
+    - ['i = 0', null]
+    - ['if i >= 1 then b = 2 unless i == 1 then b = 4 otherwise b = 3', null]
+    - ['b', 3]
