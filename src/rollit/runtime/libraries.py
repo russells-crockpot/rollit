@@ -1,31 +1,32 @@
 # pylint: disable=protected-access
 """
 """
-import os
-import pathlib
-import re
-from collections import namedtuple
+import os as os_
+import sys
+from contextlib import suppress
+from types import MappingProxyType
 
-from ..exceptions import RollitTypeError, LibraryNotFoundError
-from ..util import ensure_tuple
+from .. import rli
+from ..exceptions import RollitTypeError
 from ..objects import Roll, Dice, Bag
-from .. import lai
 
 __all__ = [
-    'LibraryLoader',
+    'rootlib',
+    'BUILTIN_LIBRARIES',
 ]
 
-_rootlib = lai.PythonBasedLibrary('~')
+rootlib = rli.PythonBasedLibrary('~')
+""" """
 
 
-@_rootlib.modifier('print')
+@rootlib.modifier('print')
 # pylint: disable=useless-return
 def _(*args, subject, context):
     print(subject, *args)
     return None
 
 
-@_rootlib.modifier('top')
+@rootlib.modifier('top')
 def _(*args, subject, context):
     if not args:
         num = 1
@@ -38,7 +39,7 @@ def _(*args, subject, context):
     return Roll(sorted(subject, reverse=True)[0:num])
 
 
-@_rootlib.modifier('bottom')
+@rootlib.modifier('bottom')
 def _(*args, subject, context):
     if not args:
         num = 1
@@ -51,15 +52,17 @@ def _(*args, subject, context):
     return Roll(sorted(subject)[0:num])
 
 
-_runtime = lai.PythonBasedLibrary('runtime')
+runtime = rli.PythonBasedLibrary('runtime')
+"""
+"""
 
 
-@_runtime.modifier('loops')
+@runtime.modifier('loops')
 def _(*args, subject, context):
     return Roll(context.scope.loops)
 
 
-@_runtime.modifier('scope_entries')
+@runtime.modifier('scope_entries')
 def _(*args, subject, context):
     scopes = []
     scope = context.scope
@@ -75,7 +78,7 @@ def _(*args, subject, context):
     return bag
 
 
-@_runtime.modifier('names_in_scope')
+@runtime.modifier('names_in_scope')
 def _(*args, subject, context):
     names = set()
     scope = context.scope
@@ -88,97 +91,46 @@ def _(*args, subject, context):
     return names
 
 
-_BUILTIN_LIBS = (
-    _rootlib,
-    _runtime,
-)
+@runtime.on_access
+def _(name, lib, context):
+    if name == 'cwd':
+        return os_.getcwd()
+    return lib.raw_get(name)
 
 
-class LibraryLoader:
-    """
-    """
-    __slots__ = ('libraries', '_paths', '_runner')
-    _FILE_SUFFIX_PAT = re.compile(r'\.(py[coz]?|rollit)', re.I)
-    LibraryInfo = namedtuple('LibraryInfo', ('name', 'file', 'type', 'content', 'isolate'))
-    """ """
+os = rli.PythonBasedLibrary('os')
 
-    def __init__(self, paths, runner):
-        self._paths = None
-        self.paths = paths
-        self._runner = runner
-        self.libraries = {}
-        for lib in _BUILTIN_LIBS:
-            self._add_from_lai_lib(lib, __file__)
 
-    def _add_from_lai_lib(self, lib, path):
-        info = self.LibraryInfo(lib.name, path, 'python', lib.to_placeholder(), lib.isolate)
-        self.libraries[info.name] = info
+@os.entry('name')
+def _():
+    if sys.platform.startswith('linux'):
+        return 'linux'
+    if sys.platform.startswith('win'):
+        return 'windows'
+    if sys.platform.startswith('cygwin'):
+        return 'cygwin'
+    if sys.platform.startswith('darwin'):
+        return 'macos'
+    return sys.platform.rstrip('0123456789. -_')
 
-    @property
-    def paths(self):
-        """
-        """
-        return self._paths
 
-    @paths.setter
-    def paths(self, value):
-        self._paths = [pathlib.Path(p) for p in value]
+os.envvars = rli.BagPlaceholder()
 
-    def get_library(self, library_name, context):
-        """
-        """
-        self.load_library(library_name)
-        info = self.libraries[library_name]
-        if info.type == 'python':
-            if isinstance(info.content, lai.ObjectPlaceholder):
-                return info.content.resolve(context)
-            raise TypeError(f'Expected and ObjectPlaceholder but got {type(info.content)}')
-        if info.type == 'rollit':
-            with self._runner.brief_context() as ctx:
-                self._runner.run(info.content, context=ctx)
-                # pylint: disable=protected-access
-                return ctx.root_scope._variables
-        raise ValueError(f'Unknown library type: {info.type}')
 
-    def load_library(self, library_name, *, force_reload=False):
-        """
-        """
-        if force_reload or library_name not in self.libraries:
-            path = self.find_library(library_name)
-            if not path:
-                raise LibraryNotFoundError(library_name)
-            if path.casefold().endswith('.rollit'):
-                self.load_rollit_library(library_name, path, force_reload=force_reload)
-            else:
-                self.load_python_library(library_name, path, force_reload=force_reload)
+@os.envvars.on_access
+def _(name, subject, context):
+    with suppress(KeyError):
+        return os_.environ[context(name)]
+    return None
 
-    def load_python_library(self, name, file_path, *, force_reload=False):
-        """
-        """
-        raise NotImplementedError()
 
-    def load_rollit_library(self, name, file_path, *, force_reload=False):
-        """
-        """
-        if not force_reload and name in self.libraries:
-            return
-        with open(file_path) as f:
-            model = ensure_tuple(self._runner.parse(f.read()))
-        self.libraries[name] = self.LibraryInfo(name, str(file_path), 'rollit', model)
+@os.envvars.on_set
+def _(name, value, subject, context):
+    os_.environ[context(name)] = str(context(value))
 
-    def find_library(self, name):
-        """
-        """
-        if name in self.libraries:
-            return self.libraries[name].file
-        suffix = None
-        if '.' in name:
-            suffix, name = name.rspilt('.', 1)
-            suffix = suffix.replace('.', os.sep)
-        for base_path in self.paths:
-            if suffix:
-                base_path /= suffix
-            for filename in base_path.iterdir():
-                if filename.stem == name and self._FILE_SUFFIX_PAT.fullmatch(filename.suffix):
-                    return str(filename)
-        return None
+
+BUILTIN_LIBRARIES = MappingProxyType({
+    rootlib.name: rootlib,
+    runtime.name: runtime,
+    os.name: os,
+})

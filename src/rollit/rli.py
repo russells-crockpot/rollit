@@ -1,10 +1,13 @@
-"""Items related to the Library Application Interface.
+"""Items related to the Rollit Library Interface. And API used to create libraries for rollit in
+python.
 """
 import inspect
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from contextlib import suppress
 
 from .ast import ModelElement
+from .ast.elements import SpecialEntry
 from .objects import Modifier, Roll, Dice, Bag, NoSubject
 from .util import is_valid_iterable
 
@@ -75,8 +78,10 @@ class BagPlaceholder(ObjectPlaceholder):
     """
     __slots__ = ('_entries', '_raw')
 
-    def __init__(self, entries, raw=False, *, preloaders=None, postloaders=None):
+    def __init__(self, entries=None, raw=False, *, preloaders=None, postloaders=None):
         super().__init__(preloaders=preloaders, postloaders=postloaders)
+        if entries is None:
+            entries = {}
         self._entries = entries
         self._raw = raw
 
@@ -91,6 +96,41 @@ class BagPlaceholder(ObjectPlaceholder):
             for k, v in self._raw.items():
                 bag.raw_set(k, v)
         return bag
+
+    def on_access(self, modifier):
+        """
+        """
+        if not isinstance(modifier, Modifier):
+            modifier = PythonBasedModifier(modifier)
+        self._entries[SpecialEntry.ACCESS] = modifier
+
+    def on_set(self, modifier):
+        """
+        """
+        if not isinstance(modifier, Modifier):
+            modifier = PythonBasedModifier(modifier)
+        self._entries[SpecialEntry.SET] = modifier
+
+    def on_clear(self, modifier):
+        """
+        """
+        if not isinstance(modifier, Modifier):
+            modifier = PythonBasedModifier(modifier)
+        self._entries[SpecialEntry.CLEAR] = modifier
+
+    def on_create(self, modifier):
+        """
+        """
+        if not isinstance(modifier, Modifier):
+            modifier = PythonBasedModifier(modifier)
+        self._entries[SpecialEntry.CREATE] = modifier
+
+    def on_destroy(self, modifier):
+        """
+        """
+        if not isinstance(modifier, Modifier):
+            modifier = PythonBasedModifier(modifier)
+        self._entries[SpecialEntry.DESTROY] = modifier
 
 
 class PythonBasedModifier(Modifier):
@@ -122,6 +162,7 @@ class PythonBasedModifier(Modifier):
 class PythonBasedLibrary:
     """
     """
+    _initialized = False
     name = None
     """ """
     isolate = False
@@ -140,6 +181,13 @@ class PythonBasedLibrary:
             entries = {}
         for key, value in entries.items():
             self[key] = value
+        self._initialized = True
+
+    def __setattr__(self, name, value):
+        if self._initialized:
+            with suppress(TypeError):
+                self[name] = value
+        return super().__setattr__(name, value)
 
     def modifier(self, name_or_func):
         """
@@ -162,6 +210,16 @@ class PythonBasedLibrary:
         """
         """
         self._entries[name] = entry(value, is_property=is_property)
+
+    def entry(self, name, *, is_property=True):
+        """
+        """
+
+        def _decorator(entry_):
+            self._entries[name] = entry(entry_, is_property=is_property)
+            return entry_
+
+        return _decorator
 
     def preloader(self, func):
         """
@@ -227,6 +285,26 @@ class PythonBasedLibrary:
             postloaders=postloaders,
         )
 
+    def on_access(self, modifier):
+        """
+        """
+        self._entries[SpecialEntry.ACCESS] = entry(modifier)
+
+    def on_set(self, modifier):
+        """
+        """
+        self._entries[SpecialEntry.SET] = entry(modifier)
+
+    def on_clear(self, modifier):
+        """
+        """
+        self._entries[SpecialEntry.CLEAR] = entry(modifier)
+
+    def on_destroy(self, modifier):
+        """
+        """
+        self._entries[SpecialEntry.DESTROY] = entry(modifier)
+
 
 _VALID_ENTRY_TYPES = (int, str, Bag, Roll, Dice, ModelElement, Modifier, ObjectPlaceholder,
                       type(None), PythonBasedLibrary)
@@ -274,3 +352,12 @@ class entry(namedtuple('_EntryBase', ('value', 'is_property'))):
         if not (isinstance(value, _VALID_ENTRY_TYPES) or isinstance(value, property)):
             raise TypeError()
         return super().__new__(cls, value, is_property=is_property)
+
+    def __getattr__(self, name):
+        return getattr(self.value, name)
+
+    def __setattr__(self, name, value):
+        return setattr(self.value, name, value)
+
+    def __delattr__(self, name):
+        return delattr(self.value, name)
