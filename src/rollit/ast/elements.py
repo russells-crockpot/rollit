@@ -91,6 +91,7 @@ class OverloadableOperator(ModelEnumElement):
     LENGTH = '#'
     REDUCE = '{}'
     SUBJECT = '?'
+    ITERATE = 'forevery'
 
 
 class SpecialAccessor(ModelEnumElement):

@@ -1,7 +1,7 @@
-rollit.execution module
+rollit.repl.base module
 =======================
 
-.. automodule:: rollit.execution
+.. automodule:: rollit.repl.base
    :members:
    :undoc-members:
    :show-inheritance:

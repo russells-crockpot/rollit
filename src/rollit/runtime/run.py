@@ -21,12 +21,12 @@ __all__ = ['Runner', 'LibraryLoader']
 
 
 class LibraryLoader:
-    """
+    """Finds and loads libraries used by rollit.
     """
     __slots__ = ('libraries', '_paths', '_runner')
     _FILE_SUFFIX_PAT = re.compile(r'\.(py[coz]?|rollit)', re.I)
     LibraryInfo = namedtuple('LibraryInfo', ('name', 'file', 'type', 'content', 'isolate'))
-    """ """
+    """Information about a library that has been loaded."""
 
     def __init__(self, paths, runner):
         self._paths = None
@@ -74,7 +74,12 @@ class LibraryLoader:
             self._add_from_lai_lib(libraries.BUILTIN_LIBRARIES[library_name], libraries.__file__)
 
     def load_library(self, library_name, *, force_reload=False):
-        """
+        """Loads a library so that it will be accessible.
+
+        .. note::
+
+            This *only* loads the library, and makes it available; it still needs to be retrieved
+            via the :meth:`~.get_library` method.
         """
         if library_name.startswith('~.'):
             self.load_stdlib(library_name[2:], force_reload=force_reload)

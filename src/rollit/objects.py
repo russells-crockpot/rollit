@@ -1,4 +1,4 @@
-"""
+"""Internal representations of rollit objects.
 """
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
@@ -83,12 +83,12 @@ del __create_no_subject
 
 
 class RollitNonErrorException(BaseException):
-    """
+    """An exception that is used as a sort of internal marker, but not as any sort of error.
     """
 
 
 class LeaveException(RollitNonErrorException):
-    """
+    """Used to indicate that a ``leave`` statement was issued.
     """
     __slots__ = ()
     __THE_EXCEPTION = None
@@ -100,7 +100,7 @@ class LeaveException(RollitNonErrorException):
 
 
 class RestartException(RollitNonErrorException):
-    """
+    """Used to indicate that a ``restart`` statement was issued.
     """
     __slots__ = ('location_specifier', 'name')
 

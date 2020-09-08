@@ -1,7 +1,7 @@
-rollit.elements module
+rollit.ast.util module
 ======================
 
-.. automodule:: rollit.elements
+.. automodule:: rollit.ast.util
    :members:
    :undoc-members:
    :show-inheritance:

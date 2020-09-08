@@ -23,7 +23,7 @@ __all__ = [
 
 
 class ObjectPlaceholder(metaclass=ABCMeta):
-    """
+    """A placeholder for and internal object that will be
     """
     __slots__ = ('_preloaders', '_postloaders')
 

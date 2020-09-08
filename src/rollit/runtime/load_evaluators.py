@@ -1,6 +1,4 @@
-#pylint: disable=too-many-function-args
-"""
-"""
+#pylint: disable=too-many-function-args,missing-docstring
 from collections import namedtuple
 from contextlib import suppress, nullcontext
 

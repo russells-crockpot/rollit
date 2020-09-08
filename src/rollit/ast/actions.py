@@ -291,7 +291,10 @@ def right_op_overload(text, start, end, values, codeinfo):
 @elements_to_values
 @add_codeinfo
 def one_sided_op_overload(text, start, end, values, codeinfo):
-    return elements.OverloadOperator(operator=elements.OverloadableOperator(values[0]),
+    value = values[0]
+    if not isinstance(value, str):
+        value = ''.join(value)
+    return elements.OverloadOperator(operator=elements.OverloadableOperator(value),
                                      side=elements.OperatorSide.NA,
                                      codeinfo=codeinfo)
 

@@ -9,7 +9,6 @@ RollIt documentation!
    :caption: Contents:
 
    general/overview.rst
-   general/notation.rst
    language-reference/toc.rst
    api-reference/rollit/modules.rst
 

@@ -1,4 +1,4 @@
-"""
+"""Contains the runtime context for rollit, which is what actually execute a parsed model.
 """
 from contextlib import contextmanager, suppress
 
@@ -13,7 +13,13 @@ __all__ = ['RuntimeContext']
 
 
 class RuntimeContext:
-    """
+    """The runtime context is what actually evaluates and executes the parsed code. This includes
+    keeping track of the scopes, loaded libraries, etcetera.
+
+    A :class:`~.RuntimeContext` itself is callable. This is simply shorthand for the
+    :meth:`~.evaluate` method.
+
+    Similarly, values can be accessed/looked up by subscripting the context.
     """
     _runner = None
     _accessing = None
@@ -37,21 +43,22 @@ class RuntimeContext:
 
     @property
     def root_scope(self):
-        """
+        """The root scope.
         """
         return self._root_scope
 
     @property
     def accessing(self):
-        """
+        """A context itself is always "accessing" something (except for a brief time upon its
+        creation). Usually what it's accessing is current scope, however this is not always the
+        case. Inside the execution for a bag definition, for example, the object currently being
+        accessed is the new bag. Another example, when using the access expression ``a.b.c`` then
+        the context first accesses ``a``, followed by ``b`` finally followed by ``c``. Unless
+        specified otherwise, the current scope will always be accessible.
+
+        To actually *change* what is being accessed, use the :meth:`~.now_access` context manager.
         """
         return self._accessing
-
-    @accessing.setter
-    def accessing(self, value):
-        if value is None:
-            raise ValueError()
-        self._accessing = value
 
     @property
     def subject(self):
@@ -61,7 +68,7 @@ class RuntimeContext:
 
     @property
     def scope(self):
-        """
+        """The current scope.
         """
         return self._scope
 
@@ -152,12 +159,10 @@ class RuntimeContext:
             old_scope_access = self._allow_scope_access
             self._allow_scope_access = allow_scope_access
             old_accessing = self.accessing
-            self.accessing = accessing
+            self._accessing = accessing
             yield self.accessing
             if old_accessing is None:
-                self._accessing = None
-            else:
-                self.accessing = old_accessing
+                self._accessing = old_accessing
             self._allow_scope_access = old_scope_access
         else:
             yield
@@ -170,9 +175,9 @@ class RuntimeContext:
             parent_scope = self.scope
         old_accessing = self.accessing
         old_scope = self._scope
-        self._scope = self.accessing = parent_scope.child(**kwargs)
+        self._scope = self._accessing = parent_scope.child(**kwargs)
         yield self._scope
-        self.accessing = old_accessing
+        self._accessing = old_accessing
         self._scope = old_scope
 
     @contextmanager

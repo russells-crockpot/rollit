@@ -1,4 +1,4 @@
-"""
+"""General objects and information about the language (e.g. keywords, operators, etcetera).
 """
 from collections import namedtuple
 

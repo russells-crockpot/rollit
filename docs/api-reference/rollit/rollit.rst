@@ -1,18 +1,30 @@
 rollit package
 ==============
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 5
+
+   rollit.ast
+   rollit.extra
+   rollit.repl
+   rollit.runtime
+
 Submodules
 ----------
 
 .. toctree::
    :maxdepth: 5
 
-   rollit.elements
    rollit.exceptions
-   rollit.execution
-   rollit.model
-   rollit.parser
-   rollit.semantics
+   rollit.grammar
+   rollit.langref
+   rollit.main
+   rollit.objects
+   rollit.rli
+   rollit.util
 
 Module contents
 ---------------

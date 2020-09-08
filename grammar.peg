@@ -71,7 +71,8 @@ two_sided_op    <- '*'
                  / '&'
 one_sided_op    <- 'has'
                  / '#'
-                 / '{}'
+                 / '{' _ '}'
+                 / 'for' _ 'every'
                  / '?'
 
 overload_op     <- @'<[' _ two_sided_op _ @']' _                            %left_op_overload

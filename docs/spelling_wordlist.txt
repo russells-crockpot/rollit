@@ -60,3 +60,10 @@ th
 ast
 recurse
 elif
+pygments
+lineno
+langref
+repl
+maths
+subscripting
+rli

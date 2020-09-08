@@ -1,5 +1,5 @@
 # pylint: disable=protected-access, too-complex, using-constant-test
-"""
+"""Contains the python code for the standard library.
 """
 import math
 import os as os_

@@ -1,4 +1,4 @@
-"""
+"""Contains dice towers. Dice towers are used to generate the random numbers for rolls.
 """
 import random  # nosec
 from abc import ABCMeta, abstractmethod
@@ -35,7 +35,7 @@ class DefaultTower(DiceTower):
 
 class IncrementalTower(DiceTower):
     """A dice tower that instead of generating a random number, it increments an internal counter
-    everytime it's rolled. When a new roll is requested, the following formula is used:
+    every time it's rolled. When a new roll is requested, the following formula is used:
 
     >>> ((counter + sides) % sides) + 1
 
