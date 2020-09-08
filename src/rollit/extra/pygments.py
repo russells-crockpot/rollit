@@ -52,7 +52,7 @@ class RollitLexer(RegexLexer):
             ('%>', Punctuation),
             (r'[\s\n\r\f]+', Text),
             include('ignore'),
-            # (r'(->)([])', ),
+            (r'[\-:]>', Operator),
             # (r'(for)\s*(every)\s*(\S+)\s*that', ),
             # (r'', ),
         ],

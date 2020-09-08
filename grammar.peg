@@ -167,7 +167,7 @@ atom        <- number / name / string
 
 
 modifier_tail           <- access _ modifier_args?                          %modifier_call
-first_modifier_call     <- dice _ ('-'/'+') @'>' _ modifier_tail            %first_modifier_call
+first_modifier_call     <- dice _ ('-'/':') @'>' _ modifier_tail            %first_modifier_call
 modifier_call           <- _ws @'->' _ modifier_tail
 modifier_args           <- @'(' _ws (expression _ @',' _ws )*
                             expression ? _  @')' _                          %arg_list

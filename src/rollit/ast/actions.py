@@ -218,7 +218,7 @@ def modifier_def(text, start, end, values, codeinfo):
 @add_codeinfo
 def first_modifier_call(text, start, end, values, codeinfo):
     target, op, call = values
-    if op == '+':
+    if op == ':':
         accessing = target
         accessors = []
         if isinstance(target, elements.Access):

@@ -5241,7 +5241,7 @@ class Grammar(object):
                     chunk1, max1 = None, self._offset + 1
                     if max1 <= self._input_size:
                         chunk1 = self._input[self._offset:max1]
-                    if chunk1 == '+':
+                    if chunk1 == ':':
                         address3 = TreeNode(self._input[self._offset:self._offset + 1], self._offset, [])
                         self._offset = self._offset + 1
                     else:
@@ -5250,7 +5250,7 @@ class Grammar(object):
                             self._failure = self._offset
                             self._expected = []
                         if self._offset == self._failure:
-                            self._expected.append('\'+\'')
+                            self._expected.append('\':\'')
                     if address3 is FAILURE:
                         self._offset = index2
                 if address3 is not FAILURE:

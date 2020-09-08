@@ -88,6 +88,8 @@ class BagPlaceholder(ObjectPlaceholder):
     def get_object(self, context):
         bag = Bag(context)
         for k, v in self._entries.items():
+            if isinstance(v, ObjectPlaceholder):
+                v = v.resolve(context)
             if self._raw is True:
                 bag.raw_set(k, v)
             else:
@@ -97,12 +99,30 @@ class BagPlaceholder(ObjectPlaceholder):
                 bag.raw_set(k, v)
         return bag
 
+    def modifier(self, name_or_func):
+        """
+        """
+        name = name_or_func
+        if callable(name_or_func):
+            name = name_or_func.__name__
+
+        def _decorator(func):
+            if not isinstance(func, Modifier):
+                func = PythonBasedModifier(func)
+            self._entries[name] = func
+            return func
+
+        if callable(name_or_func):
+            return _decorator(name_or_func)
+        return _decorator
+
     def on_access(self, modifier):
         """
         """
         if not isinstance(modifier, Modifier):
             modifier = PythonBasedModifier(modifier)
         self._entries[SpecialEntry.ACCESS] = modifier
+        return modifier
 
     def on_set(self, modifier):
         """
@@ -110,6 +130,7 @@ class BagPlaceholder(ObjectPlaceholder):
         if not isinstance(modifier, Modifier):
             modifier = PythonBasedModifier(modifier)
         self._entries[SpecialEntry.SET] = modifier
+        return modifier
 
     def on_clear(self, modifier):
         """
@@ -117,6 +138,7 @@ class BagPlaceholder(ObjectPlaceholder):
         if not isinstance(modifier, Modifier):
             modifier = PythonBasedModifier(modifier)
         self._entries[SpecialEntry.CLEAR] = modifier
+        return modifier
 
     def on_create(self, modifier):
         """
@@ -124,6 +146,7 @@ class BagPlaceholder(ObjectPlaceholder):
         if not isinstance(modifier, Modifier):
             modifier = PythonBasedModifier(modifier)
         self._entries[SpecialEntry.CREATE] = modifier
+        return modifier
 
     def on_destroy(self, modifier):
         """
@@ -131,6 +154,7 @@ class BagPlaceholder(ObjectPlaceholder):
         if not isinstance(modifier, Modifier):
             modifier = PythonBasedModifier(modifier)
         self._entries[SpecialEntry.DESTROY] = modifier
+        return modifier
 
 
 class PythonBasedModifier(Modifier):
@@ -306,7 +330,7 @@ class PythonBasedLibrary:
         self._entries[SpecialEntry.DESTROY] = entry(modifier)
 
 
-_VALID_ENTRY_TYPES = (int, str, Bag, Roll, Dice, ModelElement, Modifier, ObjectPlaceholder,
+_VALID_ENTRY_TYPES = (int, float, str, Bag, Roll, Dice, ModelElement, Modifier, ObjectPlaceholder,
                       type(None), PythonBasedLibrary)
 
 
@@ -350,7 +374,7 @@ class entry(namedtuple('_EntryBase', ('value', 'is_property'))):
             value = PythonBasedModifier(value)
         # pylint: disable=consider-merging-isinstance
         if not (isinstance(value, _VALID_ENTRY_TYPES) or isinstance(value, property)):
-            raise TypeError()
+            raise TypeError(f'Invalid entry type: {type(value).__qualname__}')
         return super().__new__(cls, value, is_property=is_property)
 
     def __getattr__(self, name):
