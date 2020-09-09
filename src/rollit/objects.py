@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
 
-from .ast import elements, ModelElement, ModelEnumElement
+from .ast import elements, ModelElement, ModelEnumElement, constants
 from .exceptions import RollitTypeError, InvalidNameError
 from .util import is_valid_iterable
 
@@ -120,12 +120,116 @@ class OopsException(RollitNonErrorException):
         self.value = value
 
 
-class Dice:
+class OperatorImplementations:
+    """
+    """
+    __slots__ = (
+        *(op.left_python_name for op in elements.TwoSidedOperator),
+        *(op.right_python_name for op in elements.TwoSidedOperator),
+        *(op.python_name for op in elements.OneSidedOperator),
+        *(op.python_name for op in elements.OverloadOnlyOperator),
+    )
+
+    def __init__(self, *, copy_from=None):
+        if not copy_from:
+            for attr in self.__slots__:
+                setattr(self, attr, NotImplemented)
+        else:
+            for attr in self.__slots__:
+                setattr(self, attr, getattr(copy_from, attr, NotImplemented))
+
+    @staticmethod
+    def _convert_key(key):
+        if isinstance(key, elements.OverloadOperator):
+            if key.side == elements.OperationSide.NA:
+                return key.operator.python_name
+            return getattr(key.operator, f'{key.side.name.lower()}_python_name')
+        return key
+
+    def __delattr__(self, name):
+        setattr(self, name, NotImplemented)
+
+    def __delitem__(self, key):
+        setattr(self, self._convert_key(key), NotImplemented)
+
+    def __getitem__(self, key):
+        getattr(self, self._convert_key(key))
+
+    def __setitem__(self, key, value):
+        setattr(self, self._convert_key(key), value)
+
+    def get_impl(self, operator, side=None):
+        """
+        """
+        if isinstance(operator, elements.TwoSidedOperator):
+            if not side:
+                raise ValueError()
+            key = getattr(operator, f'{side.name.lower()}_python_name')
+        else:
+            key = operator.python_name
+        return getattr(self, key)
+
+    def add_impl(self, operator, side=None):
+        """
+        """
+
+        def _decorator(func):
+            if isinstance(operator, elements.TwoSidedOperator):
+                if not side:
+                    raise ValueError()
+                key = getattr(operator, f'{side.name.lower()}_python_name')
+            else:
+                key = operator.python_name
+            setattr(self, key, func)
+            return func
+
+        return _decorator
+
+
+class InternalObject(metaclass=ABCMeta):
+    """
+    """
+    __slots__ = ('_op_impls',)
+
+    default_ops_impl = None
+    """ """
+
+    def __init__(self):
+        self._op_impls = OperatorImplementations(copy_from=self.default_ops_impl)
+
+    def override_operator(self, key, override):
+        """
+        """
+        self._op_impls[key] = override
+
+    def __getattr__(self, name):
+        if name in self._op_impls:
+            return getattr(self._op_impls, name)
+        raise AttributeError(name)
+
+    def operate_on(self, context, operator, side=None, other=None):
+        """
+        """
+        op_impl = self._op_impls.get_impl(operator, side=side)
+        args = ()
+        if not isinstance(operator, elements.OverloadOnlyOperator):
+            args = (other,)
+        if isinstance(op_impl, Modifier):
+            with context.use_subject(self):
+                op_impl.call(*args, context=context)
+                return context.subject
+        elif callable(op_impl):
+            return op_impl(self, *args, context)
+        return op_impl
+
+
+class Dice(InternalObject):
     """
     """
     __slots__ = ('num_dice', 'sides')
 
     def __init__(self, num_dice, sides, *args, **kwargs):
+        super().__init__()
         self.num_dice = num_dice
         self.sides = sides
 
@@ -165,48 +269,45 @@ class Dice:
         return f'{num_dice}d{sides}'
 
 
-class Roll(list):
+class Roll(InternalObject):
     """
     """
+    default_ops_impl = OperatorImplementations()
+    __slots__ = ('_items', '_value')
 
     def __init__(self, results=()):
-        super().__init__(results)
+        super().__init__()
+        self._items = list(results)
         self._value = None
 
-    @property
-    def total(self):
+    def get_total(self, context):
         """
         """
-        return sum(int(i) for i in self)
+        if not self._items:
+            return 0
+        running_total = self._items[0]
+        for item in self._items[1:]:
+            # pylint: disable=unexpected-keyword-arg
+            running_total = context(
+                elements.BinaryOp(
+                    left=running_total,
+                    op=elements.TwoSidedOperator.ADD,
+                    right=item,
+                    codeinfo=None,
+                ))
+        return running_total
 
-    @property
-    def value(self):
+    def get_value(self, context):
         """
         """
         if self._value is None:
-            return self.total
-        return self._value
+            return self.get_total(context)
+        return context(self._value)
 
-    @value.setter
-    def value(self, value):
-        self._value = value
-
-    def reduce(self, context):
-        """
-        """
-        value_reduced = False
-        new_values = []
-        for result in self:
-            if not isinstance(result, (int, float)):
-                result = context.reduce(result)
-                value_reduced = True
-            new_values.append(result)
-        if not value_reduced:
-            return self.value
-        roll = Roll(new_values)
-        # pylint: disable=protected-access
-        roll._value = self._value
-        return roll
+    def __setattr__(self, name, value):
+        if name == 'value':
+            name = '_value'
+        super().__setattr__(name, value)
 
     def __getitem__(self, key):
         if key == elements.SpecialAccessor.LENGTH:
@@ -220,7 +321,7 @@ class Roll(list):
         try:
             if key >= 1:
                 key -= 1
-            return super().__getitem__(key)
+            return self._items[key]
         except TypeError:
             raise RollitTypeError() from None
 
@@ -228,14 +329,14 @@ class Roll(list):
         if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.TOTAL):
             raise RuntimeError()
         if key in (elements.SpecialAccessor.VALUE, 0):
-            self.value = value
+            self._value = value
         elif key == elements.SpecialAccessor.EVERY:
             raise NotImplementedError()
         else:
             try:
                 if key >= 1:
                     key -= 1
-                super().__setitem__(key, value)
+                self._items[key] = value
             except TypeError:
                 raise RollitTypeError() from None
 
@@ -243,66 +344,77 @@ class Roll(list):
         if key in (elements.SpecialAccessor.LENGTH, elements.SpecialAccessor.TOTAL):
             raise RuntimeError()
         if key in (elements.SpecialAccessor.VALUE, 0):
-            self.value = None
+            self._value = None
         if key == elements.SpecialAccessor.EVERY:
             self.clear()
         else:
             try:
                 if key >= 1:
                     key -= 1
-                super().__delitem__(key)
+                del self._items[key]
             except TypeError:
                 raise RollitTypeError() from None
 
-    def __float__(self):
-        return float(self.value)
+    def __len__(self):
+        return len(self._items)
 
-    def __int__(self):
-        return int(self.value)
+    def __contains__(self, key):
+        return key in self._items
 
     def __str__(self):
-        return f'[{", ".join(str(r) for r in self)}]'
+        return f'[{", ".join(str(r) for r in self._items)}]'
 
     def map_to(self, *args):
         """
         """
         raise NotImplementedError()
 
-    def __add__(self, other):
-        return self.value + other
+    def operate_on(self, context, operator, side=None, other=None):
+        op_impl = super().operate_on(context, operator, side=side, other=other)
+        if op_impl is NotImplemented:
+            if isinstance(other, Roll) and operator not in (
+                    elements.TwoSidedOperator.AMPERSAND,
+                    elements.OneSidedOperator.HAS,
+            ):
+                other = other.get_value(context)
+            value = self.get_value(context)
+            if value is self:
+                return NotImplemented
+            if isinstance(value, InternalObject):
+                return value.operate_on(context, operator, side=side, other=other)
+            if operator.value in constants.OPERATOR_MAP:
+                if side == elements.OperationSide.LEFT:
+                    return constants.OPERATOR_MAP[operator.value](value, other)
+                return constants.OPERATOR_MAP[operator.value](other, value)
+        return op_impl
 
-    def __sub__(self, other):
-        return self.value - other
 
-    def __mul__(self, other):
-        return self.value * other
+@Roll.default_ops_impl.add_impl(elements.OneSidedOperator.HAS)
+def _(obj, context, other):
+    return other in obj
 
-    def __truediv__(self, other):
-        return self.value / other
 
-    def __floordiv__(self, other):
-        return self.value // other
+@Roll.default_ops_impl.add_impl(elements.OverloadOnlyOperator.LENGTH)
+def _(obj, context):
+    return len(obj)
 
-    def __mod__(self, other):
-        return self.value % other
 
-    def __radd__(self, other):
-        return other + self.value
-
-    def __rsub__(self, other):
-        return other - self.value
-
-    def __rmul__(self, other):
-        return other * self.value
-
-    def __rtruediv__(self, other):
-        return other / self.value
-
-    def __rfloordiv__(self, other):
-        return other // self.value
-
-    def __rmod__(self, other):
-        return other % self.value
+@Roll.default_ops_impl.add_impl(elements.OverloadOnlyOperator.REDUCE)
+# pylint: disable=protected-access
+def _(obj, context):
+    value_reduced = False
+    new_values = []
+    for result in obj._items:
+        if not isinstance(result, (int, float, str)):
+            new_result = context.reduce(result)
+            value_reduced = new_result is not result
+            result = new_result
+        new_values.append(result)
+    if not value_reduced:
+        return obj.get_value(context)
+    roll = Roll(new_values)
+    roll._value = obj._value
+    return roll
 
 
 # pylint: disable=protected-access
@@ -312,6 +424,7 @@ class BagSpecialEntries:
     __slots__ = ('_owner', '_context', 'parent', 'access', 'set', 'clear', 'create', 'destroy')
 
     def __init__(self, owner, context):
+        super().__init__()
         self._owner = owner
         self._context = context
         self.parent = None
@@ -411,12 +524,14 @@ class BagSpecialEntries:
             raise KeyError(key)
 
 
-class Bag:
+class Bag(InternalObject):
     """
     """
+    default_ops_impl = OperatorImplementations()
     __slots__ = ('_entries', '_context', '_special_entries')
 
     def __init__(self, context):
+        super().__init__()
         self._context = context
         self._special_entries = BagSpecialEntries(self, self._context)
         self._entries = {}
@@ -523,6 +638,7 @@ class Bag:
 class Modifier(metaclass=ABCMeta):
     """
     """
+    __slots__ = ()
 
     def call(self, *args, context):
         """
@@ -550,6 +666,9 @@ class Modifier(metaclass=ABCMeta):
 
     def __str__(self):
         return self.display_string
+
+
+InternalObject.register(Modifier)
 
 
 class RollitBasedModifier(

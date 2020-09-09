@@ -52,28 +52,29 @@ enlarge     <- @'{' _ws !(':' / special_accessor)
 reduce      <- @'{' _ws !(':' / special_accessor)
                expression _ws @'}' _                                        %reduce
 
-two_sided_op    <- '*'
-                 / '%/'
-                 / '/'
-                 / '%'
-                 / '+'
-                 / '-'
-                 / 'or'
-                 / 'and'
-                 / '=='
-                 / '!='
-                 / '<='
-                 / '>='
-                 / '<'
-                 / '>'
-                 / 'isa'
-                 / '@'
-                 / '&'
-one_sided_op    <- 'has'
-                 / '#'
-                 / '{' _ '}'
-                 / 'for' _ 'every'
-                 / '?'
+two_sided_op    <- '*'                  %two_sided_operator
+                 / '%/'                 %two_sided_operator
+                 / '/'                  %two_sided_operator
+                 / '%'                  %two_sided_operator
+                 / '+'                  %two_sided_operator
+                 / '-'                  %two_sided_operator
+                 / 'or'                 %two_sided_operator
+                 / 'and'                %two_sided_operator
+                 / 'isa'                %two_sided_operator
+                 / '@'                  %two_sided_operator
+                 / '&'                  %two_sided_operator
+one_sided_op    <- 'has'                %one_sided_operator
+                 / '#'                  %overload_only_operator
+                 / '=='                 %one_sided_operator
+                 / '!='                 %one_sided_operator
+                 / '<='                 %one_sided_operator
+                 / '>='                 %one_sided_operator
+                 / '<'                  %one_sided_operator
+                 / '>'                  %one_sided_operator
+                 / '0'                  %overload_only_operator
+                 / '{' _ '}'            %overload_only_operator
+                 / 'for' _ 'every'      %overload_only_operator
+                 / '?'                  %overload_only_operator
 
 overload_op     <- @'<[' _ two_sided_op _ @']' _                            %left_op_overload
                  / @'[' _ two_sided_op _ @']>' _                            %right_op_overload
@@ -100,22 +101,22 @@ access              <- accessing (_ws @'.' accessor)+                       %acc
                      / @'<' !'[' _ special_entry _ @'>' _
                      / name
 
-mult_op         <- '*'                          %text
-                 / '%/'                         %text
-                 / '/'                          %text
-                 / '%' !'>'                     %text
-add_op          <- '+'                          %text
-                 / '-'                          %text
-anor_op         <- 'or'                         %text
-                 / 'and' !(_ 'always')          %text
-comp_op         <- '=='                         %text
-                 / '!='                         %text
-                 / '<='                         %text
-                 / '>='                         %text
-                 / '<'                          %text
-                 / '>'                          %text
-                 / 'has' !(_ 'do')              %text
-                 / 'isa'                        %text
+mult_op         <- '*'                          %two_sided_operator
+                 / '%/'                         %two_sided_operator
+                 / '/'                          %two_sided_operator
+                 / '%' !'>'                     %two_sided_operator
+add_op          <- '+'                          %two_sided_operator
+                 / '-'                          %two_sided_operator
+anor_op         <- 'or'                         %two_sided_operator
+                 / 'and' !(_ 'always')          %two_sided_operator
+comp_op         <- '=='                         %one_sided_operator
+                 / '!='                         %one_sided_operator
+                 / '<='                         %one_sided_operator
+                 / '>='                         %one_sided_operator
+                 / '<'                          %one_sided_operator
+                 / '>'                          %one_sided_operator
+                 / 'has' !(_ 'do')              %one_sided_operator
+                 / 'isa'                        %two_sided_operator
 assign_op       <- '+='                         %text
                  / '-='                         %text
                  / '*='                         %text

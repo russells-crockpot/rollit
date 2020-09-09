@@ -11,10 +11,10 @@ from ..grammar import ParseError
 from ..objects import Roll
 from ..util import format_runtime_error, is_valid_iterable
 
-try:
-    import readline  # pylint: disable=unused-import
-except ImportError:
-    pass
+# try:
+#     import readline  # pylint: disable=unused-import
+# except ImportError:
+#     pass
 
 __all__ = ['BaseRepl', 'Repl']
 

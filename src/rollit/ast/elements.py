@@ -28,7 +28,6 @@ __all__ = [
     'Negation',
     'NewBag',
     'Oops',
-    'OverloadableOperator',
     'OverloadOperator',
     'Reduce',
     'Restart',
@@ -67,31 +66,76 @@ def create_model_element_type(name,
     return type(name, bases, class_attrs)
 
 
-class OverloadableOperator(ModelEnumElement):
+class Operator(ModelEnumElement):
     """
     """
-    MULTIPLY = '*'
-    TRUEDIV = '%/'
-    FLOORDIV = '/'
-    MODULO = '%'
-    ADD = '+'
-    SUBTRACT = '-'
-    OR = 'or'
-    AND = 'and'
-    EQUALS = '=='
-    NOT_EQUALS = '!='
-    GREATER_THAN_EQUALS = '<='
-    LESS_THAN_EQUALS = '>='
-    LESS_THAN = '<'
-    GREATER_THAN = '>'
-    ISA = 'isa'
-    EXPAND = '@'
-    AMPERSAND = '&'
-    HAS = 'has'
-    LENGTH = '#'
-    REDUCE = '{}'
-    SUBJECT = '?'
-    ITERATE = 'forevery'
+
+
+class OneSidedOperator(Operator):
+    """
+    """
+    _ignore_ = ('python_name',)
+    python_name = None
+
+    EQUALS = ('==', 'equals')
+    NOT_EQUALS = ('!=', 'not_equals')
+    GREATER_THAN_EQUALS = ('<=', 'greater_than_equals')
+    LESS_THAN_EQUALS = ('>=', 'less_than_equals')
+    LESS_THAN = ('<', 'less_than')
+    GREATER_THAN = ('>', 'greater_than')
+    HAS = ('has', 'has')
+
+    def __new__(cls, value, python_name):
+        self = object.__new__(cls)
+        self._value_ = value
+        self.python_name = python_name
+        return self
+
+
+class TwoSidedOperator(Operator):
+    """
+    """
+    _ignore_ = ('left_python_name', 'right_python_name')
+    left_python_name = right_python_name = None
+
+    # Two sided
+    MULTIPLY = ('*', 'l_multiply', 'r_multiply')
+    TRUEDIV = ('%/', 'l_truediv', 'r_truediv')
+    FLOORDIV = ('/', 'l_floordiv', 'r_floordiv')
+    MODULO = ('%', 'l_modulo', 'r_modulo')
+    ADD = ('+', 'l_add', 'r_add')
+    SUBTRACT = ('-', 'l_subtract', 'r_subtract')
+    OR = ('or', 'l_or', 'r_or')
+    AND = ('and', 'l_and', 'r_and')
+    ISA = ('isa', 'l_isa', 'r_isa')
+    EXPAND = ('@', 'l_expand', 'r_expand')
+    AMPERSAND = ('&', 'l_ampersand', 'r_ampersand')
+
+    def __new__(cls, value, left_python_name, right_python_name):
+        self = object.__new__(cls)
+        self._value_ = value
+        self.left_python_name = left_python_name
+        self.right_python_name = right_python_name
+        return self
+
+
+class OverloadOnlyOperator(Operator):
+    """
+    """
+    _ignore_ = ('python_name',)
+    python_name = None
+
+    LENGTH = ('#', 'length')
+    REDUCE = ('{}', 'reduce')
+    SUBJECT = ('?', 'as_subject')
+    ITERATE = ('forevery', 'iterate')
+    ISZERO = ('0', 'iszero')
+
+    def __new__(cls, value, python_name):
+        self = object.__new__(cls)
+        self._value_ = value
+        self.python_name = python_name
+        return self
 
 
 class SpecialAccessor(ModelEnumElement):
@@ -212,12 +256,12 @@ class Reference(create_model_element_type('BaseReference')):
 Reference.register(SpecialReference)
 
 
-class OperatorSide(enum.Enum):
+class OperationSide(enum.Enum):
     """
     """
+    NA = enum.auto()
     LEFT = enum.auto()
     RIGHT = enum.auto()
-    NA = enum.auto()
 
 
 # Loops

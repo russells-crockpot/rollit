@@ -88,8 +88,9 @@ def dice(text, start, end, values, codeinfo):
 @add_codeinfo
 def binary_op(text, start, end, values, codeinfo):
     left, op, right = values
-    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
-        return constants.OPERATOR_MAP[op](left, right)
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)) \
+            and op.value in constants.OPERATOR_MAP:
+        return constants.OPERATOR_MAP[op.value](left, right)
     if isinstance(left, elements.StringLiteral) and isinstance(right, elements.StringLiteral):
         codeinfo = CodeInfo(
             text=text[left.codeinfo.start_pos:right.codeinfo.end_pos],
@@ -158,6 +159,21 @@ def text(text, start, end, values):
 
 def ignore(*args):
     return None
+
+
+@elements_to_values
+def overload_only_operator(text, start, end, values):
+    if values:
+        return elements.OverloadOnlyOperator(''.join(values))
+    return elements.OverloadOnlyOperator(text[start:end])
+
+
+def one_sided_operator(text, start, end, values):
+    return elements.OneSidedOperator(text[start:end])
+
+
+def two_sided_operator(text, start, end, values):
+    return elements.TwoSidedOperator(text[start:end])
 
 
 @elements_to_values
@@ -275,16 +291,16 @@ def arg_list(text, start, end, values):
 @elements_to_values
 @add_codeinfo
 def left_op_overload(text, start, end, values, codeinfo):
-    return elements.OverloadOperator(operator=elements.OverloadableOperator(values[0]),
-                                     side=elements.OperatorSide.LEFT,
+    return elements.OverloadOperator(operator=elements.TwoSidedOperator(values[0]),
+                                     side=elements.OperationSide.LEFT,
                                      codeinfo=codeinfo)
 
 
 @elements_to_values
 @add_codeinfo
 def right_op_overload(text, start, end, values, codeinfo):
-    return elements.OverloadOperator(operator=elements.OverloadableOperator(values[0]),
-                                     side=elements.OperatorSide.RIGHT,
+    return elements.OverloadOperator(operator=elements.TwoSidedOperator(values[0]),
+                                     side=elements.OperationSide.RIGHT,
                                      codeinfo=codeinfo)
 
 
@@ -294,8 +310,8 @@ def one_sided_op_overload(text, start, end, values, codeinfo):
     value = values[0]
     if not isinstance(value, str):
         value = ''.join(value)
-    return elements.OverloadOperator(operator=elements.OverloadableOperator(value),
-                                     side=elements.OperatorSide.NA,
+    return elements.OverloadOperator(operator=elements.OneSidedOperator(value),
+                                     side=elements.OperationSide.NA,
                                      codeinfo=codeinfo)
 
 

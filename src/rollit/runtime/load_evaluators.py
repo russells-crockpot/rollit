@@ -2,11 +2,9 @@
 from collections import namedtuple
 from contextlib import suppress, nullcontext
 
+from .. import objects
 from ..ast import elements, constants
 from ..exceptions import RollitTypeError, NoSuchLoopError, RollitReferenceError
-from ..langref import OPERATORS
-from ..objects import Roll, Bag, OopsException, RestartException, LeaveException, \
-        RollitBasedModifier, Dice
 from ..util import is_valid_iterable
 
 __all__ = ()
@@ -95,7 +93,7 @@ def _(self, context):
 @elements.Enlarge.evaluator
 def _(self, context):
     size = 1 if self.size is None else self.size
-    return Roll(context(self.value) for _ in range(context(size)))
+    return objects.Roll(context(self.value) for _ in range(context(size)))
 
 
 @elements.DiceNode.evaluator
@@ -105,7 +103,7 @@ def _(self, context):
         num_dice = context(num_dice)
     if isinstance(sides, elements.Reduce):
         sides = context(sides)
-    return Dice(num_dice, sides)
+    return objects.Dice(num_dice, sides)
 
 
 @elements.Negation.evaluator
@@ -117,17 +115,32 @@ def _(self, context):
 def _(self, context):
     left = context(self.left)
     right = context(self.right)
-    #FIXME handle string concatination and other operators
-    # pylint: disable=no-member
-    if self.op in OPERATORS.math:
-        left = context.full_reduce(left)
-        right = context.full_reduce(right)
-    return constants.OPERATOR_MAP[self.op](left, right)
+    rval = NotImplemented
+    if isinstance(left, objects.InternalObject):
+        rval = left.operate_on(context, self.op, elements.OperationSide.LEFT, right)
+        if isinstance(rval, objects.Modifier):
+            with context.use_subject(left):
+                rval = rval.call(right, context=context)
+    if rval is NotImplemented and isinstance(right, objects.InternalObject):
+        rval = right.operate_on(context, self.op, elements.OperationSide.RIGHT, left)
+        if isinstance(rval, objects.Modifier):
+            with context.use_subject(right):
+                rval = rval.call(left, context=context)
+    if isinstance(rval, elements.ModelElement):
+        return context(rval)
+    if isinstance(rval, (int, str, float, objects.InternalObject)):
+        return rval
+    if rval is NotImplemented:
+        try:
+            return constants.OPERATOR_MAP[self.op.value](left, right)
+        except TypeError:
+            raise RollitTypeError()
+    raise RollitTypeError()
 
 
 @elements.NewBag.evaluator
 def _(self, context):
-    bag = Bag(context)
+    bag = objects.Bag(context)
     with context.now_access(bag):
         for stmt in self.value:
             context(stmt)
@@ -172,12 +185,12 @@ def _(self, context):
 
 @elements.Oops.evaluator
 def _(self, context):
-    raise OopsException(context(self.value))
+    raise objects.OopsException(context(self.value))
 
 
 @elements.Leave.evaluator
 def _(self, context):
-    raise LeaveException()
+    raise objects.LeaveException()
 
 
 @elements.Modify.evaluator
@@ -192,7 +205,7 @@ def _(self, context):
 @elements.ModifierDef.evaluator
 def _(self, context):
     with context.new_scope(isolate=True) as scope:
-        modifier = RollitBasedModifier(self, scope)
+        modifier = objects.RollitBasedModifier(self, scope)
     if self.target in (None, elements.SpecialReference.NONE):
         return modifier
     context(elements.Assignment(self.target, modifier, codeinfo=self.codeinfo))
@@ -203,7 +216,7 @@ def _(self, context):
 def _(self, context):
     try:
         context(self.attempt)
-    except OopsException as e:
+    except objects.OopsException as e:
         with context.new_scope(isolate=True, error=context(e.value)):
             for but in self.buts or ():
                 if but.predicate == elements.SpecialReference.ALL or context(but.predicate):
@@ -224,7 +237,7 @@ def _(self, context):
     try:
         load_into = context(self.into)
     except RollitReferenceError:
-        load_into = Bag(context)
+        load_into = objects.Bag(context)
         context[self.into.value] = load_into
     if self.to_load == elements.SpecialReference.ALL:
         load_into.load(load_from)
@@ -236,7 +249,7 @@ def _(self, context):
 
 @elements.Restart.evaluator
 def _(self, context):
-    raise RestartException(*self)
+    raise objects.RestartException(*self)
 
 
 class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier', 'context'))):
@@ -245,7 +258,7 @@ class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier', 'co
         return self
 
     def __exit__(self, exc_type, exc, traceback):
-        if exc and isinstance(exc, RestartException):
+        if exc and isinstance(exc, objects.RestartException):
             if exc.name in (elements.SpecialReference.NONE, self.name):
                 return self.location_specifier == exc.location_specifier
             if exc.name == elements.SpecialReference.PARENT:
@@ -265,9 +278,9 @@ def _(self, context):
                     if self.name:
                         scope.add_loop(self.name)
                     iterable = context(self.iterable)
-                    if isinstance(iterable, Dice):
+                    if isinstance(iterable, objects.Dice):
                         iterable = context.reduce(iterable)
-                    if not isinstance(iterable, (Bag, Roll)):
+                    if not isinstance(iterable, (objects.Bag, objects.Roll)):
                         raise RollitTypeError(f'Only bags and rolls are iterable. Got: {iterable}')
                     for item in iterable:
                         scope[self.item_name] = item
@@ -301,7 +314,7 @@ def _(self, context):
             try:
                 for stmt in do:
                     context(stmt)
-            except RestartException as e:
+            except objects.RestartException as e:
                 if e.name and e.name not in (elements.SpecialReference.NONE, self.name):
                     if e.name not in context.scope.loops:
                         raise NoSuchLoopError(e.name)

@@ -1,13 +1,18 @@
 """
 """
+import re
+from contextlib import suppress
+
 from .base import CodeInfo
-from .elements import StringLiteral, BinaryOp, Negation, SpecialReference
+from .elements import StringLiteral, BinaryOp, Negation, SpecialReference, OneSidedOperator, \
+        TwoSidedOperator, OverloadOnlyOperator
 from ..util import is_valid_iterable, ensure_tuple
 
 __all__ = [
     'was_evaluated',
     'flatten_tuple',
     'negate',
+    'get_operator',
 ]
 
 
@@ -56,3 +61,16 @@ def negate(element, codeinfo=None, script=None):
                             lineno=lineno,
                         ))
     return Negation(element, codeinfo=codeinfo)
+
+
+# pylint: disable=no-value-for-parameter
+def get_operator(symbol):
+    """
+    """
+    with suppress(ValueError):
+        return OneSidedOperator(symbol)
+    with suppress(ValueError):
+        return TwoSidedOperator(symbol)
+    with suppress(ValueError):
+        return OverloadOnlyOperator(re.sub(r'\s+', '', symbol))
+    raise ValueError(f'Unknown operator: {symbol}')
