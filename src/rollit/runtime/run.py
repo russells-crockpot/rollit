@@ -5,7 +5,6 @@ import os
 import pathlib
 import re
 from collections import namedtuple
-from contextlib import contextmanager
 
 from .. import grammar, rli
 from ..ast import actions, ModelElement
@@ -13,8 +12,8 @@ from ..ast.util import flatten_tuple
 from ..exceptions import LibraryNotFoundError
 from ..util import ensure_tuple
 from . import libraries
-from .base import DEFAULT_SEARCH_PATHS
-from .context import RuntimeContext
+from .base import DEFAULT_SEARCH_PATHS, context as current_ctx
+from .core import RuntimeContext
 from .towers import DefaultTower
 
 __all__ = ['Runner', 'LibraryLoader']
@@ -49,18 +48,18 @@ class LibraryLoader:
     def paths(self, value):
         self._paths = [pathlib.Path(p) for p in value]
 
-    def get_library(self, library_name, context):
+    def get_library(self, library_name):
         """
         """
         self.load_library(library_name)
         info = self.libraries[library_name]
         if info.type == 'python':
             if isinstance(info.content, rli.ObjectPlaceholder):
-                return info.content.resolve(context)
+                return info.content.resolve()
             raise TypeError(f'Expected and ObjectPlaceholder but got {type(info.content)}')
         if info.type == 'rollit':
             with self._runner.brief_context() as ctx:
-                self._runner.run(info.content, context=ctx)
+                self._runner.run(info.content)
                 # pylint: disable=protected-access
                 return ctx.root_scope._variables
         raise ValueError(f'Unknown library type: {info.type}')
@@ -147,11 +146,15 @@ class Runner:
         """
         return grammar.parse(script, actions=actions)
 
-    def run(self, script_or_model, *, context=None):
+    def run(self, script_or_model, context=None):
         """
         """
-        if context is None:
+        if not context:
             context = self._default_context
+        # pylint: disable=protected-access
+        return context._pycontext.run(self._run, script_or_model)
+
+    def _run(self, script_or_model):
         model = script_or_model
         if isinstance(script_or_model, (bytes, str)):
             model = self.parse(script_or_model)
@@ -160,15 +163,14 @@ class Runner:
             model = model[0]
         if not isinstance(model, ModelElement) \
                 and isinstance(model, (tuple, list)):
-            return tuple(context(item) for item in flatten_tuple(model))
-        return context(model)
+            return tuple(current_ctx(item) for item in flatten_tuple(model))
+        return current_ctx(model)
 
-    def load_library(self, name, context):
+    def load_library(self, name):
         """
         """
-        return self._library_loader.get_library(name, context)
+        return self._library_loader.get_library(name)
 
-    @contextmanager
     def brief_context(self):
         """
         """

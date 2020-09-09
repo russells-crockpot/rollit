@@ -2648,21 +2648,111 @@ class Grammar(object):
                                                     self._expected.append('\'@\'')
                                             if address0 is FAILURE:
                                                 self._offset = index1
-                                                chunk10, max10 = None, self._offset + 1
+                                                chunk10, max10 = None, self._offset + 2
                                                 if max10 <= self._input_size:
                                                     chunk10 = self._input[self._offset:max10]
-                                                if chunk10 == '&':
-                                                    address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 1, [])
-                                                    self._offset = self._offset + 1
+                                                if chunk10 == '==':
+                                                    address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 2, [])
+                                                    self._offset = self._offset + 2
                                                 else:
                                                     address0 = FAILURE
                                                     if self._offset > self._failure:
                                                         self._failure = self._offset
                                                         self._expected = []
                                                     if self._offset == self._failure:
-                                                        self._expected.append('\'&\'')
+                                                        self._expected.append('\'==\'')
                                                 if address0 is FAILURE:
                                                     self._offset = index1
+                                                    chunk11, max11 = None, self._offset + 2
+                                                    if max11 <= self._input_size:
+                                                        chunk11 = self._input[self._offset:max11]
+                                                    if chunk11 == '!=':
+                                                        address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 2, [])
+                                                        self._offset = self._offset + 2
+                                                    else:
+                                                        address0 = FAILURE
+                                                        if self._offset > self._failure:
+                                                            self._failure = self._offset
+                                                            self._expected = []
+                                                        if self._offset == self._failure:
+                                                            self._expected.append('\'!=\'')
+                                                    if address0 is FAILURE:
+                                                        self._offset = index1
+                                                        chunk12, max12 = None, self._offset + 2
+                                                        if max12 <= self._input_size:
+                                                            chunk12 = self._input[self._offset:max12]
+                                                        if chunk12 == '<=':
+                                                            address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 2, [])
+                                                            self._offset = self._offset + 2
+                                                        else:
+                                                            address0 = FAILURE
+                                                            if self._offset > self._failure:
+                                                                self._failure = self._offset
+                                                                self._expected = []
+                                                            if self._offset == self._failure:
+                                                                self._expected.append('\'<=\'')
+                                                        if address0 is FAILURE:
+                                                            self._offset = index1
+                                                            chunk13, max13 = None, self._offset + 2
+                                                            if max13 <= self._input_size:
+                                                                chunk13 = self._input[self._offset:max13]
+                                                            if chunk13 == '>=':
+                                                                address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 2, [])
+                                                                self._offset = self._offset + 2
+                                                            else:
+                                                                address0 = FAILURE
+                                                                if self._offset > self._failure:
+                                                                    self._failure = self._offset
+                                                                    self._expected = []
+                                                                if self._offset == self._failure:
+                                                                    self._expected.append('\'>=\'')
+                                                            if address0 is FAILURE:
+                                                                self._offset = index1
+                                                                chunk14, max14 = None, self._offset + 1
+                                                                if max14 <= self._input_size:
+                                                                    chunk14 = self._input[self._offset:max14]
+                                                                if chunk14 == '<':
+                                                                    address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 1, [])
+                                                                    self._offset = self._offset + 1
+                                                                else:
+                                                                    address0 = FAILURE
+                                                                    if self._offset > self._failure:
+                                                                        self._failure = self._offset
+                                                                        self._expected = []
+                                                                    if self._offset == self._failure:
+                                                                        self._expected.append('\'<\'')
+                                                                if address0 is FAILURE:
+                                                                    self._offset = index1
+                                                                    chunk15, max15 = None, self._offset + 1
+                                                                    if max15 <= self._input_size:
+                                                                        chunk15 = self._input[self._offset:max15]
+                                                                    if chunk15 == '>':
+                                                                        address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 1, [])
+                                                                        self._offset = self._offset + 1
+                                                                    else:
+                                                                        address0 = FAILURE
+                                                                        if self._offset > self._failure:
+                                                                            self._failure = self._offset
+                                                                            self._expected = []
+                                                                        if self._offset == self._failure:
+                                                                            self._expected.append('\'>\'')
+                                                                    if address0 is FAILURE:
+                                                                        self._offset = index1
+                                                                        chunk16, max16 = None, self._offset + 1
+                                                                        if max16 <= self._input_size:
+                                                                            chunk16 = self._input[self._offset:max16]
+                                                                        if chunk16 == '&':
+                                                                            address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 1, [])
+                                                                            self._offset = self._offset + 1
+                                                                        else:
+                                                                            address0 = FAILURE
+                                                                            if self._offset > self._failure:
+                                                                                self._failure = self._offset
+                                                                                self._expected = []
+                                                                            if self._offset == self._failure:
+                                                                                self._expected.append('\'&\'')
+                                                                        if address0 is FAILURE:
+                                                                            self._offset = index1
         self._cache['two_sided_op'][index0] = (address0, self._offset)
         return address0
 
@@ -2703,232 +2793,142 @@ class Grammar(object):
                     self._expected.append('\'#\'')
             if address0 is FAILURE:
                 self._offset = index1
-                chunk2, max2 = None, self._offset + 2
+                chunk2, max2 = None, self._offset + 1
                 if max2 <= self._input_size:
                     chunk2 = self._input[self._offset:max2]
-                if chunk2 == '==':
-                    address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 2, [])
-                    self._offset = self._offset + 2
+                if chunk2 == '0':
+                    address0 = self._actions.overload_only_operator(self._input, self._offset, self._offset + 1, [])
+                    self._offset = self._offset + 1
                 else:
                     address0 = FAILURE
                     if self._offset > self._failure:
                         self._failure = self._offset
                         self._expected = []
                     if self._offset == self._failure:
-                        self._expected.append('\'==\'')
+                        self._expected.append('\'0\'')
                 if address0 is FAILURE:
                     self._offset = index1
-                    chunk3, max3 = None, self._offset + 2
+                    index2, elements0 = self._offset, []
+                    address1 = FAILURE
+                    chunk3, max3 = None, self._offset + 1
                     if max3 <= self._input_size:
                         chunk3 = self._input[self._offset:max3]
-                    if chunk3 == '!=':
-                        address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 2, [])
-                        self._offset = self._offset + 2
+                    if chunk3 == '{':
+                        address1 = TreeNode(self._input[self._offset:self._offset + 1], self._offset, [])
+                        self._offset = self._offset + 1
                     else:
-                        address0 = FAILURE
+                        address1 = FAILURE
                         if self._offset > self._failure:
                             self._failure = self._offset
                             self._expected = []
                         if self._offset == self._failure:
-                            self._expected.append('\'!=\'')
+                            self._expected.append('\'{\'')
+                    if address1 is not FAILURE:
+                        elements0.append(address1)
+                        address2 = FAILURE
+                        address2 = self._read__()
+                        if address2 is not FAILURE:
+                            elements0.append(address2)
+                            address3 = FAILURE
+                            chunk4, max4 = None, self._offset + 1
+                            if max4 <= self._input_size:
+                                chunk4 = self._input[self._offset:max4]
+                            if chunk4 == '}':
+                                address3 = TreeNode(self._input[self._offset:self._offset + 1], self._offset, [])
+                                self._offset = self._offset + 1
+                            else:
+                                address3 = FAILURE
+                                if self._offset > self._failure:
+                                    self._failure = self._offset
+                                    self._expected = []
+                                if self._offset == self._failure:
+                                    self._expected.append('\'}\'')
+                            if address3 is not FAILURE:
+                                elements0.append(address3)
+                            else:
+                                elements0 = None
+                                self._offset = index2
+                        else:
+                            elements0 = None
+                            self._offset = index2
+                    else:
+                        elements0 = None
+                        self._offset = index2
+                    if elements0 is None:
+                        address0 = FAILURE
+                    else:
+                        address0 = self._actions.overload_only_operator(self._input, index2, self._offset, elements0)
+                        self._offset = self._offset
                     if address0 is FAILURE:
                         self._offset = index1
-                        chunk4, max4 = None, self._offset + 2
-                        if max4 <= self._input_size:
-                            chunk4 = self._input[self._offset:max4]
-                        if chunk4 == '<=':
-                            address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 2, [])
-                            self._offset = self._offset + 2
+                        index3, elements1 = self._offset, []
+                        address4 = FAILURE
+                        chunk5, max5 = None, self._offset + 3
+                        if max5 <= self._input_size:
+                            chunk5 = self._input[self._offset:max5]
+                        if chunk5 == 'for':
+                            address4 = TreeNode(self._input[self._offset:self._offset + 3], self._offset, [])
+                            self._offset = self._offset + 3
                         else:
-                            address0 = FAILURE
+                            address4 = FAILURE
                             if self._offset > self._failure:
                                 self._failure = self._offset
                                 self._expected = []
                             if self._offset == self._failure:
-                                self._expected.append('\'<=\'')
+                                self._expected.append('\'for\'')
+                        if address4 is not FAILURE:
+                            elements1.append(address4)
+                            address5 = FAILURE
+                            address5 = self._read__()
+                            if address5 is not FAILURE:
+                                elements1.append(address5)
+                                address6 = FAILURE
+                                chunk6, max6 = None, self._offset + 5
+                                if max6 <= self._input_size:
+                                    chunk6 = self._input[self._offset:max6]
+                                if chunk6 == 'every':
+                                    address6 = TreeNode(self._input[self._offset:self._offset + 5], self._offset, [])
+                                    self._offset = self._offset + 5
+                                else:
+                                    address6 = FAILURE
+                                    if self._offset > self._failure:
+                                        self._failure = self._offset
+                                        self._expected = []
+                                    if self._offset == self._failure:
+                                        self._expected.append('\'every\'')
+                                if address6 is not FAILURE:
+                                    elements1.append(address6)
+                                else:
+                                    elements1 = None
+                                    self._offset = index3
+                            else:
+                                elements1 = None
+                                self._offset = index3
+                        else:
+                            elements1 = None
+                            self._offset = index3
+                        if elements1 is None:
+                            address0 = FAILURE
+                        else:
+                            address0 = self._actions.overload_only_operator(self._input, index3, self._offset, elements1)
+                            self._offset = self._offset
                         if address0 is FAILURE:
                             self._offset = index1
-                            chunk5, max5 = None, self._offset + 2
-                            if max5 <= self._input_size:
-                                chunk5 = self._input[self._offset:max5]
-                            if chunk5 == '>=':
-                                address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 2, [])
-                                self._offset = self._offset + 2
+                            chunk7, max7 = None, self._offset + 1
+                            if max7 <= self._input_size:
+                                chunk7 = self._input[self._offset:max7]
+                            if chunk7 == '?':
+                                address0 = self._actions.overload_only_operator(self._input, self._offset, self._offset + 1, [])
+                                self._offset = self._offset + 1
                             else:
                                 address0 = FAILURE
                                 if self._offset > self._failure:
                                     self._failure = self._offset
                                     self._expected = []
                                 if self._offset == self._failure:
-                                    self._expected.append('\'>=\'')
+                                    self._expected.append('\'?\'')
                             if address0 is FAILURE:
                                 self._offset = index1
-                                chunk6, max6 = None, self._offset + 1
-                                if max6 <= self._input_size:
-                                    chunk6 = self._input[self._offset:max6]
-                                if chunk6 == '<':
-                                    address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 1, [])
-                                    self._offset = self._offset + 1
-                                else:
-                                    address0 = FAILURE
-                                    if self._offset > self._failure:
-                                        self._failure = self._offset
-                                        self._expected = []
-                                    if self._offset == self._failure:
-                                        self._expected.append('\'<\'')
-                                if address0 is FAILURE:
-                                    self._offset = index1
-                                    chunk7, max7 = None, self._offset + 1
-                                    if max7 <= self._input_size:
-                                        chunk7 = self._input[self._offset:max7]
-                                    if chunk7 == '>':
-                                        address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 1, [])
-                                        self._offset = self._offset + 1
-                                    else:
-                                        address0 = FAILURE
-                                        if self._offset > self._failure:
-                                            self._failure = self._offset
-                                            self._expected = []
-                                        if self._offset == self._failure:
-                                            self._expected.append('\'>\'')
-                                    if address0 is FAILURE:
-                                        self._offset = index1
-                                        chunk8, max8 = None, self._offset + 1
-                                        if max8 <= self._input_size:
-                                            chunk8 = self._input[self._offset:max8]
-                                        if chunk8 == '0':
-                                            address0 = self._actions.overload_only_operator(self._input, self._offset, self._offset + 1, [])
-                                            self._offset = self._offset + 1
-                                        else:
-                                            address0 = FAILURE
-                                            if self._offset > self._failure:
-                                                self._failure = self._offset
-                                                self._expected = []
-                                            if self._offset == self._failure:
-                                                self._expected.append('\'0\'')
-                                        if address0 is FAILURE:
-                                            self._offset = index1
-                                            index2, elements0 = self._offset, []
-                                            address1 = FAILURE
-                                            chunk9, max9 = None, self._offset + 1
-                                            if max9 <= self._input_size:
-                                                chunk9 = self._input[self._offset:max9]
-                                            if chunk9 == '{':
-                                                address1 = TreeNode(self._input[self._offset:self._offset + 1], self._offset, [])
-                                                self._offset = self._offset + 1
-                                            else:
-                                                address1 = FAILURE
-                                                if self._offset > self._failure:
-                                                    self._failure = self._offset
-                                                    self._expected = []
-                                                if self._offset == self._failure:
-                                                    self._expected.append('\'{\'')
-                                            if address1 is not FAILURE:
-                                                elements0.append(address1)
-                                                address2 = FAILURE
-                                                address2 = self._read__()
-                                                if address2 is not FAILURE:
-                                                    elements0.append(address2)
-                                                    address3 = FAILURE
-                                                    chunk10, max10 = None, self._offset + 1
-                                                    if max10 <= self._input_size:
-                                                        chunk10 = self._input[self._offset:max10]
-                                                    if chunk10 == '}':
-                                                        address3 = TreeNode(self._input[self._offset:self._offset + 1], self._offset, [])
-                                                        self._offset = self._offset + 1
-                                                    else:
-                                                        address3 = FAILURE
-                                                        if self._offset > self._failure:
-                                                            self._failure = self._offset
-                                                            self._expected = []
-                                                        if self._offset == self._failure:
-                                                            self._expected.append('\'}\'')
-                                                    if address3 is not FAILURE:
-                                                        elements0.append(address3)
-                                                    else:
-                                                        elements0 = None
-                                                        self._offset = index2
-                                                else:
-                                                    elements0 = None
-                                                    self._offset = index2
-                                            else:
-                                                elements0 = None
-                                                self._offset = index2
-                                            if elements0 is None:
-                                                address0 = FAILURE
-                                            else:
-                                                address0 = self._actions.overload_only_operator(self._input, index2, self._offset, elements0)
-                                                self._offset = self._offset
-                                            if address0 is FAILURE:
-                                                self._offset = index1
-                                                index3, elements1 = self._offset, []
-                                                address4 = FAILURE
-                                                chunk11, max11 = None, self._offset + 3
-                                                if max11 <= self._input_size:
-                                                    chunk11 = self._input[self._offset:max11]
-                                                if chunk11 == 'for':
-                                                    address4 = TreeNode(self._input[self._offset:self._offset + 3], self._offset, [])
-                                                    self._offset = self._offset + 3
-                                                else:
-                                                    address4 = FAILURE
-                                                    if self._offset > self._failure:
-                                                        self._failure = self._offset
-                                                        self._expected = []
-                                                    if self._offset == self._failure:
-                                                        self._expected.append('\'for\'')
-                                                if address4 is not FAILURE:
-                                                    elements1.append(address4)
-                                                    address5 = FAILURE
-                                                    address5 = self._read__()
-                                                    if address5 is not FAILURE:
-                                                        elements1.append(address5)
-                                                        address6 = FAILURE
-                                                        chunk12, max12 = None, self._offset + 5
-                                                        if max12 <= self._input_size:
-                                                            chunk12 = self._input[self._offset:max12]
-                                                        if chunk12 == 'every':
-                                                            address6 = TreeNode(self._input[self._offset:self._offset + 5], self._offset, [])
-                                                            self._offset = self._offset + 5
-                                                        else:
-                                                            address6 = FAILURE
-                                                            if self._offset > self._failure:
-                                                                self._failure = self._offset
-                                                                self._expected = []
-                                                            if self._offset == self._failure:
-                                                                self._expected.append('\'every\'')
-                                                        if address6 is not FAILURE:
-                                                            elements1.append(address6)
-                                                        else:
-                                                            elements1 = None
-                                                            self._offset = index3
-                                                    else:
-                                                        elements1 = None
-                                                        self._offset = index3
-                                                else:
-                                                    elements1 = None
-                                                    self._offset = index3
-                                                if elements1 is None:
-                                                    address0 = FAILURE
-                                                else:
-                                                    address0 = self._actions.overload_only_operator(self._input, index3, self._offset, elements1)
-                                                    self._offset = self._offset
-                                                if address0 is FAILURE:
-                                                    self._offset = index1
-                                                    chunk13, max13 = None, self._offset + 1
-                                                    if max13 <= self._input_size:
-                                                        chunk13 = self._input[self._offset:max13]
-                                                    if chunk13 == '?':
-                                                        address0 = self._actions.overload_only_operator(self._input, self._offset, self._offset + 1, [])
-                                                        self._offset = self._offset + 1
-                                                    else:
-                                                        address0 = FAILURE
-                                                        if self._offset > self._failure:
-                                                            self._failure = self._offset
-                                                            self._expected = []
-                                                        if self._offset == self._failure:
-                                                            self._expected.append('\'?\'')
-                                                    if address0 is FAILURE:
-                                                        self._offset = index1
         self._cache['one_sided_op'][index0] = (address0, self._offset)
         return address0
 
@@ -4121,7 +4121,7 @@ class Grammar(object):
         if max0 <= self._input_size:
             chunk0 = self._input[self._offset:max0]
         if chunk0 == '==':
-            address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 2, [])
+            address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 2, [])
             self._offset = self._offset + 2
         else:
             address0 = FAILURE
@@ -4136,7 +4136,7 @@ class Grammar(object):
             if max1 <= self._input_size:
                 chunk1 = self._input[self._offset:max1]
             if chunk1 == '!=':
-                address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 2, [])
+                address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 2, [])
                 self._offset = self._offset + 2
             else:
                 address0 = FAILURE
@@ -4151,7 +4151,7 @@ class Grammar(object):
                 if max2 <= self._input_size:
                     chunk2 = self._input[self._offset:max2]
                 if chunk2 == '<=':
-                    address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 2, [])
+                    address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 2, [])
                     self._offset = self._offset + 2
                 else:
                     address0 = FAILURE
@@ -4166,7 +4166,7 @@ class Grammar(object):
                     if max3 <= self._input_size:
                         chunk3 = self._input[self._offset:max3]
                     if chunk3 == '>=':
-                        address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 2, [])
+                        address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 2, [])
                         self._offset = self._offset + 2
                     else:
                         address0 = FAILURE
@@ -4181,7 +4181,7 @@ class Grammar(object):
                         if max4 <= self._input_size:
                             chunk4 = self._input[self._offset:max4]
                         if chunk4 == '<':
-                            address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 1, [])
+                            address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 1, [])
                             self._offset = self._offset + 1
                         else:
                             address0 = FAILURE
@@ -4196,7 +4196,7 @@ class Grammar(object):
                             if max5 <= self._input_size:
                                 chunk5 = self._input[self._offset:max5]
                             if chunk5 == '>':
-                                address0 = self._actions.one_sided_operator(self._input, self._offset, self._offset + 1, [])
+                                address0 = self._actions.two_sided_operator(self._input, self._offset, self._offset + 1, [])
                                 self._offset = self._offset + 1
                             else:
                                 address0 = FAILURE

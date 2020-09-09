@@ -7,6 +7,7 @@ import sys
 from contextlib import suppress
 from types import MappingProxyType
 
+from .base import context
 from .. import rli
 from ..ast import elements
 from ..exceptions import RollitTypeError
@@ -37,30 +38,32 @@ if True:
 
     @rootlib.modifier('print')
     # pylint: disable=useless-return
-    def _(*args, subject, context):
+    def _(*args, subject):
         print(subject, *args)
         return None
 
     @rootlib.modifier('top')
-    def _(*args, subject, context):
+    def _(*args, subject):
         if not args:
             num = 1
         else:
             num = args[0]
         if isinstance(subject, Dice):
-            subject = context.reduce(subject)
+            # pylint: disable=too-many-function-args
+            subject = context(elements.Reduce(subject, codeinfo=None))
         if not isinstance(subject, Roll):
             raise RollitTypeError()
         return Roll(sorted(subject, reverse=True)[0:num])
 
     @rootlib.modifier('bottom')
-    def _(*args, subject, context):
+    def _(*args, subject):
         if not args:
             num = 1
         else:
             num = args[0]
         if isinstance(subject, Dice):
-            subject = context.reduce(subject)
+            # pylint: disable=too-many-function-args
+            subject = context(elements.Reduce(subject, codeinfo=None))
         if not isinstance(subject, Roll):
             raise RollitTypeError()
         return Roll(sorted(subject)[0:num])
@@ -74,11 +77,11 @@ runtime = rli.PythonBasedLibrary('runtime')
 if True:
 
     @runtime.modifier('loops')
-    def _(*args, subject, context):
+    def _(*args, subject):
         return Roll(context.scope.loops)
 
     @runtime.modifier('scope_entries')
-    def _(*args, subject, context):
+    def _(*args, subject):
         scopes = []
         scope = context.scope
         while scope.parent:
@@ -88,12 +91,12 @@ if True:
         entries = {}
         for scope in reversed(scopes):
             entries.update(scope)
-        bag = Bag(context)
+        bag = Bag()
         bag._entries = entries
         return bag
 
     @runtime.modifier('names_in_scope')
-    def _(*args, subject, context):
+    def _(*args, subject):
         names = set()
         scope = context.scope
         while scope.parent:
@@ -105,7 +108,7 @@ if True:
         return names
 
     @runtime.on_access
-    def _(name, lib, context):
+    def _(name, lib):
         if name == 'cwd':
             return os_.getcwd()
         return lib.raw_get(name)
@@ -133,13 +136,13 @@ if True:
     os.envvars = rli.BagPlaceholder()
 
     @os.envvars.on_access
-    def _(name, subject, context):
+    def _(name, subject):
         with suppress(KeyError):
             return os_.environ[context(name)]
         return None
 
     @os.envvars.on_set
-    def _(name, value, subject, context):
+    def _(name, value, subject):
         os_.environ[context(name)] = str(context(value))
 
 
@@ -151,14 +154,14 @@ if True:
     io.File = rli.BagPlaceholder()
 
     @io.File.modifier('create')
-    def _(filename, subject, context):
-        bag = Bag(context)
+    def _(filename, subject):
+        bag = Bag()
         bag['name'] = filename
         bag[elements.SpecialEntry.PARENT] = subject
         return bag
 
     @io.File.modifier('exists')
-    def _(*, subject, context):
+    def _(*, subject):
         return os_.path.exists(subject['name'])
 
 
@@ -181,7 +184,7 @@ bags = rli.PythonBasedLibrary('bags')
 if True:
 
     @bags.modifier('flatten')
-    def _(*, subject, context):
+    def _(*, subject):
         # pylint: disable=redefined-outer-name
         bags = []
         current_bag = subject
@@ -189,7 +192,7 @@ if True:
             bags.append(current_bag)
             current_bag = current_bag.parent
         bags.append(current_bag)
-        result = Bag(context)
+        result = Bag()
         for bag in bags:
             result.load(bag)
         return result
@@ -207,19 +210,19 @@ strings = rli.PythonBasedLibrary('strings')
 if True:
 
     @strings.modifier('lower')
-    def _(*, subject, context):
+    def _(*, subject):
         return subject.lower()
 
     @strings.modifier('upper')
-    def _(*, subject, context):
+    def _(*, subject):
         return subject.upper()
 
     @strings.modifier('strip')
-    def _(*, subject, context):
+    def _(*, subject):
         return subject.strip()
 
     @strings.modifier('split')
-    def _(delim, times=None, *, subject, context):
+    def _(delim, times=None, *, subject):
         if times is None:
             return subject.split(delim)
         return subject.split(delim, times)
@@ -232,7 +235,7 @@ loading = rli.PythonBasedLibrary('loading')
 if True:
 
     @loading.modifier('load_isolated')
-    def _(*, subject, context):
+    def _(*, subject):
         ...
 
 

@@ -224,7 +224,9 @@ tests:
         left:
           _class: Reference
           value: 'name'
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right: 1
   - script: 'name -= 1'
     result:
@@ -237,7 +239,9 @@ tests:
         left:
           _class: Reference
           value: 'name'
-        op: '-'
+        op:
+          _class: TwoSidedOperator
+          value: SUBTRACT
         right: 1
   - script: 'name /= 1'
     result:
@@ -250,7 +254,9 @@ tests:
         left:
           _class: Reference
           value: 'name'
-        op: '/'
+        op:
+          _class: TwoSidedOperator
+          value: FLOORDIV
         right: 1
   - script: 'name %/= 1'
     result:
@@ -263,7 +269,9 @@ tests:
         left:
           _class: Reference
           value: 'name'
-        op: '%/'
+        op:
+          _class: TwoSidedOperator
+          value: TRUEDIV
         right: 1
   - script: 'name %= 1'
     result:
@@ -276,7 +284,9 @@ tests:
         left:
           _class: Reference
           value: 'name'
-        op: '%'
+        op:
+          _class: TwoSidedOperator
+          value: MODULO
         right: 1
   - script: 'name => top'
     result:
@@ -354,7 +364,9 @@ tests:
             _class: DiceNode
             number_of_dice: 3
             sides: 4
-          op: '+'
+          op:
+            _class: TwoSidedOperator
+            value: ADD
           right: 5
   - script: 'name = value'
     result:
@@ -421,7 +433,9 @@ tests:
     result:
       _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: Reference
         value: z
@@ -429,7 +443,9 @@ tests:
     result:
       _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: Reference
         value: z
@@ -437,7 +453,9 @@ tests:
     result:
     - _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: Reference
         value: z
@@ -464,7 +482,9 @@ tests:
     result:
     - _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: Reference
         value: z
@@ -482,7 +502,9 @@ tests:
       value: 1
     - _class: BinaryOp
       left: 3
-      op: '*'
+      op:
+        _class: TwoSidedOperator
+        value: MULTIPLY
       right:
         _class: Reference
         value: y
@@ -490,13 +512,17 @@ tests:
     result:
     - _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: Reference
         value: z
     - _class: BinaryOp
       left: 3
-      op: '*'
+      op:
+        _class: TwoSidedOperator
+        value: MULTIPLY
       right:
         _class: Reference
         value: y
@@ -509,13 +535,17 @@ tests:
     result:
     - _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: Reference
         value: z
     - _class: BinaryOp
       left: 3
-      op: '*'
+      op:
+        _class: TwoSidedOperator
+        value: MULTIPLY
       right:
         _class: Reference
         value: y

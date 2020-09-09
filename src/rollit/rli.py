@@ -9,6 +9,7 @@ from contextlib import suppress
 from .ast import ModelElement
 from .ast.elements import SpecialEntry
 from .objects import Modifier, Roll, Dice, Bag, NoSubject
+from .runtime import context
 from .util import is_valid_iterable
 
 __all__ = [
@@ -32,31 +33,31 @@ class ObjectPlaceholder(metaclass=ABCMeta):
         self._postloaders = postloaders if postloaders is not None else []
 
     #TODO handle modifiers
-    def _run_load_op(self, context, op, obj):
+    def _run_load_op(self, op, obj):
         if not op:
             return
         if is_valid_iterable(op):
             for item in op:
-                self._run_load_op(context, item, obj)
+                self._run_load_op(item, obj)
         elif isinstance(op, ModelElement):
             context(op)
         elif callable(op):
-            op(obj, context)
+            op(obj)
         else:
             raise TypeError()
 
-    def resolve(self, context):
+    def resolve(self):
         """
         """
         for op in self._preloaders:
-            self._run_load_op(context, op, self)
-        obj = self.get_object(context)
+            self._run_load_op(op, self)
+        obj = self.get_object()
         for op in self._postloaders:
-            self._run_load_op(context, op, obj)
+            self._run_load_op(op, obj)
         return obj
 
     @abstractmethod
-    def get_object(self, context):
+    def get_object(self):
         """
         """
 
@@ -85,11 +86,11 @@ class BagPlaceholder(ObjectPlaceholder):
         self._entries = entries
         self._raw = raw
 
-    def get_object(self, context):
-        bag = Bag(context)
+    def get_object(self):
+        bag = Bag()
         for k, v in self._entries.items():
             if isinstance(v, ObjectPlaceholder):
-                v = v.resolve(context)
+                v = v.resolve()
             if self._raw is True:
                 bag.raw_set(k, v)
             else:
@@ -169,8 +170,8 @@ class PythonBasedModifier(Modifier):
         self.func = func
         self._display_string = f'[-built-in modifier: {self.func.__name__.lstrip("_")}-]'
 
-    def modify(self, *args, context):
-        val = self.func(*args, subject=context.scope.subject, context=context)
+    def modify(self, *args):
+        val = self.func(*args, subject=context.scope.subject)
         if val not in (None, NoSubject):
             context.scope.subject = val
 

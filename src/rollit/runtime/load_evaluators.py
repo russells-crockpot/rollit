@@ -2,15 +2,16 @@
 from collections import namedtuple
 from contextlib import suppress, nullcontext
 
+from .base import context
 from .. import objects
 from ..ast import elements, constants
-from ..exceptions import RollitTypeError, NoSuchLoopError, RollitReferenceError
+from ..exceptions import RollitTypeError, NoSuchLoopError, RollitReferenceError, CannotReduceError
 from ..util import is_valid_iterable
 
 __all__ = ()
 
 
-def _access_all_but_last(access, context):
+def _access_all_but_last(access):
     final_accessor = access.accessors[-1]
     if isinstance(final_accessor, elements.Reduce):
         final_accessor = context(final_accessor)
@@ -23,25 +24,30 @@ def _access_all_but_last(access, context):
         )), final_accessor
 
 
-@elements.Reduce.reducer
 @elements.Reduce.evaluator
-def _(self, context):
+def _(self):
     with context.now_access(context.scope):
-        return context.reduce(context(self.value))
+        to_reduce = context(self.value)
+        if not isinstance(to_reduce, objects.InternalObject):
+            return to_reduce
+        rval = to_reduce.operate_on(elements.OverloadOnlyOperator.REDUCE)
+        if rval is NotImplemented:
+            raise CannotReduceError(self.value)
+        return rval
 
 
 @elements.RawAccessor.evaluator
-def _(self, context):
+def _(self):
     with context.now_access(context.scope):
         return context(self.value)
 
 
 @elements.Assignment.evaluator
-def _(self, context):
+def _(self):
     cm = nullcontext()
     target = self.target
     if isinstance(target, elements.Access):
-        accessing, target = _access_all_but_last(self.target, context)
+        accessing, target = _access_all_but_last(self.target)
         cm = context.now_access(accessing)
     if isinstance(target, elements.Reference):
         target = target.value
@@ -55,7 +61,7 @@ def _(self, context):
 
 
 @elements.Access.evaluator
-def _(self, context):
+def _(self):
     accessing = context(self.accessing)
     for accessor in self.accessors:
         with context.now_access(accessing, allow_scope_access=False):
@@ -69,13 +75,13 @@ def _(self, context):
 
 
 @elements.ClearValue.evaluator
-def _(self, context):
+def _(self):
     to_clear = self.value
     cm = nullcontext()
     if isinstance(to_clear, elements.Access):
-        base, to_clear = _access_all_but_last(to_clear, context)
+        base, to_clear = _access_all_but_last(to_clear)
         if isinstance(to_clear, elements.Reduce):
-            to_clear = context.reduce(to_clear)
+            to_clear = context(to_clear)
         cm = context.now_access(base, allow_scope_access=False)
     if isinstance(to_clear, elements.Reference):
         to_clear = to_clear.value
@@ -91,13 +97,13 @@ def _(self, context):
 
 
 @elements.Enlarge.evaluator
-def _(self, context):
+def _(self):
     size = 1 if self.size is None else self.size
     return objects.Roll(context(self.value) for _ in range(context(size)))
 
 
 @elements.DiceNode.evaluator
-def _(self, context):
+def _(self):
     num_dice, sides, *_ = self
     if isinstance(num_dice, elements.Reduce):
         num_dice = context(num_dice)
@@ -107,25 +113,19 @@ def _(self, context):
 
 
 @elements.Negation.evaluator
-def _(self, context):
+def _(self):
     return not context(self.value)
 
 
 @elements.BinaryOp.evaluator
-def _(self, context):
+def _(self):
     left = context(self.left)
     right = context(self.right)
     rval = NotImplemented
     if isinstance(left, objects.InternalObject):
-        rval = left.operate_on(context, self.op, elements.OperationSide.LEFT, right)
-        if isinstance(rval, objects.Modifier):
-            with context.use_subject(left):
-                rval = rval.call(right, context=context)
+        rval = left.operate_on(self.op, elements.OperationSide.LEFT, right)
     if rval is NotImplemented and isinstance(right, objects.InternalObject):
-        rval = right.operate_on(context, self.op, elements.OperationSide.RIGHT, left)
-        if isinstance(rval, objects.Modifier):
-            with context.use_subject(right):
-                rval = rval.call(left, context=context)
+        rval = right.operate_on(self.op, elements.OperationSide.RIGHT, left)
     if isinstance(rval, elements.ModelElement):
         return context(rval)
     if isinstance(rval, (int, str, float, objects.InternalObject)):
@@ -139,8 +139,8 @@ def _(self, context):
 
 
 @elements.NewBag.evaluator
-def _(self, context):
-    bag = objects.Bag(context)
+def _(self):
+    bag = objects.Bag()
     with context.now_access(bag):
         for stmt in self.value:
             context(stmt)
@@ -150,7 +150,7 @@ def _(self, context):
 
 
 @elements.IfThen.evaluator
-def _(self, context):
+def _(self):
     if context(self.predicate):
         for stmt in self.then:
             context(stmt)
@@ -160,50 +160,49 @@ def _(self, context):
 
 
 @elements.UseIf.evaluator
-def _(self, context):
+def _(self):
     if context(self.predicate):
         return context(self.use)
     return context(self.otherwise)
 
 
 @elements.ButIf.evaluator
-def _(self, context):
+def _(self):
     if context(self.predicate):
         context(self.statement)
 
 
 @elements.StringLiteral.evaluator
-@elements.StringLiteral.reducer
-def _(self, context):
+def _(self):
     return self.value
 
 
 @elements.Reference.evaluator
-def _(self, context):
+def _(self):
     return context[self.value]
 
 
 @elements.Oops.evaluator
-def _(self, context):
+def _(self):
     raise objects.OopsException(context(self.value))
 
 
 @elements.Leave.evaluator
-def _(self, context):
+def _(self):
     raise objects.LeaveException()
 
 
 @elements.Modify.evaluator
-def _(self, context):
+def _(self):
     with context.new_scope(isolate=True):
         with context.use_subject(context(self.subject)):
             for name, args, _ in self.modifiers:
-                context(name).call(*(context(a) for a in args), context=context)
+                context(name).call(*(context(a) for a in args))
             return context.scope.subject
 
 
 @elements.ModifierDef.evaluator
-def _(self, context):
+def _(self):
     with context.new_scope(isolate=True) as scope:
         modifier = objects.RollitBasedModifier(self, scope)
     if self.target in (None, elements.SpecialReference.NONE):
@@ -213,7 +212,7 @@ def _(self, context):
 
 
 @elements.Attempt.evaluator
-def _(self, context):
+def _(self):
     try:
         context(self.attempt)
     except objects.OopsException as e:
@@ -229,7 +228,7 @@ def _(self, context):
 
 
 @elements.Load.evaluator
-def _(self, context):
+def _(self):
     try:
         load_from = context(self.load_from)
     except RollitReferenceError:
@@ -237,7 +236,7 @@ def _(self, context):
     try:
         load_into = context(self.into)
     except RollitReferenceError:
-        load_into = objects.Bag(context)
+        load_into = objects.Bag()
         context[self.into.value] = load_into
     if self.to_load == elements.SpecialReference.ALL:
         load_into.load(load_from)
@@ -248,11 +247,11 @@ def _(self, context):
 
 
 @elements.Restart.evaluator
-def _(self, context):
+def _(self):
     raise objects.RestartException(*self)
 
 
-class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier', 'context'))):
+class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier'))):
 
     def __enter__(self):
         return self
@@ -264,34 +263,33 @@ class _SupressOn(namedtuple('_SupressOnBase', ('name', 'location_specifier', 'co
             if exc.name == elements.SpecialReference.PARENT:
                 exc.name = elements.SpecialReference.NONE
                 raise exc from None
-            if exc.name not in self.context.scope.loops:
+            if exc.name not in context.scope.loops:
                 raise NoSuchLoopError(exc.name)
         return False
 
 
 @elements.ForEvery.evaluator
-def _(self, context):
-    with _SupressOn(self.name, elements.RestartLocationSpecifier.AFTER, context):
+def _(self):
+    with _SupressOn(self.name, elements.RestartLocationSpecifier.AFTER):
         while True:
-            with _SupressOn(self.name, elements.RestartLocationSpecifier.BEFORE, context):
+            with _SupressOn(self.name, elements.RestartLocationSpecifier.BEFORE):
                 with context.new_scope() as scope:
                     if self.name:
                         scope.add_loop(self.name)
-                    iterable = context(self.iterable)
-                    if isinstance(iterable, objects.Dice):
-                        iterable = context.reduce(iterable)
-                    if not isinstance(iterable, (objects.Bag, objects.Roll)):
-                        raise RollitTypeError(f'Only bags and rolls are iterable. Got: {iterable}')
+                    source = context(self.iterable)
+                    iterable = source.operate_on(elements.OverloadOnlyOperator.ITERATE)
+                    if iterable is NotImplemented:
+                        raise RollitTypeError(f'Only bags and rolls are iterable. Got: {source}')
                     for item in iterable:
                         scope[self.item_name] = item
-                        with _SupressOn(self.name, elements.RestartLocationSpecifier.AT, context):
+                        with _SupressOn(self.name, elements.RestartLocationSpecifier.AT):
                             for stmt in self.do:
                                 context(stmt)
                     return
 
 
 @elements.UntilDo.evaluator
-def _(self, context):
+def _(self):
 
     def _before():
         if context(self.until):
@@ -328,6 +326,14 @@ def _(self, context):
                     return
 
 
-@elements.Reference.reducer
-def _(self, context):
-    return context.reduce(context(self))
+@elements.SpecialReference.evaluator
+def _(self):
+    if self.name == 'NONE':
+        return None
+    return context[self.value]
+
+
+@elements.SpecialAccessor.evaluator
+@elements.SpecialEntry.evaluator
+def _(self):
+    return context[self]

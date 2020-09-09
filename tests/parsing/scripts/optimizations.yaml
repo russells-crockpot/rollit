@@ -13,7 +13,9 @@ tests:
     result:
       _class: BinaryOp
       left: 1
-      op: '=='
+      op:
+        _class: TwoSidedOperator
+        value: EQUALS
       right:
         _class: Reference
         value: 'a'

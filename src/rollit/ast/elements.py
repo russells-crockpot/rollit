@@ -76,13 +76,6 @@ class OneSidedOperator(Operator):
     """
     _ignore_ = ('python_name',)
     python_name = None
-
-    EQUALS = ('==', 'equals')
-    NOT_EQUALS = ('!=', 'not_equals')
-    GREATER_THAN_EQUALS = ('<=', 'greater_than_equals')
-    LESS_THAN_EQUALS = ('>=', 'less_than_equals')
-    LESS_THAN = ('<', 'less_than')
-    GREATER_THAN = ('>', 'greater_than')
     HAS = ('has', 'has')
 
     def __new__(cls, value, python_name):
@@ -110,6 +103,12 @@ class TwoSidedOperator(Operator):
     ISA = ('isa', 'l_isa', 'r_isa')
     EXPAND = ('@', 'l_expand', 'r_expand')
     AMPERSAND = ('&', 'l_ampersand', 'r_ampersand')
+    EQUALS = ('==', 'r_equals', 'l_equals')
+    NOT_EQUALS = ('!=', 'r_not_equals', 'l_not_equals')
+    GREATER_THAN_EQUALS = ('>=', 'r_greater_than_equals', 'l_greater_than_equals')
+    LESS_THAN_EQUALS = ('<=', 'r_less_than_equals', 'l_less_than_equals')
+    LESS_THAN = ('<', 'r_less_than', 'l_less_than')
+    GREATER_THAN = ('>', 'r_greater_than', 'l_greater_than')
 
     def __new__(cls, value, left_python_name, right_python_name):
         self = object.__new__(cls)
@@ -147,10 +146,6 @@ class SpecialAccessor(ModelEnumElement):
     EVERY = '*'
     PARENT = '^'
 
-    # pylint: disable=no-member, missing-function-docstring
-    def evaluate(self, context):
-        return context[self]
-
 
 class SpecialEntry(ModelEnumElement):
     """
@@ -161,10 +156,6 @@ class SpecialEntry(ModelEnumElement):
     CLEAR = 'clear'
     CREATE = ':'
     DESTROY = '!'
-
-    # pylint: disable=no-member, missing-function-docstring
-    def evaluate(self, context):
-        return context[self]
 
 
 class SpecialReference(ModelEnumElement):
@@ -180,18 +171,7 @@ class SpecialReference(ModelEnumElement):
 
     # pylint: disable=no-member
     def __nonzero__(self):
-        return self._name_ != 'NONE'
-
-    # pylint: disable=no-member, missing-function-docstring
-    def evaluate(self, context):
-        if self._name_ == 'NONE':
-            return None
-        return context[self._value_]
-
-    # pylint: disable=no-member, missing-function-docstring
-    @property
-    def value(self):
-        return self._value_
+        return self != SpecialReference.NONE
 
 
 class RestartLocationSpecifier(ModelEnumElement):
@@ -262,6 +242,13 @@ class OperationSide(enum.Enum):
     NA = enum.auto()
     LEFT = enum.auto()
     RIGHT = enum.auto()
+
+    def __invert__(self):
+        if self is OperationSide.LEFT:
+            return OperationSide.RIGHT
+        if self is OperationSide.RIGHT:
+            return OperationSide.LEFT
+        return OperationSide.NA
 
 
 # Loops

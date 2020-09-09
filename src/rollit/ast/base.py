@@ -47,18 +47,12 @@ CodeInfo = namedtuple('CodeInfo', ('text', 'start_pos', 'end_pos', 'lineno'))
 class ModelElementMeta(ABCMeta):
     """
     """
-    _preevaluator = _evaluator = _reducer = None
+    _preevaluator = _evaluator = None
 
     def evaluator(cls, func):
         """
         """
         cls._evaluator = func
-        return func
-
-    def reducer(cls, func):
-        """
-        """
-        cls._reducer = func
         return func
 
     def preevaluator(cls, func):
@@ -94,17 +88,11 @@ class ModelElement(namedtuple('_ModelElementBase', ('codeinfo',)), metaclass=Mod
             return cls._preevaluator(value)
         return DeferEvaluation
 
-    def reduce(self, context):
+    def evaluate(self):
         """
         """
         # pylint: disable=no-member
-        return self._reducer(context)
-
-    def evaluate(self, context):
-        """
-        """
-        # pylint: disable=no-member
-        return self._evaluator(context)
+        return self._evaluator()
 
     if int(os.environ.get('TESTING_ROLLIT', 0)):
 
@@ -133,18 +121,38 @@ class ModelElement(namedtuple('_ModelElementBase', ('codeinfo',)), metaclass=Mod
             return rval
 
 
-class ModelEnumElement(enum.Enum):
+class _ModelEnumElementMeta(enum.EnumMeta):
+    _preevaluator = _evaluator = None
+
+    def evaluator(cls, func):
+        """
+        """
+        cls._evaluator = func
+        return func
+
+    def preevaluator(cls, func):
+        """
+        """
+        cls._preevaluator = func
+        return func
+
+
+# pylint: disable=missing-function-docstring
+class ModelEnumElement(enum.Enum, metaclass=_ModelEnumElementMeta):
     """
     """
 
-    # pylint: disable=missing-function-docstring
     def _to_test_dict(self):
         # pylint: disable=no-member
-        return {'_class': type(self).__name__, 'value': self._name_}
+        return {'_class': type(self).__name__, 'value': self.name}
 
     @classmethod
     def preevaluate(cls, value):
         return DeferEvaluation
+
+    def evaluate(self):
+        # pylint: disable=no-member
+        return self._evaluator()
 
 
 ModelElement.register(ModelEnumElement)

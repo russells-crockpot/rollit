@@ -62,15 +62,15 @@ two_sided_op    <- '*'                  %two_sided_operator
                  / 'and'                %two_sided_operator
                  / 'isa'                %two_sided_operator
                  / '@'                  %two_sided_operator
+                 / '=='                 %two_sided_operator
+                 / '!='                 %two_sided_operator
+                 / '<='                 %two_sided_operator
+                 / '>='                 %two_sided_operator
+                 / '<'                  %two_sided_operator
+                 / '>'                  %two_sided_operator
                  / '&'                  %two_sided_operator
 one_sided_op    <- 'has'                %one_sided_operator
                  / '#'                  %overload_only_operator
-                 / '=='                 %one_sided_operator
-                 / '!='                 %one_sided_operator
-                 / '<='                 %one_sided_operator
-                 / '>='                 %one_sided_operator
-                 / '<'                  %one_sided_operator
-                 / '>'                  %one_sided_operator
                  / '0'                  %overload_only_operator
                  / '{' _ '}'            %overload_only_operator
                  / 'for' _ 'every'      %overload_only_operator
@@ -109,12 +109,12 @@ add_op          <- '+'                          %two_sided_operator
                  / '-'                          %two_sided_operator
 anor_op         <- 'or'                         %two_sided_operator
                  / 'and' !(_ 'always')          %two_sided_operator
-comp_op         <- '=='                         %one_sided_operator
-                 / '!='                         %one_sided_operator
-                 / '<='                         %one_sided_operator
-                 / '>='                         %one_sided_operator
-                 / '<'                          %one_sided_operator
-                 / '>'                          %one_sided_operator
+comp_op         <- '=='                         %two_sided_operator
+                 / '!='                         %two_sided_operator
+                 / '<='                         %two_sided_operator
+                 / '>='                         %two_sided_operator
+                 / '<'                          %two_sided_operator
+                 / '>'                          %two_sided_operator
                  / 'has' !(_ 'do')              %one_sided_operator
                  / 'isa'                        %two_sided_operator
 assign_op       <- '+='                         %text

@@ -88,6 +88,8 @@ def dice(text, start, end, values, codeinfo):
 @add_codeinfo
 def binary_op(text, start, end, values, codeinfo):
     left, op, right = values
+    if not isinstance(op, elements.Operator):
+        op = util.get_operator(op)
     if isinstance(left, (int, float)) and isinstance(right, (int, float)) \
             and op.value in constants.OPERATOR_MAP:
         return constants.OPERATOR_MAP[op.value](left, right)
@@ -367,7 +369,10 @@ def modify_and_assign(text, start, end, values, codeinfo):
 def assignment(text, start, end, values, codeinfo):
     target, op, value = values
     if len(op) > 1:
-        value = elements.BinaryOp(left=target, op=op[:-1], right=value, codeinfo=codeinfo)
+        value = elements.BinaryOp(left=target,
+                                  op=util.get_operator(op[:-1]),
+                                  right=value,
+                                  codeinfo=codeinfo)
     if target == value:
         return None
     return elements.Assignment(target=target, value=value, codeinfo=codeinfo)

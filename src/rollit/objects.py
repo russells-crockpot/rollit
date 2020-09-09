@@ -1,14 +1,16 @@
 """Internal representations of rollit objects.
 """
+import os
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
 
 from .ast import elements, ModelElement, ModelEnumElement, constants
 from .exceptions import RollitTypeError, InvalidNameError
+from .runtime import context
 from .util import is_valid_iterable
 
-__all__ = [
+__all__ = (
     'RollitNonErrorException',
     'LeaveException',
     'RestartException',
@@ -21,7 +23,7 @@ __all__ = [
     'RollitBasedModifier',
     'NoSubject',
     'NoValue',
-]
+)
 
 
 def __create_no_value():
@@ -207,7 +209,7 @@ class InternalObject(metaclass=ABCMeta):
             return getattr(self._op_impls, name)
         raise AttributeError(name)
 
-    def operate_on(self, context, operator, side=None, other=None):
+    def operate_on(self, operator, side=None, other=None):
         """
         """
         op_impl = self._op_impls.get_impl(operator, side=side)
@@ -216,17 +218,24 @@ class InternalObject(metaclass=ABCMeta):
             args = (other,)
         if isinstance(op_impl, Modifier):
             with context.use_subject(self):
-                op_impl.call(*args, context=context)
+                op_impl.call(*args)
                 return context.subject
         elif callable(op_impl):
-            return op_impl(self, *args, context)
+            return op_impl(self, *args)
         return op_impl
+
+    if int(os.environ.get('TESTING_ROLLIT', 0)):
+
+        @abstractmethod
+        def _to_eval_test_repr(self):
+            pass
 
 
 class Dice(InternalObject):
     """
     """
     __slots__ = ('num_dice', 'sides')
+    default_ops_impl = OperatorImplementations()
 
     def __init__(self, num_dice, sides, *args, **kwargs):
         super().__init__()
@@ -250,12 +259,6 @@ class Dice(InternalObject):
         else:
             raise RollitTypeError()
 
-    def reduce(self, context):
-        """
-        """
-        num_dice = context(self.num_dice)
-        return Roll([context.roll(context(self.sides)) for _ in range(num_dice)])
-
     def __repr__(self):
         return str(self)
 
@@ -267,6 +270,30 @@ class Dice(InternalObject):
         if isinstance(sides, ModelElement):
             sides = f'({sides.codeinfo.text})'
         return f'{num_dice}d{sides}'
+
+    def operate_on(self, operator, side=None, other=None):
+        op_impl = super().operate_on(operator, side=side, other=other)
+        if op_impl is NotImplemented and side:
+            # pylint: disable=too-many-function-args
+            value = context(elements.Reduce(self, codeinfo=None))
+            if side == elements.OperationSide.LEFT:
+                kwargs = {'left': value, 'right': other, 'op': operator}
+            else:
+                kwargs = {'left': other, 'right': value, 'op': operator}
+            # pylint: disable=unexpected-keyword-arg
+            return elements.BinaryOp(**kwargs, codeinfo=None)
+        return op_impl
+
+    if int(os.environ.get('TESTING_ROLLIT', 0)):
+
+        def _to_eval_test_repr(self):
+            return (self.num_dice, self.sides)
+
+
+@Dice.default_ops_impl.add_impl(elements.OverloadOnlyOperator.REDUCE)
+def _(obj):
+    num_dice = context(obj.num_dice)
+    return Roll([context.roll(context(obj.sides)) for _ in range(num_dice)])
 
 
 class Roll(InternalObject):
@@ -280,7 +307,8 @@ class Roll(InternalObject):
         self._items = list(results)
         self._value = None
 
-    def get_total(self, context):
+    @property
+    def total(self):
         """
         """
         if not self._items:
@@ -297,17 +325,21 @@ class Roll(InternalObject):
                 ))
         return running_total
 
-    def get_value(self, context):
+    @property
+    def value(self):
         """
         """
         if self._value is None:
-            return self.get_total(context)
+            return self.total
         return context(self._value)
 
-    def __setattr__(self, name, value):
-        if name == 'value':
-            name = '_value'
-        super().__setattr__(name, value)
+    @value.setter
+    def value(self, value):
+        self._value = value
+
+    @value.deleter
+    def value(self):
+        self._value = None
 
     def __getitem__(self, key):
         if key == elements.SpecialAccessor.LENGTH:
@@ -364,54 +396,69 @@ class Roll(InternalObject):
     def __str__(self):
         return f'[{", ".join(str(r) for r in self._items)}]'
 
+    def __repr__(self):
+        return str(self)
+
+    def __iter__(self):
+        return iter(self._items)
+
     def map_to(self, *args):
         """
         """
         raise NotImplementedError()
 
-    def operate_on(self, context, operator, side=None, other=None):
-        op_impl = super().operate_on(context, operator, side=side, other=other)
+    def operate_on(self, operator, side=None, other=None):
+        op_impl = super().operate_on(operator, side=side, other=other)
         if op_impl is NotImplemented:
             if isinstance(other, Roll) and operator not in (
                     elements.TwoSidedOperator.AMPERSAND,
                     elements.OneSidedOperator.HAS,
             ):
-                other = other.get_value(context)
-            value = self.get_value(context)
-            if value is self:
-                return NotImplemented
-            if isinstance(value, InternalObject):
-                return value.operate_on(context, operator, side=side, other=other)
+                other = other.value
+            if isinstance(self.value, InternalObject):
+                return self.value.operate_on(operator, side=side, other=other)
             if operator.value in constants.OPERATOR_MAP:
                 if side == elements.OperationSide.LEFT:
-                    return constants.OPERATOR_MAP[operator.value](value, other)
-                return constants.OPERATOR_MAP[operator.value](other, value)
+                    return constants.OPERATOR_MAP[operator.value](self.value, other)
+                return constants.OPERATOR_MAP[operator.value](other, self.value)
         return op_impl
 
+    if int(os.environ.get('TESTING_ROLLIT', 0)):
 
+        def _to_eval_test_repr(self):
+            return self._items
+
+
+#TODO
 @Roll.default_ops_impl.add_impl(elements.OneSidedOperator.HAS)
-def _(obj, context, other):
+def _(obj, other):
     return other in obj
 
 
+@Roll.default_ops_impl.add_impl(elements.OverloadOnlyOperator.ITERATE)
+def _(obj):
+    return iter(obj)
+
+
 @Roll.default_ops_impl.add_impl(elements.OverloadOnlyOperator.LENGTH)
-def _(obj, context):
+def _(obj):
     return len(obj)
 
 
 @Roll.default_ops_impl.add_impl(elements.OverloadOnlyOperator.REDUCE)
 # pylint: disable=protected-access
-def _(obj, context):
+def _(obj):
     value_reduced = False
     new_values = []
     for result in obj._items:
         if not isinstance(result, (int, float, str)):
-            new_result = context.reduce(result)
+            # pylint: disable=too-many-function-args
+            new_result = context(elements.Reduce(result, codeinfo=None))
             value_reduced = new_result is not result
             result = new_result
         new_values.append(result)
     if not value_reduced:
-        return obj.get_value(context)
+        return obj.value
     roll = Roll(new_values)
     roll._value = obj._value
     return roll
@@ -421,12 +468,11 @@ def _(obj, context):
 class BagSpecialEntries:
     """
     """
-    __slots__ = ('_owner', '_context', 'parent', 'access', 'set', 'clear', 'create', 'destroy')
+    __slots__ = ('_owner', 'parent', 'access', 'set', 'clear', 'create', 'destroy')
 
-    def __init__(self, owner, context):
+    def __init__(self, owner):
         super().__init__()
         self._owner = owner
-        self._context = context
         self.parent = None
         self.access = None
         self.set = None
@@ -441,7 +487,7 @@ class BagSpecialEntries:
         return self._owner
 
     def _execute(self, entry_name, bag, *args, from_parent=False):
-        with self._context.use_subject(bag):
+        with context.use_subject(bag):
             if from_parent:
                 if self.parent:
                     entry = getattr(self.parent._special_entries, entry_name)
@@ -450,8 +496,8 @@ class BagSpecialEntries:
             else:
                 entry = getattr(self, entry_name)
             if entry:
-                entry.call(*args, context=self._context)
-                return self._context.subject
+                entry.call(*args)
+                return context.subject
             if self.parent:
                 method = getattr(self.parent._special_entries, f'on_{entry_name}')
                 return method(*args, bag=bag)
@@ -528,12 +574,11 @@ class Bag(InternalObject):
     """
     """
     default_ops_impl = OperatorImplementations()
-    __slots__ = ('_entries', '_context', '_special_entries')
+    __slots__ = ('_entries', '_special_entries')
 
-    def __init__(self, context):
+    def __init__(self):
         super().__init__()
-        self._context = context
-        self._special_entries = BagSpecialEntries(self, self._context)
+        self._special_entries = BagSpecialEntries(self)
         self._entries = {}
 
     def keys(self):
@@ -634,24 +679,29 @@ class Bag(InternalObject):
     def __bool__(self):
         return True
 
+    if int(os.environ.get('TESTING_ROLLIT', 0)):
+
+        def _to_eval_test_repr(self):
+            return self._entries
+
 
 class Modifier(metaclass=ABCMeta):
     """
     """
     __slots__ = ()
 
-    def call(self, *args, context):
+    def call(self, *args):
         """
         """
         scope = context.scope
         with context.new_scope(scope, isolate=True) as scope:
             context.scope.error = scope.error
             context.scope.subject = scope.subject
-            self.modify(*args, context=context)
+            self.modify(*args)
             scope.subject = context.scope.subject
 
     @abstractmethod
-    def modify(self, *args, context):
+    def modify(self, *args):
         """
         """
 
@@ -666,6 +716,11 @@ class Modifier(metaclass=ABCMeta):
 
     def __str__(self):
         return self.display_string
+
+    if int(os.environ.get('TESTING_ROLLIT', 0)):
+
+        def _to_eval_test_repr(self):
+            return str(self)
 
 
 InternalObject.register(Modifier)
@@ -697,7 +752,7 @@ class RollitBasedModifier(
                                body=body,
                                scope=scope)
 
-    def modify(self, *args, context):
+    def modify(self, *args):
         if args is not None:
             context.scope.load(dict(zip(self.parameters, args)))
         context.scope.load(self.scope)

@@ -94,7 +94,9 @@ tests:
       definition:
       - _class: BinaryOp
         left: 1
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right:
           _class: Reference
           value: a
@@ -110,7 +112,9 @@ tests:
         left:
           _class: SpecialReference
           value: SUBJECT
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right: 2
   - script: 'name<-param1, param2: param1 + param2'
     result:
@@ -131,7 +135,9 @@ tests:
           left:
             _class: Reference
             value: 'param1'
-          op: '+'
+          op:
+            _class: TwoSidedOperator
+            value: ADD
           right:
             _class: Reference
             value: 'param2'
@@ -149,7 +155,9 @@ tests:
         left:
           _class: Reference
           value: 'param1'
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right:
           _class: Reference
           value: 'param2'
@@ -191,7 +199,9 @@ tests:
         left:
           _class: Reference
           value: 'param1'
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right:
           _class: Reference
           value: 'param2'
@@ -330,7 +340,9 @@ tests:
             number_of_dice: 4
             sides: 5
             _class: DiceNode
-          op: '-'
+          op:
+            _class: TwoSidedOperator
+            value: SUBTRACT
           right: 6
           _class: BinaryOp
         - 7

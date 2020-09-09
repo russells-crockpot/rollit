@@ -59,7 +59,9 @@ tests:
     result:
       _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: Reference
         value: a
@@ -69,7 +71,9 @@ tests:
       left:
         _class: Reference
         value: a
-      op: '-'
+      op:
+        _class: TwoSidedOperator
+        value: SUBTRACT
       right: 1
   - script: 'a - -1'
     result:
@@ -77,7 +81,9 @@ tests:
       left:
         _class: Reference
         value: a
-      op: '-'
+      op:
+        _class: TwoSidedOperator
+        value: SUBTRACT
       right: -1
   - script: 'a * 3'
     result:
@@ -85,13 +91,17 @@ tests:
       left:
         _class: Reference
         value: a
-      op: '*'
+      op:
+        _class: TwoSidedOperator
+        value: MULTIPLY
       right: 3
   - script: '3 % a'
     result:
       _class: BinaryOp
       left: 3
-      op: '%'
+      op:
+        _class: TwoSidedOperator
+        value: MODULO
       right:
         _class: Reference
         value: a
@@ -101,13 +111,17 @@ tests:
       left:
         _class: Reference
         value: a
-      op: '/'
+      op:
+        _class: TwoSidedOperator
+        value: FLOORDIV
       right: 1
   - script: '4 %/ a'
     result:
       _class: BinaryOp
       left: 4
-      op: '%/'
+      op:
+        _class: TwoSidedOperator
+        value: TRUEDIV
       right:
         _class: Reference
         value: a
@@ -120,13 +134,17 @@ tests:
     result:
       _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: BinaryOp
         left:
           _class: Reference
           value: a
-        op: '*'
+        op:
+          _class: TwoSidedOperator
+          value: MULTIPLY
         right: 3
   - script: '4 * b + 6'
     result:
@@ -134,11 +152,15 @@ tests:
       left:
         _class: BinaryOp
         left: 4
-        op: '*'
+        op:
+          _class: TwoSidedOperator
+          value: MULTIPLY
         right:
           _class: Reference
           value: b
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right: 6
 
 - name: dice
@@ -154,7 +176,9 @@ tests:
     result:
       _class: BinaryOp
       left: 1
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right:
         _class: DiceNode
         number_of_dice: 2
@@ -166,7 +190,9 @@ tests:
         _class: DiceNode
         number_of_dice: 2
         sides: 3
-      op: '*'
+      op:
+        _class: TwoSidedOperator
+        value: MULTIPLY
       right: 4
   - script: '(1+a)d3'
     result:
@@ -174,7 +200,9 @@ tests:
       number_of_dice:
         _class: BinaryOp
         left: 1
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right:
           _class: Reference
           value: a
@@ -188,7 +216,9 @@ tests:
         left:
           _class: Reference
           value: a
-        op: '*'
+        op:
+          _class: TwoSidedOperator
+          value: MULTIPLY
         right: 3
   - script: '(1d6)d4'
     result:
@@ -244,7 +274,9 @@ tests:
           _class: DiceNode
           number_of_dice: 1
           sides: 6
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right: 2
   - script: '{1d6} +2'
     result:
@@ -255,7 +287,9 @@ tests:
           _class: DiceNode
           number_of_dice: 1
           sides: 6
-      op: '+'
+      op:
+        _class: TwoSidedOperator
+        value: ADD
       right: 2
   - script: '{test}.attr'
     result:
@@ -337,7 +371,9 @@ tests:
       value:
         _class: BinaryOp
         left: 1
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right:
           _class: Reference
           value: a
@@ -349,11 +385,15 @@ tests:
         left:
           _class: BinaryOp
           left: 3
-          op: '*'
+          op:
+            _class: TwoSidedOperator
+            value: MULTIPLY
           right:
             _class: Reference
             value: a
-        op: '-'
+        op:
+          _class: TwoSidedOperator
+          value: SUBTRACT
         right: 4
   - script: '{3 * (a - 4)}'
     result:
@@ -361,13 +401,17 @@ tests:
       value:
         _class: BinaryOp
         left: 3
-        op: '*'
+        op:
+          _class: TwoSidedOperator
+          value: MULTIPLY
         right:
           _class: BinaryOp
           left:
             _class: Reference
             value: a
-          op: '-'
+          op:
+            _class: TwoSidedOperator
+            value: SUBTRACT
           right: 4
   - script: '{3 * {a - 4}}'
     result:
@@ -375,7 +419,9 @@ tests:
       value:
         _class: BinaryOp
         left: 3
-        op: '*'
+        op:
+          _class: TwoSidedOperator
+          value: MULTIPLY
         right:
           _class: Reduce
           value:
@@ -383,7 +429,9 @@ tests:
             left:
               _class: Reference
               value: a
-            op: '-'
+            op:
+              _class: TwoSidedOperator
+              value: SUBTRACT
             right: 4
 
 - name: enlarge

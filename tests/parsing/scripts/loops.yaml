@@ -65,7 +65,9 @@ tests:
       until:
         _class: BinaryOp
         left: 1
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right:
           _class: Reference
           value: g
@@ -81,7 +83,9 @@ tests:
         left:
           _class: Reference
           value: g
-        op: '>'
+        op:
+          _class: TwoSidedOperator
+          value: GREATER_THAN
         right: 3
       otherwise: null
   - script: 'until 1 + g do s >= 4'
@@ -91,7 +95,9 @@ tests:
       until:
         _class: BinaryOp
         left: 1
-        op: '+'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
         right:
           _class: Reference
           value: g
@@ -100,7 +106,9 @@ tests:
         left:
           _class: Reference
           value: s
-        op: '>='
+        op:
+          _class: TwoSidedOperator
+          value: GREATER_THAN_EQUALS
         right: 4
       otherwise: null
   - script: 'until test >=  5 do 1d6'
@@ -112,7 +120,9 @@ tests:
         left:
           _class: Reference
           value: 'test'
-        op: '>='
+        op:
+          _class: TwoSidedOperator
+          value: GREATER_THAN_EQUALS
         right: 5
       do:
         _class: DiceNode
@@ -128,7 +138,9 @@ tests:
         left:
           _class: Reference
           value: 'test'
-        op: '>='
+        op:
+          _class: TwoSidedOperator
+          value: GREATER_THAN_EQUALS
         right: 5
       do:
         _class: Assignment
@@ -140,7 +152,9 @@ tests:
           left:
             _class: Reference
             value: 'test'
-          op: '&'
+          op:
+            _class: TwoSidedOperator
+            value: AMPERSAND
           right:
             _class: DiceNode
             number_of_dice: 1
@@ -155,7 +169,9 @@ tests:
         left:
           _class: Reference
           value: 'test'
-        op: '>'
+        op:
+          _class: TwoSidedOperator
+          value: GREATER_THAN
         right: 25
       do:
         _class: Assignment
@@ -167,7 +183,9 @@ tests:
           left:
             _class: Reference
             value: 'test'
-          op: '&'
+          op:
+            _class: TwoSidedOperator
+            value: AMPERSAND
           right:
             _class: DiceNode
             number_of_dice: 1
@@ -182,7 +200,9 @@ tests:
         left:
           _class: Reference
           value: 'test'
-        op: '>'
+        op:
+          _class: TwoSidedOperator
+          value: GREATER_THAN
         right: 25
       do:
         _class: Assignment
@@ -194,7 +214,9 @@ tests:
           left:
             _class: Reference
             value: 'test'
-          op: '&'
+          op:
+            _class: TwoSidedOperator
+            value: AMPERSAND
           right:
             _class: DiceNode
             number_of_dice: 1
@@ -217,7 +239,9 @@ tests:
         left:
           _class: Reference
           value: 'test'
-        op: '>'
+        op:
+          _class: TwoSidedOperator
+          value: GREATER_THAN
         right: 25
       do:
         _class: Assignment
@@ -229,7 +253,9 @@ tests:
           left:
             _class: Reference
             value: 'test'
-          op: '&'
+          op:
+            _class: TwoSidedOperator
+            value: AMPERSAND
           right:
             _class: DiceNode
             number_of_dice: 1
