@@ -1,4 +1,5 @@
-.. _RollIt Language Reference | Overview:
+.. _Rollit Language Reference | Overview:
 
 Overview
 ========
+

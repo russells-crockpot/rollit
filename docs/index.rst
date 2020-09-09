@@ -1,7 +1,7 @@
-.. _RollIt documentation:
+.. _Rollit documentation:
 
 ###########################
-RollIt documentation!
+Rollit documentation!
 ###########################
 
 .. toctree::
@@ -13,7 +13,7 @@ RollIt documentation!
    api-reference/rollit/modules.rst
 
 
-.. _RollIt documentation | Indices and Tables:
+.. _Rollit documentation | Indices and Tables:
 
 Indices and Tables
 ==================

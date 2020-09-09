@@ -1,7 +1,7 @@
-.. _RollIt Language Reference:
+.. _Rollit Language Reference:
 
 *************************
-RollIt Language Reference
+Rollit Language Reference
 *************************
 
 .. toctree::
