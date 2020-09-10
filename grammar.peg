@@ -25,9 +25,9 @@ int     <- '-'? [0-9]+              %int_
 number  <- float / int
 
 string_escape   <- "\\" [\\runftvb']
-string          <- "'" (string_escape / [^'])* "'"      %string
+string          <- "'" (string_escape / [^'])* "'"          %string
 
-basic_name  <- !(keyword (_/eos)) [a-zA-Z_] [a-zA-Z_0-9]*   %reference
+basic_name  <- !(keyword (_/eos)) [a-zA-Z_] [a-zA-Z_0-9\-]* %reference
 name        <- '$'                                          %special_ref
              / '?'                                          %special_ref
              / '~'                                          %special_ref
@@ -57,7 +57,7 @@ two_sided_op    <- '*'                  %two_sided_operator
                  / '/'                  %two_sided_operator
                  / '%'                  %two_sided_operator
                  / '+'                  %two_sided_operator
-                 / '-'                  %two_sided_operator
+                 / '-' ![a-z_A-Z]       %two_sided_operator
                  / 'or'                 %two_sided_operator
                  / 'and'                %two_sided_operator
                  / 'isa'                %two_sided_operator
