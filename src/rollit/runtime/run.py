@@ -6,7 +6,9 @@ import pathlib
 import re
 from collections import namedtuple
 
-from .. import grammar, rli
+from .. import grammar, objects
+from ..rli.blueprint import LibraryBlueprints
+from ..rli.deferred import DeferredPythonBasedLibrary, ObjectPlaceholder
 from ..ast import actions, ModelElement
 from ..ast.util import flatten_tuple
 from ..exceptions import LibraryNotFoundError
@@ -32,10 +34,15 @@ class LibraryLoader:
         self.paths = paths
         self._runner = runner
         self.libraries = {}
-        self._add_from_lai_lib(libraries.rootlib, libraries.__file__)
+        self._add_from_rli_lib(libraries.RootLib, libraries.__file__)
 
-    def _add_from_lai_lib(self, lib, path):
-        info = self.LibraryInfo(lib.name, path, 'python', lib.to_placeholder(), lib.isolate)
+    def _add_from_rli_lib(self, lib, path):
+        if inspect.isclass(lib) and issubclass(lib, LibraryBlueprints):
+            lib = lib()
+        if isinstance(lib, DeferredPythonBasedLibrary):
+            info = self.LibraryInfo(lib.name, path, 'python', lib.to_placeholder(), lib.isolate)
+        else:
+            info = self.LibraryInfo(lib.name, path, 'python', lib, lib.isolate)
         self.libraries[info.name] = info
 
     @property
@@ -54,9 +61,11 @@ class LibraryLoader:
         self.load_library(library_name)
         info = self.libraries[library_name]
         if info.type == 'python':
-            if isinstance(info.content, rli.ObjectPlaceholder):
+            if isinstance(info.content, ObjectPlaceholder):
                 return info.content.resolve()
-            raise TypeError(f'Expected and ObjectPlaceholder but got {type(info.content)}')
+            if isinstance(info.content, objects.InternalObject):
+                return info.content
+            raise TypeError(type(info.content).__qualname__)
         if info.type == 'rollit':
             with self._runner.brief_context() as ctx:
                 self._runner.run(info.content)
@@ -70,7 +79,7 @@ class LibraryLoader:
         if force_reload or library_name not in self.libraries:
             if library_name not in libraries.BUILTIN_LIBRARIES:
                 raise LibraryNotFoundError(library_name)
-            self._add_from_lai_lib(libraries.BUILTIN_LIBRARIES[library_name], libraries.__file__)
+            self._add_from_rli_lib(libraries.BUILTIN_LIBRARIES[library_name], libraries.__file__)
 
     def load_library(self, library_name, *, force_reload=False):
         """Loads a library so that it will be accessible.

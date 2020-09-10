@@ -1,25 +1,25 @@
-"""Items related to the Rollit Library Interface. And API used to create libraries for rollit in
-python.
+"""
 """
 import inspect
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
 
-from .ast import ModelElement
-from .ast.elements import SpecialEntry
-from .objects import Modifier, Roll, Dice, Bag, NoSubject
-from .runtime import context
-from .util import is_valid_iterable
+from .base import PythonBasedLibrary, PythonBasedModifier
+from ..ast import ModelElement
+from ..ast.elements import SpecialEntry, OperationSide
+from ..objects import Modifier, Roll, Dice, Bag
+from ..runtime import context
+from ..util import is_valid_iterable
 
 __all__ = [
     'ObjectPlaceholder',
     'BagPlaceholder',
-    'PythonBasedModifier',
-    'PythonBasedLibrary',
     'preloader',
     'postloader',
     'entry',
+    'DeferredBag',
+    'DeferredPythonBasedLibrary',
 ]
 
 
@@ -158,50 +158,21 @@ class BagPlaceholder(ObjectPlaceholder):
         return modifier
 
 
-class PythonBasedModifier(Modifier):
-    """
-    """
-    __slots__ = (
-        '_display_string',
-        'func',
-    )
-
-    def __init__(self, func):
-        self.func = func
-        self._display_string = f'[-built-in modifier: {self.func.__name__.lstrip("_")}-]'
-
-    def modify(self, *args):
-        val = self.func(*args, subject=context.scope.subject)
-        if val not in (None, NoSubject):
-            context.scope.subject = val
-
-    @property
-    def display_string(self):
-        return self._display_string
-
-    @display_string.setter
-    def display_string(self, value):
-        self._display_string = value
-
-
-class PythonBasedLibrary:
+class DeferredBag:
     """
     """
     _initialized = False
     name = None
-    """ """
     isolate = False
-    """If ``True``, then the library will be loaded in it's own context."""
     raw = True
     """ """
 
-    def __init__(self, name, entries=None, *, raw=True, isolate=False):
-        self.name = name
-        self.isolate = isolate
+    def __init__(self, entries=None, *, raw=True):
         self.raw = raw
         self._preloaders = []
         self._postloaders = []
         self._entries = {}
+        self._operator_overloads = {}
         if entries is None:
             entries = {}
         for key, value in entries.items():
@@ -310,6 +281,11 @@ class PythonBasedLibrary:
             postloaders=postloaders,
         )
 
+    def on_create(self, modifier):
+        """
+        """
+        self._entries[SpecialEntry.CREATE] = entry(modifier)
+
     def on_access(self, modifier):
         """
         """
@@ -329,6 +305,28 @@ class PythonBasedLibrary:
         """
         """
         self._entries[SpecialEntry.DESTROY] = entry(modifier)
+
+    def overload_operator(self, operator, side=OperationSide.NA):
+        """
+        """
+
+        def _decorator(func):
+            self._operator_overloads[(operator, side)] = func
+            return func
+
+        return _decorator
+
+
+class DeferredPythonBasedLibrary(DeferredBag, PythonBasedLibrary):
+    """
+    """
+    name = None
+    isolate = False
+
+    def __init__(self, name, entries=None, *, raw=True, isolate=False):
+        self.name = name
+        self.isolate = isolate
+        super().__init__(entries=entries, raw=raw)
 
 
 _VALID_ENTRY_TYPES = (int, float, str, Bag, Roll, Dice, ModelElement, Modifier, ObjectPlaceholder,

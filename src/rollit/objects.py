@@ -151,16 +151,7 @@ class OperatorImplementations:
     def __delattr__(self, name):
         setattr(self, name, NotImplemented)
 
-    def __delitem__(self, key):
-        setattr(self, self._convert_key(key), NotImplemented)
-
-    def __getitem__(self, key):
-        getattr(self, self._convert_key(key))
-
-    def __setitem__(self, key, value):
-        setattr(self, self._convert_key(key), value)
-
-    def get_impl(self, operator, side=None):
+    def get_impl(self, operator, side=elements.OperationSide.NA):
         """
         """
         if isinstance(operator, elements.TwoSidedOperator):
@@ -171,7 +162,7 @@ class OperatorImplementations:
             key = operator.python_name
         return getattr(self, key)
 
-    def add_impl(self, operator, side=None):
+    def add_impl(self, operator, side=elements.OperationSide.NA):
         """
         """
 
@@ -187,6 +178,17 @@ class OperatorImplementations:
 
         return _decorator
 
+    def set_impl(self, operator, side, impl):
+        """
+        """
+        if isinstance(operator, elements.TwoSidedOperator):
+            if not side:
+                raise ValueError()
+            key = getattr(operator, f'{side.name.lower()}_python_name')
+        else:
+            key = operator.python_name
+        setattr(self, key, impl)
+
 
 class InternalObject(metaclass=ABCMeta):
     """
@@ -199,13 +201,8 @@ class InternalObject(metaclass=ABCMeta):
     def __init__(self):
         self._op_impls = OperatorImplementations(copy_from=self.default_ops_impl)
 
-    def override_operator(self, key, override):
-        """
-        """
-        self._op_impls[key] = override
-
     def __getattr__(self, name):
-        if name in self._op_impls:
+        if name in self._op_impls.__slots__:
             return getattr(self._op_impls, name)
         raise AttributeError(name)
 
@@ -223,6 +220,11 @@ class InternalObject(metaclass=ABCMeta):
         elif callable(op_impl):
             return op_impl(self, *args)
         return op_impl
+
+    def override_operator(self, operator, side, impl):
+        """
+        """
+        self._op_impls.set_impl(operator, side, impl)
 
     if int(os.environ.get('TESTING_ROLLIT', 0)):
 
@@ -401,6 +403,11 @@ class Roll(InternalObject):
 
     def __iter__(self):
         return iter(self._items)
+
+    def append(self, obj):
+        """
+        """
+        self._items.append(obj)
 
     def map_to(self, *args):
         """

@@ -45,3 +45,24 @@ tests:
     - ['i = 3d6', null]
     - ['i => top(2) -> bottom', null]
     - ['i', [2]]
+
+- name: operator_overloading
+  categories:
+  - operator_overloading
+  tests:
+  - statements:
+    - ['a = {:}', null]
+    - ['a.<[+] = 1', null]
+    - ['a + 0', 1]
+    - ['a + 10', 1]
+    - ['a.[+]> = 2', null]
+    - ['0 + a', 2]
+    - ['10 + a', 2]
+  - statements:
+    - ['b = {:}', null]
+    - ['b.<[+] <- o: 5', null]
+    - ['b + 0', 5]
+    - ['b + 10', 5]
+    - ['b.[+]> <- o: 3', null]
+    - ['0 + b', 3]
+    - ['10 + b', 3]

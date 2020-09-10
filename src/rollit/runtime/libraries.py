@@ -2,25 +2,28 @@
 """Contains the python code for the standard library.
 """
 import math
-import os as os_
+import os
 import sys
 from contextlib import suppress
 from types import MappingProxyType
 
 from .base import context
-from .. import rli
+from ..rli import cbool, blueprint as bp
+from ..rli.deferred import BagPlaceholder
 from ..ast import elements
 from ..exceptions import RollitTypeError
-from ..objects import Roll, Dice, Bag
+from ..objects import Roll, Dice, Bag, OperatorImplementations
 
 __all__ = [
-    'rootlib',
-    'os',
-    'maths',
-    'bags',
-    'rolls',
-    'strings',
-    'loading',
+    'RootLib',
+    'RuntimeLib',
+    'BagsLib',
+    'OsLib',
+    'IoLib',
+    'MathsLib',
+    'RollsLib',
+    'StringsLib',
+    'LoadingLib',
     'BUILTIN_LIBRARIES',
 ]
 #########################################################
@@ -31,19 +34,23 @@ __all__ = [
 
 ############## rootlib ##############
 
-rootlib = rli.PythonBasedLibrary('~')
-""" """
 
-if True:
+class RootLib(bp.LibraryBlueprints, name='~'):
+    """
+    """
 
-    @rootlib.modifier('print')
+    @bp.modifier
     # pylint: disable=useless-return
-    def _(*args, subject):
+    def print(self, *args, subject):
+        """
+        """
         print(subject, *args)
         return None
 
-    @rootlib.modifier('top')
-    def _(*args, subject):
+    @bp.modifier
+    def top(self, *args, subject):
+        """
+        """
         if not args:
             num = 1
         else:
@@ -55,8 +62,10 @@ if True:
             raise RollitTypeError()
         return Roll(sorted(subject, reverse=True)[0:num])
 
-    @rootlib.modifier('bottom')
-    def _(*args, subject):
+    @bp.modifier
+    def bottom(self, *args, subject):
+        """
+        """
         if not args:
             num = 1
         else:
@@ -70,18 +79,22 @@ if True:
 
 
 ############## runtime ##############
-runtime = rli.PythonBasedLibrary('runtime')
-"""
-"""
 
-if True:
 
-    @runtime.modifier('loops')
-    def _(*args, subject):
+class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
+    """
+    """
+
+    @bp.modifier
+    def loops(self, *, subject):
+        """
+        """
         return Roll(context.scope.loops)
 
-    @runtime.modifier('scope_entries')
-    def _(*args, subject):
+    @bp.modifier
+    def scope_entries(self, *, subject):
+        """
+        """
         scopes = []
         scope = context.scope
         while scope.parent:
@@ -95,8 +108,10 @@ if True:
         bag._entries = entries
         return bag
 
-    @runtime.modifier('names_in_scope')
-    def _(*args, subject):
+    @bp.modifier
+    def names_in_scope(self, *, subject):
+        """
+        """
         names = set()
         scope = context.scope
         while scope.parent:
@@ -107,22 +122,102 @@ if True:
         names.sort()
         return names
 
-    @runtime.on_access
-    def _(name, lib):
+    @bp.modifier
+    def overloads(self, *, subject):
+        """
+        """
+        default = type(subject).default_ops_impl
+        if default is None:
+            default = OperatorImplementations()
+        current = subject._op_impls
+        bag = Bag()
+        bag.set_raw('left', Bag())
+        bag.set_raw('right', Bag())
+        bag.set_raw('other', Bag())
+        for op in elements.TwoSidedOperator:
+            rval = getattr(current, op.right_python_name)
+            if rval is not NotImplemented:
+                if rval is not getattr(default, op.right_python_name):
+                    bag['right'].raw_set(op.name.lower(), rval)
+            lval = getattr(current, op.left_python_name)
+            if lval is not NotImplemented:
+                if lval is not getattr(default, op.left_python_name):
+                    bag['left'].raw_set(op.name.lower(), lval)
+        for op in elements.OneSidedOperator:
+            val = getattr(current, op.python_name)
+            if val is not NotImplemented:
+                if val is not getattr(default, op.left_python_name):
+                    bag['other'].raw_set(op.name.lower(), val)
+        for op in elements.OneSidedOperator:
+            val = getattr(current, op.python_name)
+            if val is not NotImplemented:
+                if val is not getattr(default, op.left_python_name):
+                    bag['other'].raw_set(op.name.lower(), val)
+        return bag
+
+    @bp.modifier
+    def overloaded_ops(self, *args, subject):
+        """
+        """
+        default = type(subject).default_ops_impl
+        if default is None:
+            default = OperatorImplementations()
+        current = subject._op_impls
+        bag = Bag()
+        bag.set_raw('left', Bag())
+        bag.set_raw('right', Bag())
+        bag.set_raw('other', Bag())
+        for op in elements.TwoSidedOperator:
+            bag['left'].raw_set(
+                op.name.lower(),
+                cbool(
+                    getattr(current, op.left_python_name) is not getattr(
+                        default, op.left_python_name)))
+            bag['right'].raw_set(
+                op.name.lower(),
+                cbool(
+                    getattr(current, op.right_python_name) is not getattr(
+                        default, op.right_python_name)))
+        for op in elements.OneSidedOperator:
+            bag['other'].raw_set(
+                op.name.lower(),
+                cbool(getattr(current, op.python_name) is not getattr(default, op.python_name)))
+        for op in elements.OneSidedOperator:
+            bag['other'][op.name.lower()] = cbool(
+                getattr(current, op.python_name) is not getattr(default, op.python_name))
+        return bag
+
+    # pylint: disable=missing-function-docstring
+    def on_access(self, name, lib):
         if name == 'cwd':
-            return os_.getcwd()
+            return os.getcwd()
         return lib.raw_get(name)
 
 
 ############## os ##############
-os = rli.PythonBasedLibrary('os')
-"""
-"""
+_envvars = BagPlaceholder()
 
-if True:
 
-    @os.entry('name')
-    def _():
+@_envvars.on_access
+def _(name, subject):
+    with suppress(KeyError):
+        return os.environ[context(name)]
+    return None
+
+
+@_envvars.on_set
+def _(name, value, subject):
+    os.environ[context(name)] = str(context(value))
+
+
+class OsLib(bp.LibraryBlueprints, name='os'):
+    """
+    """
+
+    @bp.entry
+    def name_(self):
+        """
+        """
         if sys.platform.startswith('linux'):
             return 'linux'
         if sys.platform.startswith('win'):
@@ -133,58 +228,57 @@ if True:
             return 'macos'
         return sys.platform.rstrip('0123456789. -_')
 
-    os.envvars = rli.BagPlaceholder()
-
-    @os.envvars.on_access
-    def _(name, subject):
-        with suppress(KeyError):
-            return os_.environ[context(name)]
-        return None
-
-    @os.envvars.on_set
-    def _(name, value, subject):
-        os_.environ[context(name)] = str(context(value))
+    envvars = bp.entry(_envvars)
 
 
 ############## io ##############
-io = rli.PythonBasedLibrary('os')
-"""
-"""
-if True:
-    io.File = rli.BagPlaceholder()
+class IoFile(bp.BagBlueprints):
+    """
+    """
 
-    @io.File.modifier('create')
-    def _(filename, subject):
+    @bp.modifier
+    def create(self, filename, subject):
+        """
+        """
         bag = Bag()
         bag['name'] = filename
         bag[elements.SpecialEntry.PARENT] = subject
         return bag
 
-    @io.File.modifier('exists')
-    def _(*, subject):
-        return os_.path.exists(subject['name'])
+    @bp.modifier
+    def exists(self, *, subject):
+        """
+        """
+        return os.path.exists(subject['name'])
+
+
+class IoLib(bp.LibraryBlueprints, name='io'):
+    """
+    """
+    File = bp.entry(IoFile)
 
 
 ############## maths ##############
-maths = rli.PythonBasedLibrary('maths')
-"""Yes, it's called ``maths`` and not ``math``. No I'm not British, but I like the way maths sounds
-better (also, everyone uses ``math``; it's boring).
-"""
 
-if True:
-    maths.pi = math.pi
-    maths.e = math.e
-    maths.tau = math.tau
+
+class MathsLib(bp.LibraryBlueprints, name='maths'):
+    """Yes, it's called ``maths`` and not ``math``. No I'm not British, but I like the way maths
+    sounds better (also, everyone uses ``math``; it's boring).
+    """
+    pi = bp.entry(math.pi)
+    e = bp.entry(math.e)
+    tau = bp.entry(math.tau)
+
 
 ############## bags ##############
-bags = rli.PythonBasedLibrary('bags')
-"""
-"""
+class BagsLib(bp.LibraryBlueprints, name='bags'):
+    """
+    """
 
-if True:
-
-    @bags.modifier('flatten')
-    def _(*, subject):
+    @bp.modifier
+    def flatten(self, *, subject):
+        """
+        """
         # pylint: disable=redefined-outer-name
         bags = []
         current_bag = subject
@@ -199,54 +293,63 @@ if True:
 
 
 ############## rolls ##############
-rolls = rli.PythonBasedLibrary('rolls')
-"""
-"""
+class RollsLib(bp.LibraryBlueprints, name='rolls'):
+    """
+    """
+
 
 ############## strings ##############
-strings = rli.PythonBasedLibrary('strings')
-"""
-"""
-if True:
+class StringsLib(bp.LibraryBlueprints, name='strings'):
+    """
+    """
 
-    @strings.modifier('lower')
-    def _(*, subject):
+    @bp.modifier
+    def lower(self, *, subject):
+        """
+        """
         return subject.lower()
 
-    @strings.modifier('upper')
-    def _(*, subject):
+    @bp.modifier
+    def upper(self, *, subject):
+        """
+        """
         return subject.upper()
 
-    @strings.modifier('strip')
-    def _(*, subject):
+    @bp.modifier
+    def strip(self, *, subject):
+        """
+        """
         return subject.strip()
 
-    @strings.modifier('split')
-    def _(delim, times=None, *, subject):
+    @bp.modifier
+    def split(self, delim, times=None, *, subject):
+        """
+        """
         if times is None:
             return subject.split(delim)
         return subject.split(delim, times)
 
 
 ############## loading ##############
-loading = rli.PythonBasedLibrary('loading')
-"""
-"""
-if True:
+class LoadingLib(bp.LibraryBlueprints, name='loading'):
+    """
+    """
 
-    @loading.modifier('load_isolated')
-    def _(*, subject):
-        ...
+    @bp.modifier
+    def isolated(self, *, subject):
+        """
+        """
+        raise NotImplementedError()
 
 
 BUILTIN_LIBRARIES = MappingProxyType({
-    rootlib.name: rootlib,
-    runtime.name: runtime,
-    os.name: os,
-    io.name: io,
-    maths.name: maths,
-    bags.name: bags,
-    rolls.name: rolls,
-    strings.name: strings,
-    loading.name: loading,
+    RootLib.name: RootLib,
+    RuntimeLib.name: RuntimeLib,
+    OsLib.name: OsLib,
+    IoLib.name: IoLib,
+    MathsLib.name: MathsLib,
+    BagsLib.name: BagsLib,
+    RollsLib.name: RollsLib,
+    StringsLib.name: StringsLib,
+    LoadingLib.name: LoadingLib,
 })

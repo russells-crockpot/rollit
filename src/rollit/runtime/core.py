@@ -43,7 +43,7 @@ class RuntimeContext(metaclass=ABCMeta):
         """
         """
         if name not in self._libraries:
-            self._libraries[name] = self._runner.load_library(name, self)
+            self._libraries[name] = self._runner.load_library(name)
         return self._libraries[name]
 
     @property

@@ -243,6 +243,9 @@ class OperationSide(enum.Enum):
     LEFT = enum.auto()
     RIGHT = enum.auto()
 
+    def __bool__(self):
+        return self != OperationSide.NA
+
     def __invert__(self):
         if self is OperationSide.LEFT:
             return OperationSide.RIGHT

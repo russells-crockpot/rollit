@@ -54,6 +54,10 @@ def _(self):
     with cm:
         if isinstance(target, elements.RawAccessor):
             context.accessing.raw_set(context(target), context(self.value))
+        elif isinstance(target, elements.OverloadOperator):
+            if not isinstance(context.accessing, objects.InternalObject):
+                raise RollitTypeError(self)
+            context.accessing.override_operator(target.operator, target.side, context(self.value))
         elif isinstance(target, (elements.SpecialAccessor, elements.SpecialEntry)):
             context[target] = context(self.value)
         else:
