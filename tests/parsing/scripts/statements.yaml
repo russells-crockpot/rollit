@@ -7,7 +7,7 @@ tests:
   categories:
   - load
   tests:
-  - script: 'load test'
+  - script: 'load a'
     result:
       _class: Load
       to_load:
@@ -15,11 +15,11 @@ tests:
         value: ALL
       load_from:
         _class: Reference
-        value: 'test'
+        value: 'a'
       into:
         _class: Reference
-        value: 'test'
-  - script: 'load test, test2'
+        value: 'a'
+  - script: 'load b, z'
     result:
     - _class: Load
       to_load:
@@ -27,21 +27,21 @@ tests:
         value: ALL
       load_from:
         _class: Reference
-        value: 'test'
+        value: 'b'
       into:
         _class: Reference
-        value: 'test'
+        value: 'b'
     - _class: Load
       to_load:
         _class: SpecialReference
         value: ALL
       load_from:
         _class: Reference
-        value: 'test2'
+        value: 'z'
       into:
         _class: Reference
-        value: 'test2'
-  - script: 'load test into copy'
+        value: 'z'
+  - script: 'load c into x'
     result:
       _class: Load
       to_load:
@@ -49,11 +49,11 @@ tests:
         value: ALL
       load_from:
         _class: Reference
-        value: 'test'
+        value: 'c'
       into:
         _class: Reference
-        value: 'copy'
-  - script: 'load test, test_two into ~'
+        value: 'x'
+  - script: 'load d, z into ~'
     result:
     - _class: Load
       to_load:
@@ -61,7 +61,7 @@ tests:
         value: ALL
       load_from:
         _class: Reference
-        value: 'test'
+        value: 'd'
       into:
         _class: SpecialReference
         value: ROOT
@@ -71,11 +71,11 @@ tests:
         value: ALL
       load_from:
         _class: Reference
-        value: 'test_two'
+        value: 'z'
       into:
         _class: SpecialReference
         value: ROOT
-  - script: 'load * from test'
+  - script: 'load * from e'
     result:
       _class: Load
       to_load:
@@ -83,35 +83,35 @@ tests:
         value: ALL
       load_from:
         _class: Reference
-        value: 'test'
+        value: 'e'
       into:
         _class: SpecialReference
-        value: ROOT
-  - script: 'load test from bag'
+        value: LOCAL
+  - script: 'load f from z'
     result:
     - _class: Load
       to_load:
-        _class: Reference
-        value: 'test'
+      - _class: Reference
+        value: 'f'
       load_from:
         _class: Reference
-        value: 'bag'
+        value: 'z'
       into:
         _class: SpecialReference
-        value: ROOT
-  - script: 'load test1 from bag into other_bag'
+        value: LOCAL
+  - script: 'load g from y into z'
     result:
     - _class: Load
       to_load:
-        _class: Reference
-        value: 'test1'
+      - _class: Reference
+        value: 'g'
       load_from:
         _class: Reference
-        value: 'bag'
+        value: 'y'
       into:
         _class: Reference
-        value: 'other_bag'
-  - script: 'load bag into other_bag'
+        value: 'z'
+  - script: 'load h into z'
     result:
     - _class: Load
       to_load:
@@ -119,88 +119,64 @@ tests:
         value: ALL
       load_from:
         _class: Reference
-        value: 'bag'
+        value: 'h'
       into:
         _class: Reference
-        value: 'other_bag'
-  - script: 'load test, test2 from bag'
+        value: 'z'
+  - script: 'load i, m from z'
     result:
     - _class: Load
       to_load:
-        _class: Reference
-        value: 'test'
+      - _class: Reference
+        value: 'i'
+      - _class: Reference
+        value: 'm'
       load_from:
         _class: Reference
-        value: 'bag'
+        value: 'z'
       into:
         _class: SpecialReference
-        value: ROOT
-    - _class: Load
-      to_load:
-        _class: Reference
-        value: 'test2'
-      load_from:
-        _class: Reference
-        value: 'bag'
-      into:
-        _class: SpecialReference
-        value: ROOT
-  - script: 'load test from bag into other_bag'
-    result:
-      _class: Load
-      to_load:
-        _class: Reference
-        value: 'test'
-      load_from:
-        _class: Reference
-        value: 'bag'
-      into:
-        _class: Reference
-        value: 'other_bag'
-  - script: 'load test2, test3 from bag into ~'
+        value: LOCAL
+  - script: 'load j from m into z'
     result:
     - _class: Load
       to_load:
-        _class: Reference
-        value: 'test2'
+      - _class: Reference
+        value: 'j'
       load_from:
         _class: Reference
-        value: 'bag'
+        value: 'm'
       into:
-        _class: SpecialReference
-        value: ROOT
-    - _class: Load
-      to_load:
         _class: Reference
-        value: 'test3'
-      load_from:
-        _class: Reference
-        value: 'bag'
-      into:
-        _class: SpecialReference
-        value: ROOT
-  - script: 'load test4, test5 from bag into other_bag'
+        value: 'z'
+  - script: 'load k, m from z into ~'
     result:
     - _class: Load
       to_load:
-        _class: Reference
-        value: 'test4'
+      - _class: Reference
+        value: 'k'
+      - _class: Reference
+        value: 'm'
       load_from:
         _class: Reference
-        value: 'bag'
+        value: 'z'
       into:
-        _class: Reference
-        value: 'other_bag'
+        _class: SpecialReference
+        value: ROOT
+  - script: 'load l, m from y into z'
+    result:
     - _class: Load
       to_load:
-        _class: Reference
-        value: 'test5'
+      - _class: Reference
+        value: 'l'
+      - _class: Reference
+        value: 'm'
       load_from:
         _class: Reference
-        value: 'bag'
+        value: 'y'
       into:
         _class: Reference
-        value: 'other_bag'
+        value: 'z'
 
 - name: assignment
   categories:
@@ -555,6 +531,14 @@ tests:
   - attempt
   - error_handling
   tests:
+  - script: 'attempt a'
+    result:
+      _class: Attempt
+      attempt:
+        _class: Reference
+        value: 'a'
+      buts: []
+      always: null
   - script: 'attempt a1 but always b'
     result:
       _class: Attempt

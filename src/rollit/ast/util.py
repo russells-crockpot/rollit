@@ -3,7 +3,6 @@
 import re
 from contextlib import suppress
 
-from .base import CodeInfo
 from .elements import StringLiteral, BinaryOp, Negation, SpecialReference, OneSidedOperator, \
         TwoSidedOperator, OverloadOnlyOperator
 from ..util import is_valid_iterable, ensure_tuple
@@ -46,20 +45,10 @@ def negate(element, codeinfo=None, script=None):
     if isinstance(element, Negation):
         return element.value
     if isinstance(element, BinaryOp) and element.op == TwoSidedOperator.NOT_EQUALS:
-        start_pos = element.codeinfo.start_pos if not codeinfo else codeinfo.start_pos
-        lineno = element.codeinfo.lineno if not codeinfo else codeinfo.lineno
-        codeinfo_text = element.codeinfo.text
-        if script:
-            codeinfo_text = script[start_pos:element.codeinfo.end_pos]
         return BinaryOp(element.left,
                         TwoSidedOperator.EQUALS,
                         element.right,
-                        codeinfo=CodeInfo(
-                            text=codeinfo_text,
-                            start_pos=start_pos,
-                            end_pos=element.codeinfo.end_pos,
-                            lineno=lineno,
-                        ))
+                        codeinfo=element.codeinfo)
     return Negation(element, codeinfo=codeinfo)
 
 

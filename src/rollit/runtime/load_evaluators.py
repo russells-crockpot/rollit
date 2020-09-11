@@ -89,7 +89,7 @@ def _(self):
         base, to_clear = _access_all_but_last(to_clear)
         if isinstance(to_clear, elements.Reduce):
             to_clear = context(to_clear)
-        cm = context.now_access(base, allow_scope_access=False)
+        cm = context.now_access(base)
     if isinstance(to_clear, elements.Reference):
         to_clear = to_clear.value
     with cm:

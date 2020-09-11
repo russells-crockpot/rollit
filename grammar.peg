@@ -217,9 +217,9 @@ but_if_stmt <- expression _ &'but' / stmt_or_expr
 but_if      <- @'but' !'always' _ @'if' _ (expression / '*' ) _
                @'occurs' _ then                                         %but_if
 always      <- @'but' _ @'always' _ws stmt_or_expr                      %always
-attempt     <- @'attempt' _ws but_if_stmt                               %attempt
-             / @'attempt' _ws but_if_stmt _ws always                    %attempt
+attempt     <- @'attempt' _ws but_if_stmt _ws always                    %attempt
              / @'attempt' _ws but_if_stmt _ws but_if+ (_ws always)?     %attempt
+             / @'attempt' _ws but_if_stmt                               %attempt
 
 statement   <- eos
              / 'leave'                                                          %leave

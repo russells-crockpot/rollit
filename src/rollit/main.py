@@ -73,7 +73,10 @@ def create_argparser():
             default=False,
             action='store_true',
         )
-    argparser.add_argument('script_file', help='rollit script to run.', nargs=argparse.REMAINDER)
+    argparser.add_argument('script_file', help='rollit script to run.', nargs='?')
+    argparser.add_argument('args',
+                           help='Arguments to pass the rollit script.',
+                           nargs=argparse.REMAINDER)
     return argparser
 
 
@@ -83,13 +86,13 @@ def main():
     runner = Runner(dice_tower=_TOWER_MAP[args.tower])
     try:
         if args.script_file:
-            if len(args.script_file) > 1:
-                print('Only one rollit script file can be provided at at time!', file=sys.stderr)
-                sys.exit(1)
-            with open(args.script_file[0]) as f:
-                runner.run(f.read())
+            with open(args.script_file) as f:
+                runner.sysargs = tuple(args.args)
+                with runner.use_source(args.script_file):
+                    runner.run(f.read())
         if args.command:
-            result = runner.run(args.command)
+            with runner.use_source('cli'):
+                result = runner.run(args.command)
             if not args.interactive:
                 if result:
                     print(result)
@@ -100,8 +103,9 @@ def main():
         print(format_runtime_error(e), file=sys.stderr)
         sys.exit(1)
     if args.interactive or not (args.command or args.script_file):
-        if has_pretty and not args.ugly:
-            repl = PrettyRepl(runner, options=args)
-        else:
-            repl = Repl(runner, options=args)
-        repl.run()
+        with runner.use_source('interpreter'):
+            if has_pretty and not args.ugly:
+                repl = PrettyRepl(runner, options=args)
+            else:
+                repl = Repl(runner, options=args)
+            repl.run()

@@ -115,11 +115,11 @@ tests:
   - enlarge
   tests:
   - statements:
-    - ['{@}', [null]]
+    - ['{@}', null]
   - statements:
-    - ['{1@}', [null]]
+    - ['{1@}', null]
   - statements:
-    - ['{3@}', [null, null, null]]
+    - ['{3@}', null]
   - statements:
     - ['{@4}', [4]]
   - statements:

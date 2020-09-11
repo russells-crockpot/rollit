@@ -28,12 +28,13 @@ def _convert_values(value):
 def create_scripttest_func(category):
 
     def _func(runner, scripttest):
-        for statement, expected in scripttest.statements:
-            actual = runner.run(statement)
-            actual = _convert_values(actual)
-            if isinstance(actual, dict):
-                actual = reorder_keys(expected, actual)
-            assert expected == actual
+        with runner.use_source('testing'):
+            for statement, expected in scripttest.statements:
+                actual = runner.run(statement)
+                actual = _convert_values(actual)
+                if isinstance(actual, dict):
+                    actual = reorder_keys(expected, actual)
+                assert expected == actual
 
     _func.__name__ = f'test_{category}'
     return pytest.mark.parametrize('scripttest', getattr(script_tests, category))(_func)

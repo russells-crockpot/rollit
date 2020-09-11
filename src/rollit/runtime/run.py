@@ -1,24 +1,37 @@
 """
 """
+import enum
 import inspect
 import os
 import pathlib
 import re
 from collections import namedtuple
+from contextlib import nullcontext, contextmanager
 
 from .. import grammar, objects
 from ..rli.blueprint import LibraryBlueprints
 from ..rli.deferred import DeferredPythonBasedLibrary, ObjectPlaceholder
-from ..ast import actions, ModelElement
+from ..ast import Actions, ModelElement
 from ..ast.util import flatten_tuple
 from ..exceptions import LibraryNotFoundError
 from ..util import ensure_tuple
 from . import libraries
-from .base import DEFAULT_SEARCH_PATHS, context as current_ctx
+from .base import DEFAULT_SEARCH_PATHS, context as current_ctx, _CURRENT_CONTEXT
 from .core import RuntimeContext
 from .towers import DefaultTower
 
 __all__ = ['Runner', 'LibraryLoader']
+
+
+class Isolated(enum.Enum):
+    """
+    """
+    NO = enum.auto()
+    """ """
+    YES = enum.auto()
+    """ """
+    DEFAULT = enum.auto()
+    """ """
 
 
 class LibraryLoader:
@@ -55,22 +68,30 @@ class LibraryLoader:
     def paths(self, value):
         self._paths = [pathlib.Path(p) for p in value]
 
-    def get_library(self, library_name):
+    def get_library(self, library_name, *, isolated=Isolated.DEFAULT):
         """
         """
+        if not isinstance(isolated, Isolated):
+            raise TypeError()
         self.load_library(library_name)
         info = self.libraries[library_name]
-        if info.type == 'python':
-            if isinstance(info.content, ObjectPlaceholder):
-                return info.content.resolve()
-            if isinstance(info.content, objects.InternalObject):
-                return info.content
-            raise TypeError(type(info.content).__qualname__)
-        if info.type == 'rollit':
-            with self._runner.brief_context() as ctx:
-                self._runner.run(info.content)
-                # pylint: disable=protected-access
-                return ctx.root_scope._variables
+        if isolated == Isolated.NO or (isolated == Isolated.DEFAULT and not info.isolate):
+            cm = nullcontext(self._runner.default_context)
+        else:
+            cm = self._runner.brief_context()
+        with cm:
+            if info.type == 'python':
+                if isinstance(info.content, ObjectPlaceholder):
+                    return info.content.resolve()
+                if isinstance(info.content, objects.InternalObject):
+                    return info.content
+                raise TypeError(type(info.content).__qualname__)
+            if info.type == 'rollit':
+                with current_ctx.new_scope(isolate=True):
+                    with self._runner.use_source(info.file):
+                        self._runner.run(info.content, source=info.file)
+                    # pylint: disable=protected-access
+                    return current_ctx.scope._variables
         raise ValueError(f'Unknown library type: {info.type}')
 
     def load_stdlib(self, library_name, *, force_reload=False):
@@ -138,49 +159,78 @@ class LibraryLoader:
 class Runner:
     """
     """
+    _default_context = None
 
     def __init__(self,
                  search_paths=DEFAULT_SEARCH_PATHS,
                  *,
                  dice_tower=DefaultTower,
-                 parser_options=None):
+                 parser_options=None,
+                 sysargs=()):
         if inspect.isclass(dice_tower):
             dice_tower = dice_tower()
         self.dice_tower = dice_tower
         self._library_loader = LibraryLoader(search_paths, self)
         self._default_context = RuntimeContext(runner=self)
+        self._current_source = None
+        self.sysargs = sysargs
+
+    @property
+    def current_source(self):
+        """
+        """
+        return self._current_source
+
+    @contextmanager
+    def use_source(self, source):
+        """
+        """
+        old_source = self._current_source
+        self._current_source = source
+        yield
+        self._current_source = old_source
+
+    @property
+    def default_context(self):
+        """
+        """
+        return self._default_context
 
     def parse(self, script):
         """
         """
-        return grammar.parse(script, actions=actions)
+        if not self.current_source:
+            raise ValueError('A source must be provided when parsing!')
+        return grammar.parse(script, actions=Actions(self.current_source))
 
     def run(self, script_or_model, context=None):
         """
         """
         if not context:
             context = self._default_context
-        # pylint: disable=protected-access
-        return context._pycontext.run(self._run, script_or_model)
+        with context:
+            model = script_or_model
+            if isinstance(script_or_model, (bytes, str)):
+                model = self.parse(script_or_model)
+            if not isinstance(model, ModelElement) \
+                    and isinstance(model, (tuple, list)) and len(model) == 1:
+                model = model[0]
+            if not isinstance(model, ModelElement) \
+                    and isinstance(model, (tuple, list)):
+                return tuple(context(item) for item in flatten_tuple(model))
+            return context(model)
 
-    def _run(self, script_or_model):
-        model = script_or_model
-        if isinstance(script_or_model, (bytes, str)):
-            model = self.parse(script_or_model)
-        if not isinstance(model, ModelElement) \
-                and isinstance(model, (tuple, list)) and len(model) == 1:
-            model = model[0]
-        if not isinstance(model, ModelElement) \
-                and isinstance(model, (tuple, list)):
-            return tuple(current_ctx(item) for item in flatten_tuple(model))
-        return current_ctx(model)
-
+    #TODO add isolation option?
     def load_library(self, name):
         """
         """
         return self._library_loader.get_library(name)
 
+    @contextmanager
     def brief_context(self):
         """
         """
-        yield RuntimeContext(runner=self)
+        ctx = RuntimeContext(runner=self)
+        reset_token = _CURRENT_CONTEXT.set(ctx)
+        yield ctx
+        _CURRENT_CONTEXT.reset(reset_token)

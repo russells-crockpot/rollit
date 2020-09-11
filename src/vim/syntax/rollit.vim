@@ -14,7 +14,8 @@ endif
 let s:cpo_save = &cpo
 set cpo&vim
 
-syn keyword rollitRepeat        until do except when for every that at after restart before
+syn keyword rollitRepeat        until do except for every that at after restart before when
+syn keyword rollitException     attempt but always occurs
 syn keyword rollitLoad          load from into
 syn keyword rollitConditional   use if then and or not has otherwise unless
 syn keyword rollitLeave         leave
@@ -45,6 +46,7 @@ syn region rollitReduce     start="{" end="}" display
 
 
 "hi def link rollitStatement		    Statement
+hi def link rollitException         Exception
 hi def link rollitConditional       Conditional
 hi def link rollitLeave             Function
 hi def link rollitModifierDef       Function

@@ -84,6 +84,27 @@ def unwrap_func(func):
             return func
 
 
+def _format_codeinfo(info):
+    line1 = [f'  {info.source}']
+    if len(info.line_numbers) > 1:
+        line1.append(f'lines {info.line_numbers[0]}-{info.line_numbers[-1]}:')
+        text = info.text \
+                .replace('\n', r'\n') \
+                .replace('\r', r'\r') \
+                .replace('\f', r'\f')
+    else:
+        line1.append(f'line {info.line_numbers[0]}:')
+        text = info.text
+    last_line = [f'{" " * (info.startpos+4)}^']
+    if info.endpos != info.startpos:
+        last_line.append(f'{" " * ((info.endpos - info.startpos))}^')
+    return '\n'.join((
+        ' '.join(line1),
+        f'    {text}',
+        ''.join(last_line),
+    ))
+
+
 def format_runtime_error(error):
     """
     """
@@ -93,11 +114,19 @@ def format_runtime_error(error):
     ]
     if error.stacktrace:
         lines.append('Stacktrace:')
+        #TODO remove overlapping lines
+        previous_info = None
         for item in error.stacktrace:
             if not item.codeinfo:
                 lines.append(f'  Unknown {type(item).__name__}')
-            else:
-                lines.append(f'  line #{item.codeinfo.lineno:02}: {item.codeinfo.text}')
+                continue
+            info = item.codeinfo
+            if previous_info \
+                    and info.line_numbers[0] >= previous_info.line_numbers[0] \
+                    and info.line_numbers[-1] <= previous_info.line_numbers[-1]:
+                continue
+            lines.append(_format_codeinfo(info))
+            previous_info = info
     return '\n'.join(lines)
 
 

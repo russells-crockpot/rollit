@@ -9,7 +9,7 @@ from contextlib import suppress
 import pytest
 
 from rollit import grammar
-from rollit.ast import actions
+from rollit.ast import Actions
 from rollit.util import is_valid_iterable
 
 try:
@@ -83,7 +83,7 @@ with suppress(Exception):
 def parser():
 
     def _parse(s):
-        rval = grammar.parse(s, actions=actions)
+        rval = grammar.parse(s, actions=Actions('testing'))
         if is_valid_iterable(rval) and len(rval) == 1:
             return rval[0]
         return rval

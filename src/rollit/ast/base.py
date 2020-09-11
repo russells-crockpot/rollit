@@ -40,7 +40,7 @@ del __create_defer_evaluation
 ElementSpecs = namedtuple('ElementSpecs', ('predicate_info', 'intern_strings'), defaults=((), True))
 """ """
 
-CodeInfo = namedtuple('CodeInfo', ('text', 'start_pos', 'end_pos', 'lineno'))
+CodeInfo = namedtuple('CodeInfo', ('text', 'startpos', 'endpos', 'line_numbers', 'source'))
 """ """
 
 

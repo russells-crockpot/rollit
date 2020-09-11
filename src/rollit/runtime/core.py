@@ -28,6 +28,7 @@ class RuntimeContext(metaclass=ABCMeta):
     _scope = None
     _libraries = None
     _pycontext = None
+    _reset_token = None
 
     def __init__(self, runner):
         reset_token = _CURRENT_CONTEXT.set(self)
@@ -115,10 +116,14 @@ class RuntimeContext(metaclass=ABCMeta):
         del self.accessing[name]
 
     def __enter__(self):
+        if _CURRENT_CONTEXT.get() != self:
+            self._reset_token = _CURRENT_CONTEXT.set(self)
         return self
 
     def __exit__(self, *args):
-        return
+        if self._reset_token:
+            _CURRENT_CONTEXT.reset(self._reset_token)
+            self._reset_token = None
 
     def roll(self, sides):
         """
