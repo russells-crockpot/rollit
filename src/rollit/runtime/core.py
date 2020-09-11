@@ -5,7 +5,7 @@ from abc import ABCMeta
 from contextlib import contextmanager, suppress
 
 from ..objects import Bag, NoSubject
-from ..ast import elements, ModelElement, ModelEnumElement
+from ..ast import elements, ModelElement
 from ..exceptions import RollitTypeError, InvalidNameError, RollitRuntimeError, \
         RollitReferenceError, RollitSyntaxError
 from .base import _CURRENT_CONTEXT, context as current_context
@@ -26,7 +26,6 @@ class RuntimeContext(metaclass=ABCMeta):
     _accessing = None
     _root_scope = None
     _scope = None
-    _allow_scope_access = True
     _libraries = None
     _pycontext = None
 
@@ -38,6 +37,7 @@ class RuntimeContext(metaclass=ABCMeta):
         self._accessing = self._root_scope = self._scope = Scope()
         self._libraries = {'~': self._runner.load_library('~')}
         self.root_scope.load(self._libraries['~'])
+        self.stack = []
 
     def get_library(self, name):
         """
@@ -90,17 +90,23 @@ class RuntimeContext(metaclass=ABCMeta):
             return True
         return name in self._scope
 
-    def __getitem__(self, key):
-        if isinstance(key, (elements.SpecialEntry, elements.RawAccessor)) \
+    # maybe allow "search_libraries"?
+    def get_value(self, name, *, search_scope=True):
+        """
+        """
+        if isinstance(name, (elements.SpecialEntry, elements.RawAccessor)) \
                 and not isinstance(self.accessing, Bag):
             raise RollitTypeError()
         try:
-            return self.accessing[key]
+            return self.accessing[name]
         except (RollitReferenceError, InvalidNameError):
-            if self.accessing != self._scope and self._allow_scope_access:
+            if self.accessing != self._scope and search_scope:
                 with suppress(InvalidNameError, RollitReferenceError):
-                    return self._scope[key]
+                    return self._scope[name]
             raise
+
+    def __getitem__(self, key):
+        return self.get_value(key)
 
     def __setitem__(self, name, value):
         self.accessing[name] = value
@@ -119,30 +125,34 @@ class RuntimeContext(metaclass=ABCMeta):
         """
         return self._runner.dice_tower.roll(sides)
 
+    @contextmanager
+    def _pushstack(self, obj):
+        self.stack.append(obj)
+        yield
+        self.stack.pop()
+
     def __call__(self, obj):
         """
         """
         if not isinstance(obj, ModelElement):
             return obj
         try:
-            return obj.evaluate()
+            with self._pushstack(obj):
+                return obj.evaluate()
         except RollitRuntimeError as e:
-            if not e.codeinfo and not isinstance(obj, ModelEnumElement):
-                e.codeinfo = obj.codeinfo
+            if not e.stacktrace:
+                e.stacktrace = tuple(self.stack)
             raise
 
     @contextmanager
-    def now_access(self, accessing, *, allow_scope_access=True):
+    def now_access(self, accessing):
         """
         """
-        if self.accessing != accessing or self._allow_scope_access != allow_scope_access:
-            old_scope_access = self._allow_scope_access
-            self._allow_scope_access = allow_scope_access
+        if self.accessing != accessing:
             old_accessing = self.accessing
             self._accessing = accessing
             yield self.accessing
             self._accessing = old_accessing
-            self._allow_scope_access = old_scope_access
         else:
             yield
 
@@ -152,11 +162,10 @@ class RuntimeContext(metaclass=ABCMeta):
         """
         if not parent_scope:
             parent_scope = self.scope
-        old_accessing = self.accessing
         old_scope = self._scope
-        self._scope = self._accessing = parent_scope.child(**kwargs)
-        yield self._scope
-        self._accessing = old_accessing
+        self._scope = parent_scope.child(**kwargs)
+        with self.now_access(self._scope):
+            yield self._scope
         self._scope = old_scope
 
     @contextmanager

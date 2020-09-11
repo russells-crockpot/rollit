@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from contextlib import suppress
 
-from .base import PythonBasedLibrary, PythonBasedModifier
+from .base import PythonBasedLibrary, PythonBasedModifier, PythonBag
 from ..ast import ModelElement
 from ..ast.elements import SpecialEntry, OperationSide
 from ..objects import Modifier, Roll, Dice, Bag
@@ -86,18 +86,26 @@ class BagPlaceholder(ObjectPlaceholder):
         self._entries = entries
         self._raw = raw
 
+    def _get_value(self, item):
+        if isinstance(item, dict):
+            return PythonBag({k: self._get_value(v) for k, v in item.items()})
+        if is_valid_iterable(item):
+            return Roll(self._get_value(v) for v in item)
+        if isinstance(item, ObjectPlaceholder):
+            return item.resolve()
+        return item
+
     def get_object(self):
         bag = Bag()
         for k, v in self._entries.items():
-            if isinstance(v, ObjectPlaceholder):
-                v = v.resolve()
+            v = self._get_value(v)
             if self._raw is True:
                 bag.raw_set(k, v)
             else:
                 bag[k] = v
         if isinstance(self._raw, dict):
             for k, v in self._raw.items():
-                bag.raw_set(k, v)
+                bag.raw_set(k, self._get_value(v))
         return bag
 
     def modifier(self, name_or_func):
@@ -246,7 +254,7 @@ class DeferredBag:
                     raise ValueError()
             if not isinstance(value, _VALID_ENTRY_TYPES):
                 value = self._get_entry_value(entry(value))
-        if isinstance(value, PythonBasedLibrary):
+        if isinstance(value, DeferredBag):
             value = value.to_placeholder()
         return value
 
@@ -330,7 +338,7 @@ class DeferredPythonBasedLibrary(DeferredBag, PythonBasedLibrary):
 
 
 _VALID_ENTRY_TYPES = (int, float, str, Bag, Roll, Dice, ModelElement, Modifier, ObjectPlaceholder,
-                      type(None), PythonBasedLibrary)
+                      type(None), PythonBasedLibrary, DeferredBag)
 
 
 class _Loader(namedtuple('_LoaderBase', ('func',))):

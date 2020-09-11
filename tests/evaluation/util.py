@@ -16,6 +16,9 @@ def _convert_values(value):
         # pylint: disable=protected-access
         value = value._to_eval_test_repr()
     if isinstance(value, (list, set, tuple)):
+        compact = set(value)
+        if len(compact) == 1 and compact.pop() is None:
+            return None
         return tuple(_convert_values(v) for v in value)
     if isinstance(value, dict):
         return {k: _convert_values(v) for k, v in value.items()}

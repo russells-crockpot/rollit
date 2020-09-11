@@ -66,3 +66,74 @@ tests:
     - ['b.[+]> <- o: 3', null]
     - ['0 + b', 3]
     - ['10 + b', 3]
+
+- name: load
+  categories:
+  - load
+  tests:
+  - statements:
+    - ['load runtime', null]
+    - ['!->runtime.loops', []]
+    - ["runtime has 'overloads'", true]
+  - statements:
+    - ['load strings into test', null]
+    - ["'b'->test.upper", 'B']
+    - ["test has 'lower'", true]
+    - ["~ has 'strings'", false]
+  - statements:
+    - ['load loops from runtime', null]
+    - ["~ has 'loops'", true]
+    - ["~ has 'runtime'", false]
+    - ['!->loops', []]
+  - statements:
+    - ['load upper from strings into c', null]
+    - ["~ has 'strings'", false]
+    - ["~ has 'upper'", false]
+    - ["c has 'upper'", true]
+    - ["c has 'lower'", false]
+    - ["'test'->c.upper", 'TEST']
+  - statements:
+    - ['a = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['load a into m', null]
+    - ['m', {'z': 1, 'y': 2, 'x': 3}]
+  - statements:
+    - ['b = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['m = {: :}', null]
+    - ['load b into m', null]
+    - ['m', {'z': 1, 'y': 2, 'x': 3}]
+  - statements:
+    - ['c = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['m = {: g=7 | z = 23:}', null]
+    - ['load c into m', null]
+    - ['m', {'z': 1, 'y': 2, 'x': 3, 'g': 7}]
+  - statements:
+    - ['d = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['m = {: g = 7 | z = 23:}', null]
+    - ['load z from d into m', null]
+    - ['m', {'z': 1, 'g': 7}]
+  - statements:
+    - ['e = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['m = {: g = 7 | z = 23:}', null]
+    - ['load z, y from e into m', null]
+    - ['m', {'z': 1, 'g': 7, 'y': 2}]
+  - statements:
+    - ['f = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['load z from f', null]
+    - ['z', 1]
+    - ["~ has 'x'", false]
+  - statements:
+    - ['g = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['load * from g', null]
+    - ['z', 1]
+    - ['y', 2]
+    - ['x', 3]
+  - statements:
+    - ['h = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['m = {: g = 7 | z = 23:}', null]
+    - ['load m, h into n', null]
+    - ['n', {'z': 23, 'y': 2, 'x': 3, 'g': 7}]
+  - statements:
+    - ['i = {: z = 1 | y = 2 | x = 3 :}', null]
+    - ['m = {: g = 7 | z = 23:}', null]
+    - ['load i, m into n', null]
+    - ['n', {'z': 1, 'y': 2, 'x': 3, 'g': 7}]

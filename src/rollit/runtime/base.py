@@ -31,6 +31,8 @@ class _CurrentContextProxy:
     __contains__ = lambda s, n: _CURRENT_CONTEXT.get().__contains__(n)
     __dir__ = lambda s: dir(_CURRENT_CONTEXT.get())
     __call__ = lambda s, v: _CURRENT_CONTEXT.get()(v)
+    __str__ = lambda s: _CURRENT_CONTEXT.get().__str__()
+    __repr__ = lambda s: _CURRENT_CONTEXT.get().__repr__()
 
 
 context = _CurrentContextProxy()

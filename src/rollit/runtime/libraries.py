@@ -1,4 +1,5 @@
-# pylint: disable=protected-access, too-complex, using-constant-test
+# pylint: disable=protected-access, too-complex, using-constant-test,
+# pylint: disable=no-method-argument, no-self-argument
 """Contains the python code for the standard library.
 """
 import math
@@ -26,29 +27,22 @@ __all__ = [
     'LoadingLib',
     'BUILTIN_LIBRARIES',
 ]
-#########################################################
-# Note: The contents of each library is in a ``if True``
-# block because it makes folding code easier and the code
-# in general look cleaner/more organized.
-#########################################################
+
 
 ############## rootlib ##############
-
-
 class RootLib(bp.LibraryBlueprints, name='~'):
     """
     """
 
     @bp.modifier
     # pylint: disable=useless-return
-    def print(self, *args, subject):
+    def print(*args, subject):
         """
         """
         print(subject, *args)
-        return None
 
     @bp.modifier
-    def top(self, *args, subject):
+    def top(*args, subject):
         """
         """
         if not args:
@@ -63,7 +57,7 @@ class RootLib(bp.LibraryBlueprints, name='~'):
         return Roll(sorted(subject, reverse=True)[0:num])
 
     @bp.modifier
-    def bottom(self, *args, subject):
+    def bottom(*args, subject):
         """
         """
         if not args:
@@ -79,20 +73,18 @@ class RootLib(bp.LibraryBlueprints, name='~'):
 
 
 ############## runtime ##############
-
-
 class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
     """
     """
 
     @bp.modifier
-    def loops(self, *, subject):
+    def loops(*, subject):
         """
         """
         return Roll(context.scope.loops)
 
     @bp.modifier
-    def scope_entries(self, *, subject):
+    def scope_entries(*, subject):
         """
         """
         scopes = []
@@ -109,7 +101,7 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
         return bag
 
     @bp.modifier
-    def names_in_scope(self, *, subject):
+    def names_in_scope(*, subject):
         """
         """
         names = set()
@@ -118,12 +110,11 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
             names |= set(scope.variable_names())
             scope = scope.parent
         names |= set(scope.variable_names())
-        names = Roll(names)
-        names.sort()
+        names = Roll(sorted(names))
         return names
 
     @bp.modifier
-    def overloads(self, *, subject):
+    def overloads(*, subject):
         """
         """
         default = type(subject).default_ops_impl
@@ -131,9 +122,9 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
             default = OperatorImplementations()
         current = subject._op_impls
         bag = Bag()
-        bag.set_raw('left', Bag())
-        bag.set_raw('right', Bag())
-        bag.set_raw('other', Bag())
+        bag.setraw('left', Bag())
+        bag.setraw('right', Bag())
+        bag.setraw('other', Bag())
         for op in elements.TwoSidedOperator:
             rval = getattr(current, op.right_python_name)
             if rval is not NotImplemented:
@@ -156,7 +147,13 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
         return bag
 
     @bp.modifier
-    def overloaded_ops(self, *args, subject):
+    def id(*args, subject):
+        """
+        """
+        return subject.getid()
+
+    @bp.modifier
+    def overloaded_ops(*args, subject):
         """
         """
         default = type(subject).default_ops_impl
@@ -164,9 +161,9 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
             default = OperatorImplementations()
         current = subject._op_impls
         bag = Bag()
-        bag.set_raw('left', Bag())
-        bag.set_raw('right', Bag())
-        bag.set_raw('other', Bag())
+        bag.setraw('left', Bag())
+        bag.setraw('right', Bag())
+        bag.setraw('other', Bag())
         for op in elements.TwoSidedOperator:
             bag['left'].raw_set(
                 op.name.lower(),
@@ -188,10 +185,10 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
         return bag
 
     # pylint: disable=missing-function-docstring
-    def on_access(self, name, lib):
+    def on_access(name, *, subject):
         if name == 'cwd':
             return os.getcwd()
-        return lib.raw_get(name)
+        return subject.raw_get(name)
 
 
 ############## os ##############
@@ -237,7 +234,7 @@ class IoFile(bp.BagBlueprints):
     """
 
     @bp.modifier
-    def create(self, filename, subject):
+    def create(filename, subject):
         """
         """
         bag = Bag()
@@ -246,7 +243,7 @@ class IoFile(bp.BagBlueprints):
         return bag
 
     @bp.modifier
-    def exists(self, *, subject):
+    def exists(*, subject):
         """
         """
         return os.path.exists(subject['name'])
@@ -255,12 +252,10 @@ class IoFile(bp.BagBlueprints):
 class IoLib(bp.LibraryBlueprints, name='io'):
     """
     """
-    File = bp.entry(IoFile)
+    File = bp.entry(IoFile())
 
 
 ############## maths ##############
-
-
 class MathsLib(bp.LibraryBlueprints, name='maths'):
     """Yes, it's called ``maths`` and not ``math``. No I'm not British, but I like the way maths
     sounds better (also, everyone uses ``math``; it's boring).
@@ -276,7 +271,19 @@ class BagsLib(bp.LibraryBlueprints, name='bags'):
     """
 
     @bp.modifier
-    def flatten(self, *, subject):
+    def names(*, subject):
+        """
+        """
+        return Roll(subject._entries.keys())
+
+    @bp.modifier
+    def values(*, subject):
+        """
+        """
+        return Roll(subject._entries.values())
+
+    @bp.modifier
+    def flatten(*, subject):
         """
         """
         # pylint: disable=redefined-outer-name
@@ -304,25 +311,25 @@ class StringsLib(bp.LibraryBlueprints, name='strings'):
     """
 
     @bp.modifier
-    def lower(self, *, subject):
+    def lower(*, subject):
         """
         """
         return subject.lower()
 
     @bp.modifier
-    def upper(self, *, subject):
+    def upper(*, subject):
         """
         """
         return subject.upper()
 
     @bp.modifier
-    def strip(self, *, subject):
+    def strip(*, subject):
         """
         """
         return subject.strip()
 
     @bp.modifier
-    def split(self, delim, times=None, *, subject):
+    def split(delim, times=None, *, subject):
         """
         """
         if times is None:
@@ -336,7 +343,7 @@ class LoadingLib(bp.LibraryBlueprints, name='loading'):
     """
 
     @bp.modifier
-    def isolated(self, *, subject):
+    def isolated(*, subject):
         """
         """
         raise NotImplementedError()

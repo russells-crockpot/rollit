@@ -12,13 +12,13 @@ class RollitRuntimeError(RollitException):
     """
     msg = None
     """ """
-    codeinfo = None
+    stacktrace = None
     """ """
 
-    def __init__(self, *args, codeinfo=None, **kwargs):
-        self.codeinfo = codeinfo
+    def __init__(self, *args, **kwargs):
         if args:
             self.msg = args[0]
+        self.value = self.msg
         super().__init__(*args, **kwargs)
 
 

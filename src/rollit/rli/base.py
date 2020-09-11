@@ -33,7 +33,9 @@ class PythonBasedModifier(Modifier):
 
     def modify(self, *args):
         val = self.func(*args, subject=context.scope.subject)
-        if val not in (None, NoSubject):
+        if val == NoSubject:
+            context.scope.subject = None
+        elif val is not None:
             context.scope.subject = val
 
     @property

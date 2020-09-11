@@ -421,54 +421,44 @@ def load_from_into(text, start, end, values, codeinfo):
         into = elements.SpecialReference.ROOT
     if to_load == '*':
         to_load = elements.SpecialReference.ALL
-    items = []
-    if is_valid_iterable(load_from):
-        for item in util.flatten_tuple(load_from):
-            items.append(
-                elements.Load(
-                    to_load=to_load,
-                    load_from=item,
-                    into=into,
-                    codeinfo=codeinfo,
-                ))
+    elif is_valid_iterable(to_load):
+        to_load = util.flatten_tuple(to_load)
     else:
-        for item in util.flatten_tuple(to_load):
-            items.append(
-                elements.Load(
-                    to_load=item,
-                    load_from=load_from,
-                    into=into,
-                    codeinfo=codeinfo,
-                ))
-    return items[0] if len(items) == 1 else tuple(items)
+        to_load = ensure_tuple(to_load)
+    return elements.Load(
+        to_load=to_load,
+        load_from=load_from,
+        into=into,
+        codeinfo=codeinfo,
+    )
 
 
 @elements_to_values
 @add_codeinfo
 def load_from(text, start, end, values, codeinfo):
     to_load, load_from = values
-    if is_valid_iterable(to_load):
+    if to_load == '*':
+        to_load = elements.SpecialReference.ALL
+    elif is_valid_iterable(to_load):
         to_load = util.flatten_tuple(to_load)
     else:
-        to_load = (to_load,)
-    items = []
-    for item_to_load in to_load:
-        items.append(
-            elements.Load(
-                to_load=item_to_load,
-                load_from=load_from,
-                into=elements.SpecialReference.ROOT,
-                codeinfo=codeinfo,
-            ))
-    return items[0] if len(items) == 1 else tuple(items)
+        to_load = ensure_tuple(to_load)
+    return elements.Load(
+        to_load=to_load,
+        load_from=load_from,
+        into=elements.SpecialReference.ROOT,
+        codeinfo=codeinfo,
+    )
 
 
 @elements_to_values
 @add_codeinfo
 def load_into(text, start, end, values, codeinfo):
-    to_load, into = values
+    things_to_load_from, into = values
+    if is_valid_iterable(things_to_load_from):
+        things_to_load_from = util.flatten_tuple(things_to_load_from)
     items = []
-    for load_from in util.flatten_tuple(to_load):
+    for load_from in ensure_tuple(things_to_load_from):
         items.append(
             elements.Load(
                 to_load=elements.SpecialReference.ALL,
@@ -476,7 +466,7 @@ def load_into(text, start, end, values, codeinfo):
                 into=into,
                 codeinfo=codeinfo,
             ))
-    return items[0] if len(items) == 1 else tuple(items)
+    return tuple(items)
 
 
 @elements_to_values
@@ -665,7 +655,16 @@ def always(text, start, end, values, codeinfo):
 @elements_to_values
 @add_codeinfo
 def attempt(text, start, end, values, codeinfo):
-    attempt, *buts, always = values
+    attempt, *remainder = values
+    if not remainder:
+        return elements.Attempt(
+            attempt=attempt,
+            buts=(),
+            always=None,
+            codeinfo=codeinfo,
+        )
+    if remainder:
+        *buts, always = remainder
     if not isinstance(always, internal.Always):
         buts = tuple((*buts, always))
         always = None

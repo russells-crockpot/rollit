@@ -87,12 +87,18 @@ def unwrap_func(func):
 def format_runtime_error(error):
     """
     """
-    return '\n'.join((
+    lines = [
         f'A {type(error).__name__} occurred!',
         f'  Error Message: {error.msg}',
-        f'  Code Fragment: {error.codeinfo.text}',
-        f'  Line Number: {error.codeinfo.lineno}',
-    ))
+    ]
+    if error.stacktrace:
+        lines.append('Stacktrace:')
+        for item in error.stacktrace:
+            if not item.codeinfo:
+                lines.append(f'  Unknown {type(item).__name__}')
+            else:
+                lines.append(f'  line #{item.codeinfo.lineno:02}: {item.codeinfo.text}')
+    return '\n'.join(lines)
 
 
 def is_valid_iterable(node):

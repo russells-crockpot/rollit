@@ -190,16 +190,31 @@ class OperatorImplementations:
         setattr(self, key, impl)
 
 
+def _idgenerator():
+    i = 0
+    while True:
+        i += 1
+        yield i
+
+
 class InternalObject(metaclass=ABCMeta):
     """
     """
-    __slots__ = ('_op_impls',)
+    __slots__ = ('_op_impls', '_rollit_id')
+    __idgenerator = _idgenerator()
 
     default_ops_impl = None
     """ """
 
     def __init__(self):
         self._op_impls = OperatorImplementations(copy_from=self.default_ops_impl)
+
+    def __setattr__(self, name, value):
+        if name == '_rollit_id':
+            with suppress(AttributeError):
+                self._rollit_id  # pylint: disable=pointless-statement
+                raise ValueError('Cannot change and object\'s ID once it has been set')
+        super().__setattr__(name, value)
 
     def __getattr__(self, name):
         if name in self._op_impls.__slots__:
@@ -226,11 +241,23 @@ class InternalObject(metaclass=ABCMeta):
         """
         self._op_impls.set_impl(operator, side, impl)
 
+    #pylint: disable=access-member-before-definition,attribute-defined-outside-init
+    def getid(self):
+        """
+        """
+        with suppress(AttributeError):
+            return self._rollit_id
+        self._rollit_id = next(self.__idgenerator)
+        return self._rollit_id
+
     if int(os.environ.get('TESTING_ROLLIT', 0)):
 
         @abstractmethod
         def _to_eval_test_repr(self):
             pass
+
+
+del _idgenerator
 
 
 class Dice(InternalObject):

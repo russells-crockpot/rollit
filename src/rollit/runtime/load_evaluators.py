@@ -5,7 +5,8 @@ from contextlib import suppress, nullcontext
 from .base import context
 from .. import objects
 from ..ast import elements, constants
-from ..exceptions import RollitTypeError, NoSuchLoopError, RollitReferenceError, CannotReduceError
+from ..exceptions import RollitTypeError, NoSuchLoopError, RollitReferenceError, CannotReduceError,\
+        RollitRuntimeError
 from ..util import is_valid_iterable
 
 __all__ = ()
@@ -68,11 +69,13 @@ def _(self):
 def _(self):
     accessing = context(self.accessing)
     for accessor in self.accessors:
-        with context.now_access(accessing, allow_scope_access=False):
+        with context.now_access(accessing):
             if isinstance(accessor, elements.Reduce):
                 accessing = accessing[context(accessor)]
             elif isinstance(accessor, elements.RawAccessor):
                 accessing = accessing.raw_get(context(accessor))
+            elif isinstance(accessor, elements.Reference):
+                accessing = context.get_value(accessor.value, search_scope=False)
             else:
                 accessing = context(accessor)
     return accessing
@@ -219,13 +222,14 @@ def _(self):
 def _(self):
     try:
         context(self.attempt)
-    except objects.OopsException as e:
-        with context.new_scope(isolate=True, error=context(e.value)):
-            for but in self.buts or ():
-                if but.predicate == elements.SpecialReference.ALL or context(but.predicate):
-                    context(but.statement)
-                    return
-            raise
+    except (objects.OopsException, RollitRuntimeError) as e:
+        if self.buts:
+            with context.new_scope(isolate=True, error=context(e.value)):
+                for but in self.buts:
+                    if but.predicate == elements.SpecialReference.ALL or context(but.predicate):
+                        context(but.statement)
+                        return
+                raise
     finally:
         if self.always:
             context(self.always)
@@ -332,7 +336,7 @@ def _(self):
 
 @elements.SpecialReference.evaluator
 def _(self):
-    if self.name == 'NONE':
+    if self == elements.SpecialReference.NONE:
         return None
     return context[self.value]
 

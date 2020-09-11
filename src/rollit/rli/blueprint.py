@@ -104,16 +104,17 @@ class BagBlueprints:
         for name in dir(cls):
             if name.startswith('__') and name.endswith('__') or name in cls._ignore:
                 continue
-            if name.endswith('_'):
-                name = name[:-1]
-            if not name.startswith('_'):
-                name = name.replace('_', '-')
             value = getattr(cls, name)
             if isinstance(value, BagBlueprints):
                 value = value()
             if name in _SPECIAL_OP_METHOD_NAMES:
-                getattr(self, name)(value.value)
-            elif isinstance(value, entry):
+                if isinstance(value, _EntryDescriptor):
+                    value = value.value
+                getattr(self, name)(value)
+                continue
+            if name.endswith('_'):
+                name = name[:-1]
+            if isinstance(value, entry):
                 self.add_entry(name, value.value, is_property=True)
             elif isinstance(value, modifier):
                 self.add_entry(name, value.value, is_property=False)
