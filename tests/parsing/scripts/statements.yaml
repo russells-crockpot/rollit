@@ -300,7 +300,7 @@ tests:
         _class: Reference
         value: name
       value:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
   - script: 'name = {2}'
@@ -312,38 +312,39 @@ tests:
       value:
         _class: Reduce
         value: 2
-  - script: 'name = {@}'
+  - script: 'name = [:]'
     result:
       _class: Assignment
       target:
         _class: Reference
         value: name
       value:
-        _class: Enlarge
-        size: null
-        value: null
-  - script: 'name = {1d6@(3d4 + 5)}'
+        _class: NewRoll
+        value: []
+  - script: 'name = [: 1d6 <-> (3d4 + 5) :]'
     result:
       _class: Assignment
       target:
         _class: Reference
         value: name
       value:
-        _class: Enlarge
-        size:
-          _class: DiceNode
-          number_of_dice: 1
-          sides: 6
+        _class: NewRoll
         value:
-          _class: BinaryOp
-          left:
-            _class: DiceNode
-            number_of_dice: 3
-            sides: 4
-          op:
-            _class: TwoSidedOperator
-            value: ADD
-          right: 5
+        - _class: Fill
+          size:
+            _class: NewDice
+            number_of_dice: 1
+            sides: 6
+          value:
+            _class: BinaryOp
+            left:
+              _class: NewDice
+              number_of_dice: 3
+              sides: 4
+            op:
+              _class: TwoSidedOperator
+              value: ADD
+            right: 5
   - script: 'name = value'
     result:
       _class: Assignment
@@ -364,7 +365,7 @@ tests:
         subject:
           _class: Reduce
           value:
-            _class: DiceNode
+            _class: NewDice
             number_of_dice: 1
             sides: 6
         modifiers:
@@ -386,9 +387,9 @@ tests:
           subject:
             _class: Reduce
             value:
-              _class: DiceNode
+              _class: NewDice
               number_of_dice:
-                _class: DiceNode
+                _class: NewDice
                 number_of_dice: 2
                 sides: 4
               sides: 6

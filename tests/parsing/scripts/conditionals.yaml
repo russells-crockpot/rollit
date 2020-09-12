@@ -18,7 +18,7 @@ tests:
     result:
       _class: Negation
       value:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
 
@@ -118,7 +118,7 @@ tests:
     result:
       _class: BinaryOp
       left:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       op:
@@ -129,7 +129,7 @@ tests:
     result:
       _class: BinaryOp
       left:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       op:
@@ -148,7 +148,7 @@ tests:
     result:
       _class: BinaryOp
       left:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       op:
@@ -169,7 +169,7 @@ tests:
       left:
         _class: BinaryOp
         left:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides: 6
         op:
@@ -198,21 +198,21 @@ tests:
     result:
       _class: UseIf
       use:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       predicate:
         _class: Reference
         value: 'use_d6'
       otherwise:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 2
         sides: 4
   - script: 'use 1d6 if use_d6 otherwise use 2d4 if use_d4 otherwise 3d3'
     result:
       _class: UseIf
       use:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       predicate:
@@ -221,14 +221,14 @@ tests:
       otherwise:
         _class: UseIf
         use:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 2
           sides: 4
         predicate:
           _class: Reference
           value: 'use_d4'
         otherwise:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 3
           sides: 3
 

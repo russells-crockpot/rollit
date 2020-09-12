@@ -125,7 +125,7 @@ tests:
           value: GREATER_THAN_EQUALS
         right: 5
       do:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       otherwise: null
@@ -156,7 +156,7 @@ tests:
             _class: TwoSidedOperator
             value: AMPERSAND
           right:
-            _class: DiceNode
+            _class: NewDice
             number_of_dice: 1
             sides: 6
       otherwise: null
@@ -187,11 +187,11 @@ tests:
             _class: TwoSidedOperator
             value: AMPERSAND
           right:
-            _class: DiceNode
+            _class: NewDice
             number_of_dice: 1
             sides: 6
       otherwise: null
-  - script: 'until test > 25 do test = test & 1d6 otherwise test = {@0}'
+  - script: 'until test > 25 do test = test & 1d6 otherwise test = [:]'
     result:
       _class: UntilDo
       name: null
@@ -218,7 +218,7 @@ tests:
             _class: TwoSidedOperator
             value: AMPERSAND
           right:
-            _class: DiceNode
+            _class: NewDice
             number_of_dice: 1
             sides: 6
       otherwise:
@@ -227,10 +227,9 @@ tests:
           _class: Reference
           value: 'test'
         value:
-          _class: Enlarge
-          size: null
-          value: 0
-  - script: 'until @name test > 25 do test = test & 1d6 otherwise test = {@0}'
+          _class: NewRoll
+          value: []
+  - script: 'until @name test > 25 do test = test & 1d6 otherwise test = [:]'
     result:
       _class: UntilDo
       name: 'name'
@@ -257,7 +256,7 @@ tests:
             _class: TwoSidedOperator
             value: AMPERSAND
           right:
-            _class: DiceNode
+            _class: NewDice
             number_of_dice: 1
             sides: 6
       otherwise:
@@ -266,9 +265,8 @@ tests:
           _class: Reference
           value: 'test'
         value:
-          _class: Enlarge
-          size: null
-          value: 0
+          _class: NewRoll
+          value: []
 
 - name: restart
   categories:
@@ -405,7 +403,7 @@ tests:
       iterable:
         _class: Reduce
         value:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides: 6
       do:
@@ -418,7 +416,7 @@ tests:
       iterable:
         _class: Reduce
         value:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides: 6
       do:
@@ -437,7 +435,7 @@ tests:
       iterable:
         _class: Reduce
         value:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides: 6
       do:

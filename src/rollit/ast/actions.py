@@ -142,7 +142,7 @@ class Actions:
     @elements_to_values
     @add_codeinfo
     def dice(self, text, start, end, values, codeinfo):
-        return elements.DiceNode(*values, codeinfo=codeinfo)
+        return elements.NewDice(*values, codeinfo=codeinfo)
 
     @elements_to_values
     @add_codeinfo
@@ -355,6 +355,7 @@ class Actions:
     def raw_accessor(self, text, start, end, values, codeinfo):
         return elements.RawAccessor(values[0], codeinfo=codeinfo)
 
+    #TODO implement expand
     @elements_to_values
     @add_codeinfo
     def access(self, text, start, end, values, codeinfo):
@@ -369,17 +370,6 @@ class Actions:
         if value == '*':
             value = elements.SpecialReference.ALL
         return elements.Reduce(value, codeinfo=codeinfo)
-
-    @elements_to_values
-    @add_codeinfo
-    def enlarge(self, text, start, end, values, codeinfo):
-        size = value = None
-        sep_idx = values.index('@')
-        with suppress(IndexError):
-            size = values[:sep_idx][0]
-        with suppress(IndexError):
-            value = values[sep_idx + 1:][0]
-        return elements.Enlarge(size=size, value=value, codeinfo=codeinfo)
 
     @elements_to_values
     @add_codeinfo
@@ -420,6 +410,24 @@ class Actions:
     @add_codeinfo
     def otherwise(self, text, start, end, values, codeinfo):
         return internal.Otherwise(values[-1], codeinfo=codeinfo)
+
+    @elements_to_values
+    @add_codeinfo
+    def fill(self, text, start, end, values, codeinfo):
+        return elements.Fill(*values, codeinfo=codeinfo)
+
+    @add_codeinfo
+    def empty_roll(self, text, start, end, values, codeinfo):
+        return elements.NewRoll((), codeinfo=codeinfo)
+
+    @elements_to_values
+    @add_codeinfo
+    def roll_def(self, text, start, end, values, codeinfo):
+        if len(values) == 1:
+            if not is_valid_iterable(values[0]):
+                return elements.NewRoll(tuple(values), codeinfo=codeinfo)
+            values = values[0]
+        return elements.NewRoll(util.flatten_tuple(tuple(values)), codeinfo=codeinfo)
 
     @elements_to_values
     @add_codeinfo

@@ -47,6 +47,29 @@ tests:
   - statements:
     - ['4d(2+2-1)', [4, 3]]
 
+- name: reduce
+  categories:
+  - reduce
+  tests:
+  - statements:
+    - ['{1}', 1]
+  - statements:
+    - ['{1d6}', [1]]
+  - statements:
+    - ['{{1d6}}', 1]
+  - statements:
+    - ["{'test'}", 'test']
+  - statements:
+    - ['a = 2d6', null]
+    - ['={a}', null]
+    - ['a', [1, 2]]
+    - ['={a}', null]
+    - ['a', 3]
+    - ['={a}', null]
+    - ['={a}', null]
+    - ['={a}', null]
+    - ['a', 3]
+
 - name: rolls
   categories:
   - rolls
@@ -86,51 +109,19 @@ tests:
     - ['b.{=} = 3', null]
     - ['b.{=}', 3]
     - ['b.{+}', 7]
-
-- name: reduce
-  categories:
-  - reduce
-  tests:
   - statements:
-    - ['{1}', 1]
+    - ['[:]', []]
   - statements:
-    - ['{1d6}', [1]]
+    - ['[: :]', []]
   - statements:
-    - ['{{1d6}}', 1]
+    - ['[: 1, 2, 3,4 ,5,:]', [1, 2, 3, 4, 5]]
   - statements:
-    - ["{'test'}", 'test']
+    - ['[:3 <-> 4:]', [4, 4, 4, ]]
   - statements:
-    - ['a = 2d6', null]
-    - ['={a}', null]
-    - ['a', [1, 2]]
-    - ['={a}', null]
-    - ['a', 3]
-    - ['={a}', null]
-    - ['={a}', null]
-    - ['={a}', null]
-    - ['a', 3]
-
-- name: enlarge
-  categories:
-  - enlarge
-  tests:
+    - ['[:0, 6 <->{{1d6}},7:]', [0, 1, 2, 3, 4, 5, 6, 7]]
   - statements:
-    - ['{@}', null]
+    - ['[:2 <-> 1d6  :]', [[1, 6], [1, 6]]]
   - statements:
-    - ['{1@}', null]
+    - ['[:6<-> {1d6} - 1, 6, 7:]', [0, 1, 2, 3, 4, 5, 6, 7]]
   - statements:
-    - ['{3@}', null]
-  - statements:
-    - ['{@4}', [4]]
-  - statements:
-    - ['{2@5}', [5, 5]]
-  - statements:
-    - ['{2@1d6}', [[1, 6], [1, 6]]]
-  - statements:
-    - ['a = {2@2d4}', null]
-    - ['={a}', null]
-    - ['a', [[1, 2], [3, 4]]]
-    - ['={a}', null]
-    - ['a', [3, 7]]
-    - ['={a}', null]
-    - ['a', 10]
+    - ['[:0, 6 <->{1d6},7:]', [0, [1], [2], [3], [4], [5], [6], 7]]

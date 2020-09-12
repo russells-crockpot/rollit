@@ -11,6 +11,18 @@ tests:
     result:
       _class: NewBag
       value: []
+  - script: '{ :}'
+    result:
+      _class: NewBag
+      value: []
+  - script: '{: }'
+    result:
+      _class: NewBag
+      value: []
+  - script: '{ : }'
+    result:
+      _class: NewBag
+      value: []
   - script: '{: :}'
     result:
       _class: NewBag

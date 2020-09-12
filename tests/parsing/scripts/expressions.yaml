@@ -169,7 +169,7 @@ tests:
   tests:
   - script: '1d6'
     result:
-      _class: DiceNode
+      _class: NewDice
       number_of_dice: 1
       sides: 6
   - script: '1 + 2d3'
@@ -180,14 +180,14 @@ tests:
         _class: TwoSidedOperator
         value: ADD
       right:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 2
         sides: 3
   - script: '2d3 * 4'
     result:
       _class: BinaryOp
       left:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 2
         sides: 3
       op:
@@ -196,7 +196,7 @@ tests:
       right: 4
   - script: '(1+a)d3'
     result:
-      _class: DiceNode
+      _class: NewDice
       number_of_dice:
         _class: BinaryOp
         left: 1
@@ -209,7 +209,7 @@ tests:
       sides: 3
   - script: '1d(a *3)'
     result:
-      _class: DiceNode
+      _class: NewDice
       number_of_dice: 1
       sides:
         _class: BinaryOp
@@ -222,29 +222,29 @@ tests:
         right: 3
   - script: '(1d6)d4'
     result:
-      _class: DiceNode
+      _class: NewDice
       number_of_dice:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       sides: 4
   - script: '2d(3d4)'
     result:
-      _class: DiceNode
+      _class: NewDice
       number_of_dice: 2
       sides:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 3
         sides: 4
   - script: '(7d3)d(2d5)'
     result:
-      _class: DiceNode
+      _class: NewDice
       number_of_dice:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 7
         sides: 3
       sides:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 2
         sides: 5
 
@@ -262,7 +262,7 @@ tests:
     result:
       _class: Reduce
       value:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
   - script: '{1d6 +2}'
@@ -271,7 +271,7 @@ tests:
       value:
         _class: BinaryOp
         left:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides: 6
         op:
@@ -284,7 +284,7 @@ tests:
       left:
         _class: Reduce
         value:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides: 6
       op:
@@ -306,12 +306,12 @@ tests:
     result:
       _class: Reduce
       value:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides:
           _class: Reduce
           value:
-            _class: DiceNode
+            _class: NewDice
             number_of_dice: 2
             sides: 4
   - script: '{1}->top'
@@ -332,7 +332,7 @@ tests:
       subject:
         _class: Reduce
         value:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides: 4
       modifiers:
@@ -347,12 +347,12 @@ tests:
       subject:
         _class: Reduce
         value:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides:
             _class: Reduce
             value:
-              _class: DiceNode
+              _class: NewDice
               number_of_dice: 2
               sides: 4
       modifiers:
@@ -433,59 +433,6 @@ tests:
               _class: TwoSidedOperator
               value: SUBTRACT
             right: 4
-
-- name: enlarge
-  categories:
-  - enlarge
-  tests:
-  - script: '{@}'
-    result:
-      _class: Enlarge
-      size: null
-      value: null
-  - script: '{1@}'
-    result:
-      _class: Enlarge
-      size: 1
-      value: null
-  - script: '{@2}'
-    result:
-      _class: Enlarge
-      size: null
-      value: 2
-  - script: '{1@2}'
-    result:
-      _class: Enlarge
-      size: 1
-      value: 2
-  - script: '{1d6@2d3}'
-    result:
-      _class: Enlarge
-      size:
-        _class: DiceNode
-        number_of_dice: 1
-        sides: 6
-      value:
-        _class: DiceNode
-        number_of_dice: 2
-        sides: 3
-  - script: '{1d6@{2d3}}'
-    result:
-      _class: Enlarge
-      size:
-        _class: DiceNode
-        number_of_dice: 1
-        sides: 6
-      value:
-        _class: Reduce
-        value:
-          _class: DiceNode
-          number_of_dice: 2
-          sides: 3
-#  - script: '{}'
-#    result:
-#      _class: Enlarge
-#      value:
 
 - name: access
   categories:
@@ -591,3 +538,103 @@ tests:
       accessors:
       - _class: SpecialEntry
         value: SET
+
+- name: rolls
+  categories:
+  - rolls
+  tests:
+  - script: '[:]'
+    result:
+      _class: NewRoll
+      value: []
+  - script: '[: ]'
+    result:
+      _class: NewRoll
+      value: []
+  - script: '[ :]'
+    result:
+      _class: NewRoll
+      value: []
+  - script: '[ : ]'
+    result:
+      _class: NewRoll
+      value: []
+  - script: '[: :]'
+    result:
+      _class: NewRoll
+      value: []
+  - script: '[: 1 :]'
+    result:
+      _class: NewRoll
+      value: [1]
+  - script: '[: 2, :]'
+    result:
+      _class: NewRoll
+      value: [2]
+  - script: '[: 3, 4:]'
+    result:
+      _class: NewRoll
+      value: [3, 4]
+  - script: '[: 4, 5, 6:]'
+    result:
+      _class: NewRoll
+      value: [4, 5, 6]
+  - script: '[: 5, 6, 7, 8,:]'
+    result:
+      _class: NewRoll
+      value: [5, 6, 7, 8]
+  - script: '[: a+1, b:]'
+    result:
+      _class: NewRoll
+      value:
+      - _class: BinaryOp
+        left:
+          _class: Reference
+          value: 'a'
+        op:
+          _class: TwoSidedOperator
+          value: ADD
+        right: 1
+      - _class: Reference
+        value: 'b'
+  - script: '[: 1 <-> 2:]'
+    result:
+      _class: NewRoll
+      value:
+      - _class: Fill
+        size: 1
+        value: 2
+  - script: '[: 2, 3 <-> 4:]'
+    result:
+      _class: NewRoll
+      value:
+      - 2
+      - _class: Fill
+        size: 3
+        value: 4
+
+  - script: '[: 3, c + 5 <->2 * d, 5:]'
+    result:
+      _class: NewRoll
+      value:
+      - 3
+      - _class: Fill
+        size:
+          _class: BinaryOp
+          left:
+            _class: Reference
+            value: 'c'
+          op:
+            _class: TwoSidedOperator
+            value: ADD
+          right: 5
+        value:
+          _class: BinaryOp
+          left: 2
+          op:
+            _class: TwoSidedOperator
+            value: MULTIPLY
+          right:
+            _class: Reference
+            value: 'd'
+      - 5

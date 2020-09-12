@@ -34,6 +34,7 @@ name        <- '$'                                          %special_ref
              / '~'                                          %special_ref
              / '!'                                          %special_ref
              / '#'                                          %special_ref
+             / '@'                                          %special_ref
              / basic_name
 
 special_entry       <- '^'                                  %special_entry
@@ -48,8 +49,10 @@ new_bag             <- @'{:' _ws (_ statement _ !':}')* _
                      / @'{' _ @':' _ @'}' _                 %new_bag
                      / @'{:' _ws @':}' _                    %new_bag
 
-enlarge     <- @'{' _ws !(':' / special_accessor)
-               expression? _ws '@' _ws expression? _ws @'}' _               %enlarge
+roll_item   <- expression _ @'<->' _ expression                             %fill
+             / expression
+roll_def    <- @'[:' _ws (roll_item _ @',' _ws)* roll_item? _ws @':]' _     %roll_def
+             / '[' _ ':' _ ']'                                              %empty_roll
 reduce      <- @'{' _ws !(':' / special_accessor)
                expression _ws @'}' _                                        %reduce
 
@@ -159,7 +162,7 @@ dice    <- !(name/string) reduce_expr _ @`d` _
           / access
           / reduce_expr
 
-reduce_expr <- enlarge
+reduce_expr <- roll_def
              / new_bag
              / reduce
              / @'(' _ws expression _ws @')' _
@@ -173,7 +176,7 @@ modifier_tail           <- access _ modifier_args?                          %mod
 first_modifier_call     <- dice _ ('-'/':') @'>' _ modifier_tail            %first_modifier_call
 modifier_call           <- _ws @'->' _ modifier_tail
 modifier_args           <- @'(' _ws (expression _ @',' _ws )*
-                            expression ? _  @')' _                          %arg_list
+                            expression? _  @')' _                           %arg_list
 
 modifier_params         <- (basic_name _ @',' _ws )* basic_name?            %param_list
 small_modifier_body     <- modifier_params _ @':' _ !'['
@@ -184,7 +187,7 @@ modifier_def_target     <- access
                          / @'<' _ special_entry _ @'>' _
                          / '!'                                              %special_ref
                          / '?'                                              %special_ref
-modifier_def    <- modifier_def_target _ @'<-' _ws
+modifier_def    <- modifier_def_target _ @'<-' !'>' _ws
                    ( small_modifier_body / normal_modifier_body)            %modifier_def
 
 then            <- @'then' _ws stmt_or_expr
@@ -227,8 +230,8 @@ statement   <- eos
              / @'oops' _ expression                                             %oops
              / @'clear' _ access                                                %clear
              / @'restart' _  restart_pos
-             / @'[' _ws block_body _ws @']' _                                   %block
-             / @'[' _ws @']' _                                                  %empty_block
+             / @'[' !':' _ws block_body _ws @']' _                              %block
+             / @'[' !':' _ws @']' _                                             %empty_block
              / @'={' !':' _ access _ @'}' _                                     %reduce_and_assign
              / load
              / modifier_def

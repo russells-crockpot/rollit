@@ -103,13 +103,42 @@ def _(self):
                 raise RollitTypeError()
 
 
-@elements.Enlarge.evaluator
+@elements.Expand.evaluator
 def _(self):
-    size = 1 if self.size is None else self.size
-    return objects.Roll(context(self.value) for _ in range(context(size)))
+    if isinstance(self.value, objects.InternalObject):
+        return self
+    value = context(self.value)
+    if not isinstance(value, objects.InternalObject):
+        raise RollitTypeError(self)
+    # pylint: disable=protected-access
+    return self._replace(value=value)
 
 
-@elements.DiceNode.evaluator
+@elements.Fill.evaluator
+def _(self):
+    return elements.Expand(objects.Roll(context(self.value) for _ in range(context(self.size))),
+                           codeinfo=self.codeinfo)
+
+
+@elements.NewRoll.evaluator
+def _(self):
+    items = []
+    for item in self.value:
+        item = context(item)
+        if isinstance(item, elements.Expand):
+            value = item.value
+            if not isinstance(value, objects.InternalObject):
+                value = context(value)
+                if not isinstance(value, objects.InternalObject):
+                    raise RollitTypeError(value)
+            # pylint: disable=protected-access
+            items += value._items
+        else:
+            items.append(context(item))
+    return objects.Roll(items)
+
+
+@elements.NewDice.evaluator
 def _(self):
     num_dice, sides, *_ = self
     if isinstance(num_dice, elements.Reduce):

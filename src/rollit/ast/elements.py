@@ -16,7 +16,7 @@ __all__ = [
     'BinaryOp',
     'ButIf',
     'ClearValue',
-    'DiceNode',
+    'NewDice',
     'Enlarge',
     'ForEvery',
     'IfThen',
@@ -162,12 +162,14 @@ class SpecialReference(ModelEnumElement):
     """
     """
     SUBJECT = '?'
-    ROOT = '~'
     ALL = '*'
     NONE = '!'
-    LOCAL = '$'
     ERROR = '#'
+    # scopes
+    GLOBAL = '@'
+    ROOT = '~'
     PARENT = '^'
+    LOCAL = '$'
 
     # pylint: disable=no-member
     def __nonzero__(self):
@@ -280,6 +282,15 @@ ModifierDef = create_model_element_type('ModifierDef', ('target', 'parameters', 
 Leave = create_model_element_type('Leave', constant=True)
 """ """
 
+# Rolls
+Fill = create_model_element_type('Fill', ('size', 'value'))
+""" """
+NewRoll = create_model_element_type('NewRoll')
+""" """
+#TODO
+Expand = create_model_element_type('Expand')
+""" """
+
 BinaryOp = create_model_element_type('BinaryOp', ('left', 'op', 'right'))
 """ """
 Negation = create_model_element_type('Negation')
@@ -312,7 +323,7 @@ UseIf = create_model_element_type('UseIf', ('use', 'predicate', 'otherwise'),
                                   ))
 """ """
 
-DiceNode = create_model_element_type('DiceNode', ('number_of_dice', 'sides'))
+NewDice = create_model_element_type('NewDice', ('number_of_dice', 'sides'))
 """ """
 
 

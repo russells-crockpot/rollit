@@ -65,7 +65,7 @@ tests:
           _class: SpecialReference
           value: SUBJECT
         value:
-          _class: DiceNode
+          _class: NewDice
           number_of_dice: 1
           sides: 6
   - script: 'name<-param[]'
@@ -248,7 +248,7 @@ tests:
     result:
       _class: Modify
       subject:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       modifiers:
@@ -261,7 +261,7 @@ tests:
     result:
       _class: Modify
       subject:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       modifiers:
@@ -276,7 +276,7 @@ tests:
     result:
       _class: Modify
       subject:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       modifiers:
@@ -286,7 +286,7 @@ tests:
           value: 'bottom'
         args:
         - number_of_dice: 2
-          _class: DiceNode
+          _class: NewDice
           sides: 3
       - _class: ModifierCall
         modifier:
@@ -297,7 +297,7 @@ tests:
     result:
       _class: Modify
       subject:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       modifiers:
@@ -308,7 +308,7 @@ tests:
         args:
         - number_of_dice: 2
           sides: 3
-          _class: DiceNode
+          _class: NewDice
       - _class: ModifierCall
         modifier:
           _class: Reference
@@ -318,7 +318,7 @@ tests:
     result:
       _class: Modify
       subject:
-        _class: DiceNode
+        _class: NewDice
         number_of_dice: 1
         sides: 6
       modifiers:
@@ -329,7 +329,7 @@ tests:
         args:
         - number_of_dice: 2
           sides: 3
-          _class: DiceNode
+          _class: NewDice
       - _class: ModifierCall
         modifier:
           _class: Reference
@@ -339,7 +339,7 @@ tests:
         - left:
             number_of_dice: 4
             sides: 5
-            _class: DiceNode
+            _class: NewDice
           op:
             _class: TwoSidedOperator
             value: SUBTRACT
