@@ -47,6 +47,9 @@ def _(self):
 def _(self):
     cm = nullcontext()
     target = self.target
+    value = context(self.value)
+    if isinstance(self.value, elements.Expand):
+        value = value.value
     if isinstance(target, elements.Access):
         accessing, target = _access_all_but_last(self.target)
         cm = context.now_access(accessing)
@@ -54,15 +57,15 @@ def _(self):
         target = target.value
     with cm:
         if isinstance(target, elements.RawAccessor):
-            context.accessing.raw_set(context(target), context(self.value))
+            context.accessing.raw_set(context(target), value)
         elif isinstance(target, elements.OverloadOperator):
             if not isinstance(context.accessing, objects.InternalObject):
                 raise RollitTypeError(self)
-            context.accessing.override_operator(target.operator, target.side, context(self.value))
+            context.accessing.override_operator(target.operator, target.side, value)
         elif isinstance(target, (elements.SpecialAccessor, elements.SpecialEntry)):
-            context[target] = context(self.value)
+            context[target] = value
         else:
-            context[context(target)] = context(self.value)
+            context[context(target)] = value
 
 
 @elements.Access.evaluator
@@ -112,6 +115,14 @@ def _(self):
         raise RollitTypeError(self)
     # pylint: disable=protected-access
     return self._replace(value=value)
+
+
+# @elements.Expand.evaluator
+# def _(self):
+#     #Expand acts more as a marker than anything, so there's not much to do.
+#     if isinstance(self.value, objects.InternalObject):
+#         return self.value
+#     return context(self.value)
 
 
 @elements.Fill.evaluator

@@ -431,15 +431,20 @@ class Roll(InternalObject):
     def __iter__(self):
         return iter(self._items)
 
+    def extend(self, roll):
+        """
+        """
+        self._items.extend(roll)
+
     def append(self, obj):
         """
         """
         self._items.append(obj)
 
-    def map_to(self, *args):
+    def insert(self, obj, idx=0):
         """
         """
-        raise NotImplementedError()
+        self._items.insert(idx, obj)
 
     def operate_on(self, operator, side=None, other=None):
         op_impl = super().operate_on(operator, side=side, other=other)
@@ -467,6 +472,25 @@ class Roll(InternalObject):
 @Roll.default_ops_impl.add_impl(elements.OneSidedOperator.HAS)
 def _(obj, other):
     return other in obj
+
+
+@Roll.default_ops_impl.add_impl(elements.TwoSidedOperator.AMPERSAND, elements.OperationSide.LEFT)
+def _(obj, other):
+    new_roll = Roll(obj)
+    if isinstance(other, elements.Expand):
+        new_roll.extend(context(other.value))
+    else:
+        new_roll.append(context(other))
+    return new_roll
+
+
+@Roll.default_ops_impl.add_impl(elements.TwoSidedOperator.AMPERSAND, elements.OperationSide.RIGHT)
+def _(obj, other):
+    if isinstance(other, elements.Expand):
+        new_roll = context(other.value)
+        new_roll.extend(obj)
+        return new_roll
+    return Roll((other, *obj))
 
 
 @Roll.default_ops_impl.add_impl(elements.OverloadOnlyOperator.ITERATE)

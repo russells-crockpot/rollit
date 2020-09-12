@@ -359,9 +359,30 @@ class Actions:
     @elements_to_values
     @add_codeinfo
     def access(self, text, start, end, values, codeinfo):
-        return elements.Access(accessing=values[0],
-                               accessors=ensure_tuple(values[-1]),
-                               codeinfo=codeinfo)
+        accessing = values[0]
+        accessors = ensure_tuple(values[-1])
+        current_accessors = []
+        for accessor in accessors:
+            if accessor == elements.SpecialAccessor.EVERY:
+                if current_accessors:
+                    accessing = elements.Expand(
+                        elements.Access(accessing=accessing,
+                                        accessors=tuple(current_accessors),
+                                        codeinfo=codeinfo),
+                        codeinfo=codeinfo,
+                    )
+                    current_accessors = []
+                else:
+                    accessing = elements.Expand(accessing, codeinfo=codeinfo)
+            else:
+                current_accessors.append(accessor)
+        if current_accessors:
+            accessing = elements.Access(
+                accessing=accessing,
+                accessors=tuple(current_accessors),
+                codeinfo=codeinfo,
+            )
+        return accessing
 
     @elements_to_values
     @add_codeinfo
