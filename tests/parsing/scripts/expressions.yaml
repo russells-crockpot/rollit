@@ -512,14 +512,6 @@ tests:
       accessors:
       - _class: SpecialAccessor
         value: VALUE
-  - script: 'i.{*}'
-    result:
-      accessing:
-        _class: Reference
-        value: 'i'
-      accessors:
-      - _class: SpecialAccessor
-        value: EVERY
   - script: "j.<'test'>"
     result:
       accessing:

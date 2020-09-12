@@ -64,8 +64,8 @@ OPERATOR_MAP = {
     'has': lambda x, y: y in x,
     'and': lambda x, y: 1 if x and y else 0,
     'or': lambda x, y: 1 if x or y else 0,
-    'isa': _raise_not_implemented,
-    '&': _raise_not_implemented,
+    # 'isa': _raise_not_implemented,
+    # '&': _raise_not_implemented,
 }
 
 MATH_OPERATORS = frozenset({'+', '-', '*', '/', '%/', '%'})

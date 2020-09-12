@@ -164,6 +164,25 @@ def _(self):
     return not context(self.value)
 
 
+# pylint: disable=too-many-return-statements
+def _handle_isa(left, right):
+    if right == 'integer':
+        return isinstance(left, int)
+    if right == 'float':
+        return isinstance(left, float)
+    if right == 'number':
+        return isinstance(left, (int, float))
+    if right == 'string':
+        return isinstance(left, str)
+    if right == 'dice':
+        return isinstance(left, objects.Dice)
+    if right == 'roll':
+        return isinstance(left, objects.Roll)
+    if right == 'bag':
+        return isinstance(left, objects.Bag)
+    raise RollitTypeError()
+
+
 @elements.BinaryOp.evaluator
 def _(self):
     left = context(self.left)
@@ -178,10 +197,12 @@ def _(self):
     if isinstance(rval, (int, str, float, objects.InternalObject)):
         return rval
     if rval is NotImplemented:
-        try:
+        if self.op == elements.TwoSidedOperator.AMPERSAND:
+            return objects.Roll((left, right))
+        if self.op == elements.TwoSidedOperator.ISA:
+            return 1 if _handle_isa(left, right) else 0
+        with suppress(TypeError):
             return constants.OPERATOR_MAP[self.op.value](left, right)
-        except TypeError:
-            raise RollitTypeError()
     raise RollitTypeError()
 
 
