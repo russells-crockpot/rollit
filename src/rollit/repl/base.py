@@ -8,7 +8,7 @@ from abc import ABCMeta, abstractmethod
 
 from ..exceptions import RollitException, RollitRuntimeError
 from ..grammar import ParseError
-from ..objects import Roll
+from ..objects import Roll, OopsException
 from ..util import format_runtime_error, is_valid_iterable
 
 try:
@@ -73,9 +73,9 @@ class BaseRepl(metaclass=ABCMeta):
     def print_error(self, error):
         """
         """
-        if isinstance(error, RollitRuntimeError):
-            if getattr(self.options, 'debug', False):
-                traceback.print_exc()
+        if isinstance(error, RollitRuntimeError) and getattr(self.options, 'debug', False):
+            traceback.print_exc()
+        if isinstance(error, (RollitRuntimeError, OopsException)):
             print(format_runtime_error(error), file=sys.stderr)
         else:
             traceback.print_exc()
@@ -97,7 +97,7 @@ class BaseRepl(metaclass=ABCMeta):
                     if isinstance(result, str):
                         result = f"'{result}'"
                     self.print_result(result)
-            except (RollitException, ParseError) as e:
+            except (RollitException, ParseError, OopsException) as e:
                 self.print_error(e)
             except (KeyboardInterrupt, EOFError):
                 return

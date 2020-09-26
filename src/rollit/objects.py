@@ -115,11 +115,18 @@ class RestartException(RollitNonErrorException):
 class OopsException(RollitNonErrorException):
     """
     """
-    __slots__ = ('value',)
+    __slots__ = ('value', 'stacktrace')
 
     #pylint: disable=super-init-not-called
     def __init__(self, value):
         self.value = value
+        self.stacktrace = None
+
+    @property
+    def msg(self):
+        """
+        """
+        return str(self.value)
 
 
 class OperatorImplementations:
