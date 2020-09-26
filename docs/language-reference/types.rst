@@ -1,9 +1,9 @@
-.. _Types:
+.. _Rollit Language Reference | Types:
 
 Types
 =====
 
-.. _Types | int and float:
+.. _Rollit Language Reference | Types | int and float:
 
 int and float
 -------------
@@ -11,23 +11,23 @@ int and float
 As you can probably guess from the name, these are both number based primitives, with ``int`` being
 and integer and ``float`` being a floating point number.
 
-.. _Types | dice:
+.. _Rollit Language Reference | Types | dice:
 
 dice
 ----
 
-.. _Types | roll:
+.. _Rollit Language Reference | Types | roll:
 
 roll
 ----
 
 
-.. _Types | modifier:
+.. _Rollit Language Reference | Types | modifier:
 
 modifier
 --------
 
-.. _Types | bag:
+.. _Rollit Language Reference | Types | bag:
 
 bag
 ---

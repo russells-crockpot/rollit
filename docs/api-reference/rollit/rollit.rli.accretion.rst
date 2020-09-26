@@ -1,7 +1,7 @@
-rollit.runtime.scope module
+rollit.rli.accretion module
 ===========================
 
-.. automodule:: rollit.runtime.scope
+.. automodule:: rollit.rli.accretion
    :members:
    :undoc-members:
    :show-inheritance:

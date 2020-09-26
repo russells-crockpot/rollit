@@ -9,7 +9,10 @@ Rollit documentation!
    :caption: Contents:
 
    general/overview.rst
+   general/faq.rst
+   general/todo.rst
    language-reference/toc.rst
+   standard-library/toc.rst
    api-reference/rollit/modules.rst
 
 

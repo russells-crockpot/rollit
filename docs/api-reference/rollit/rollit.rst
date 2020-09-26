@@ -10,6 +10,7 @@ Subpackages
    rollit.ast
    rollit.extra
    rollit.repl
+   rollit.rli
    rollit.runtime
 
 Submodules
@@ -23,7 +24,6 @@ Submodules
    rollit.langref
    rollit.main
    rollit.objects
-   rollit.rli
    rollit.util
 
 Module contents

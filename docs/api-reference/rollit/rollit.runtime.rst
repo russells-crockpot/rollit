@@ -8,11 +8,10 @@ Submodules
    :maxdepth: 5
 
    rollit.runtime.base
-   rollit.runtime.context
+   rollit.runtime.core
    rollit.runtime.libraries
    rollit.runtime.load_evaluators
    rollit.runtime.run
-   rollit.runtime.scope
    rollit.runtime.towers
 
 Module contents

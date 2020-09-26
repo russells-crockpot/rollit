@@ -1,106 +1,60 @@
-.. _Statements:
+.. _Rollit Language Reference | Statements:
 
 Statements
 ==========
 
 
-.. _Statements | Assignment:
+.. _Rollit Language Reference | Statements | Assignment:
 
 Assignment
--------
+----------
 
 
-.. _Statements | attempt:
+.. _Rollit Language Reference | Statements | attempt:
 
 attempt
 -------
 
 
-.. _Statements | clear:
+.. _Rollit Language Reference | Statements | clear:
 
 clear
--------
+-----
 
 
-.. _Statements | for ... every:
+.. _Rollit Language Reference | Statements | for ... every:
 
 for ... every
--------
+-------------
 
 
-.. _Statements | if ... otherwise:
+.. _Rollit Language Reference | Statements | if ... otherwise:
 
 if ... otherwise
--------
+----------------
 
 
-.. _Statements | leave:
+.. _Rollit Language Reference | Statements | leave:
 
 leave
--------
+-----
 
 
-.. _Statements | load:
+.. _Rollit Language Reference | Statements | load:
 
 load
--------
+----
 
 
-.. _Statements | oops:
+.. _Rollit Language Reference | Statements | oops:
 
 oops
--------
+----
 
 
-.. _Statements | restart:
+.. _Rollit Language Reference | Statements | restart:
 
 restart
 -------
 
 
-.. _Statements | attempt:
-
-attempt
--------
-
-
-.. _Statements | attempt:
-
-attempt
--------
-
-
-.. _Statements | attempt:
-
-attempt
--------
-
-
-.. _Statements | attempt:
-
-attempt
--------
-
-
-.. _Statements | attempt:
-
-attempt
--------
-
-
-.. _Statements | attempt:
-
-attempt
--------
-
-
-.. _Statements | attempt:
-
-attempt
--------
-
-
-.. _Statements | attempt:
-
-attempt
--------

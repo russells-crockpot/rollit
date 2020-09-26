@@ -67,3 +67,8 @@ repl
 maths
 subscripting
 rli
+startpos
+endpos
+rootlib
+cli
+dnd
