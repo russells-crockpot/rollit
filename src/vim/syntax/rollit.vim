@@ -15,7 +15,7 @@ let s:cpo_save = &cpo
 set cpo&vim
 
 syn keyword rollitRepeat        until do except for every that at after restart before when
-syn keyword rollitException     attempt but always occurs
+syn keyword rollitException     attempt but always occurs oops
 syn keyword rollitLoad          load from into
 syn keyword rollitConditional   use if then and or not has otherwise unless
 syn keyword rollitLeave         leave
@@ -31,21 +31,28 @@ syn match   rollitOperator       "\(\h\w*\)\@<!d\(\w*\h\)\@!" display
 syn match   rollitOperator       "%/" display
 syn match   rollitModOperator    "->" display contained display
 syn match   rollitModOperator    "<-" display contained display
-syn match   rollitExpand         "[@]" display contained
 syn match   rollitDelimeter      "|" display
 syn match   rollitModifierDef    "\h\w*\s*<-\s*" display contains=rollitModOperator
 syn match   rollitModifierCall   "\s*->\s*\h\w*" display contains=rollitModOperator
+syn match   rollitEmptyRoll      "\[\s*:\s*\]" display
+syn match   rollitEmptyBag       "{\s*:\s*}" display
 
 syn keyword rollitTodo          FIXME NOTE NOTES TODO XXX CONSIDER contained
 syn match   rollitComment	    "//.*$" contains=rollitTodo,@Spell
 
-syn region rollitString     start="'" end="'" contains=rollitEscape,@Spell
-syn region rollitBlock      start="\[" end="\]" contains=ALLBUT,rollitExpand fold
-syn region rollitReduce     start="{" end="}" display
+syn region rollitString     start="\z\('\)" end="\z1" contains=rollitEscape,@Spell
+syn region rollitRollDef    start="\z\(\[:\)" end="\z1" contains=ALL fold
+syn region rollitBlock      start="\z\(\[\)" end="\z1" contains=ALLBUT,rollitExpand fold
+syn region rollitBagDef     start="\z\({:\)" end="\z1" display contains=ALL fold
+syn region rollitReduce     start="\z\({\)" end="\z1" display
             \ contains=ALLBUT,rollitModifierDef,rollitDelimeter,rollitLeave,
 
 
 "hi def link rollitStatement		    Statement
+hi def link rollitBagDef            Typedef
+hi def link rollitEmptyBag          Typedef
+hi def link rollitRollDef           Structure
+hi def link rollitEmptyRoll         Structure
 hi def link rollitException         Exception
 hi def link rollitConditional       Conditional
 hi def link rollitLeave             Function
