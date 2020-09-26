@@ -4,10 +4,7 @@ import contextvars
 
 from ..langref import ATOM_TYPES
 
-__all__ = ['DEFAULT_SEARCH_PATHS', 'is_atom', 'context']
-
-DEFAULT_SEARCH_PATHS = ('.',)
-""" """
+__all__ = ['is_atom', 'context']
 
 _CURRENT_CONTEXT = contextvars.ContextVar('current-runtime-context', default=None)
 
@@ -33,10 +30,11 @@ class _CurrentContextProxy:
     __call__ = lambda s, v: _CURRENT_CONTEXT.get()(v)
     __str__ = lambda s: _CURRENT_CONTEXT.get().__str__()
     __repr__ = lambda s: _CURRENT_CONTEXT.get().__repr__()
+    __bool__ = lambda s: _CURRENT_CONTEXT.get() is not None
 
 
 context = _CurrentContextProxy()
-"""The current runtime context
+"""The current :class:`~rollit.runtime.core.RuntimeContext`.
 """
 
 del _CurrentContextProxy

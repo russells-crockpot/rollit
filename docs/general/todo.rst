@@ -1,11 +1,11 @@
 Execution/Evaluation
 ====================
 
- * Finish library search path
- * Strip white space from stack trace
+ * Strip whitespace from stack trace
  * Implement ``@`` for accessing the global scope
  * Finish adding ability to load rollit libraries from python files
  * Finish implementing the ``*`` special accessor
+ * Finish error handling.
 
 Tests
 =====
@@ -84,4 +84,4 @@ Extra
 =====
 
 * Finish pygments lexer
-* Rework vim plugin
+* Improve autocompletion for pretty repl

@@ -1,16 +1,26 @@
 """Contains the runtime context for rollit, which is what actually execute a parsed model.
 """
-import contextvars
+import os
 from abc import ABCMeta
 from contextlib import contextmanager, suppress
 
-from ..objects import Bag, NoSubject
+from ..objects import Bag, NoSubject, Roll
 from ..ast import elements, ModelElement
 from ..exceptions import RollitTypeError, InvalidNameError, RollitRuntimeError, \
         RollitReferenceError, RollitSyntaxError
 from .base import _CURRENT_CONTEXT, context as current_context
 
 __all__ = ['RuntimeContext', 'Scope']
+
+
+def _get_default_search_paths():
+    if 'ROLLIT_PATHS' in os.environ:
+        return os.environ['ROLLIT_PATHS'].split('::')
+    paths = ['.']
+    if 'ROLLIT_EXTRA_PATHS' in os.environ:
+        paths += os.environ['ROLLIT_EXTRA_PATHS'].split('::')
+    paths.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'libraries'))
+    return paths
 
 
 class RuntimeContext(metaclass=ABCMeta):
@@ -27,18 +37,20 @@ class RuntimeContext(metaclass=ABCMeta):
     _root_scope = None
     _scope = None
     _libraries = None
-    _pycontext = None
-    _reset_token = None
+    _library_search_paths = None
+    _reset_tokens = None
 
     def __init__(self, runner):
-        reset_token = _CURRENT_CONTEXT.set(self)
-        self._pycontext = contextvars.copy_context()
-        _CURRENT_CONTEXT.reset(reset_token)
         self._runner = runner
         self._accessing = self._root_scope = self._scope = Scope()
+        if current_context:
+            self._library_search_paths = Roll(current_context.library_search_paths)
+        else:
+            self._library_search_paths = _get_default_search_paths()
         self._libraries = {'~': self._runner.load_library('~')}
         self.root_scope.load(self._libraries['~'])
         self.stack = []
+        self._reset_tokens = []
 
     def get_library(self, name):
         """
@@ -46,6 +58,12 @@ class RuntimeContext(metaclass=ABCMeta):
         if name not in self._libraries:
             self._libraries[name] = self._runner.load_library(name)
         return self._libraries[name]
+
+    @property
+    def library_search_paths(self):
+        """
+        """
+        return self._library_search_paths
 
     @property
     def root_scope(self):
@@ -116,14 +134,11 @@ class RuntimeContext(metaclass=ABCMeta):
         del self.accessing[name]
 
     def __enter__(self):
-        if _CURRENT_CONTEXT.get() != self:
-            self._reset_token = _CURRENT_CONTEXT.set(self)
+        self._reset_tokens.append(_CURRENT_CONTEXT.set(self))
         return self
 
     def __exit__(self, *args):
-        if self._reset_token:
-            _CURRENT_CONTEXT.reset(self._reset_token)
-            self._reset_token = None
+        _CURRENT_CONTEXT.reset(self._reset_tokens.pop())
 
     def roll(self, sides):
         """
