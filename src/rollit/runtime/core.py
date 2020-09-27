@@ -4,7 +4,7 @@ import os
 from abc import ABCMeta
 from contextlib import contextmanager, suppress
 
-from ..objects import Bag, NoSubject, Roll
+from ..objects import Bag, NoSubject, Roll, Modifier
 from ..ast import elements, ModelElement
 from ..exceptions import RollitTypeError, InvalidNameError, RollitRuntimeError, \
         RollitReferenceError, RollitSyntaxError
@@ -281,10 +281,29 @@ class Scope:
             del self.parent[name]
         del self._variables[name]
 
-    def variable_names(self):
+    def local_variable_names(self):
         """
         """
         return tuple(self._variables._entries.keys())
+
+    def variable_names(self):
+        """
+        """
+        if self.parent:
+            return set(self.local_variable_names()) | self.parent.variable_names()
+        return set(self.local_variable_names())
+
+    def local_modifier_names(self):
+        """
+        """
+        return tuple(k for k, v in self._variables._entries.items() if isinstance(v, Modifier))
+
+    def modifier_names(self):
+        """
+        """
+        if self.parent:
+            return set(self.local_modifier_names()) | self.parent.modifier_names()
+        return set(self.local_modifier_names())
 
     @property
     def loops(self):

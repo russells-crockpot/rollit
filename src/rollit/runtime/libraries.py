@@ -91,14 +91,7 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
 
     @bp.modifier
     def names_in_scope(*, subject):
-        names = set()
-        scope = context.scope
-        while scope.parent:
-            names |= set(scope.variable_names())
-            scope = scope.parent
-        names |= set(scope.variable_names())
-        names = Roll(sorted(names))
-        return names
+        return Roll(sorted(context.scope.variable_names()))
 
     @bp.modifier
     def overloads(*, subject):
