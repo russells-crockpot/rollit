@@ -43,12 +43,20 @@ syn keyword rollitTodo          FIXME NOTE NOTES TODO XXX CONSIDER contained
 syn match   rollitComment	    "//.*$" contains=rollitTodo,@Spell
 
 syn region rollitString     start="\z\('\)" end="\z1" contains=rollitEscape,@Spell
-syn region rollitRollDef    start="\z\(\[:\)" end="\z1" contains=ALL fold
-syn region rollitBlock      start="\z\(\[\)" end="\z1" contains=ALLBUT,rollitExpand fold
-syn region rollitBagDef     start="\z\({:\)" end="\z1" display contains=ALL fold
-syn region rollitReduce     start="\z\({\)" end="\z1" display
+syn region rollitRollDef    start="\[:" end=":\]" contains=ALL fold
+syn region rollitBlock      start="\[" end="\]" contains=ALLBUT,rollitExpand fold
+syn region rollitBagDef     start="{:" end=":}" display contains=ALL fold
+syn region rollitReduce     start="{" end="}" display
             \ contains=ALLBUT,rollitModifierDef,rollitDelimeter,rollitLeave,
 
+" catch errors caused by wrong parenthesis
+" syn region  rollitBlock	transparent matchgroup=rollitParen  start="(" end=")"
+"             \ contains=@rollitTop,rollitParenT1
+" syn region  rollitBlock1 transparent matchgroup=rollitParen1 start="(" end=")"
+"             \ contains=@rollitTop,rollitParenT2 contained
+" syn region  rollitBlock2 transparent matchgroup=rollitParen2 start="(" end=")"
+"             \ contains=@rollitTop,rollitParenT  contained
+" syn match   rollitBlockError	 ")"
 
 "hi def link rollitStatement		    Statement
 hi def link rollitClear             Keyword

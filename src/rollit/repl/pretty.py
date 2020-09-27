@@ -120,6 +120,7 @@ class PrettyRepl(BaseRepl):
         )}
         d['->'] = modifier_completer
         d['=>'] = modifier_completer
+        d['has'] = {'do': None}
         d['for'] = {'every': None}
         d['except'] = {'when': None}
         d['but'] = {'if': None, 'always': None}
