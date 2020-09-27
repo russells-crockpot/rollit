@@ -25,6 +25,8 @@ int     <- '-'? [0-9]+              %int_
 number  <- float / int
 
 string_escape   <- "\\" [\\runftvb']
+# string_prefix   <- [w]                                                    %string_prefix
+# string          <- string_prefix? @"'" (string_escape / [^'])* @"'"       %string
 string          <- "'" (string_escape / [^'])* "'"          %string
 
 #TODO
