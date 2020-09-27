@@ -27,6 +27,8 @@ def flatten_tuple(item):
     """
     if not is_valid_iterable(item):
         return ensure_tuple(item)
+    if item and is_valid_iterable(item[0]) and len(item) == 1:
+        item = item[0]
     if item and is_valid_iterable(item[0]):
         item = (*item[0], item[1])
     return tuple(item)

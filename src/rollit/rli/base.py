@@ -5,9 +5,11 @@ python.
 
    :mod:`rollit.runtime.libraries` for examples.
 """
+import functools
 from abc import ABCMeta, abstractmethod
 
 from ..ast.elements import SpecialEntry
+from ..exceptions import RollitTypeError
 from ..objects import Modifier, Bag, NoSubject
 from ..runtime import context
 
@@ -16,7 +18,25 @@ __all__ = [
     'PythonBasedLibrary',
     'PythonBag',
     'cbool',
+    'subject_is_type',
 ]
+
+
+def subject_is_type(type_):
+    """
+    """
+
+    def _decorator(func):
+
+        @functools.wraps(func)
+        def _wrapper(*args, subject, **kwargs):
+            if not isinstance(subject, Bag):
+                raise RollitTypeError()
+            return func(*args, subject=subject, **kwargs)
+
+        return _wrapper
+
+    return _decorator
 
 
 class PythonBasedModifier(Modifier):
@@ -36,6 +56,8 @@ class PythonBasedModifier(Modifier):
         if val == NoSubject:
             context.scope.subject = None
         elif val is not None:
+            if isinstance(val, bool):
+                val = cbool(val)
             context.scope.subject = val
 
     @property

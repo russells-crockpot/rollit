@@ -448,10 +448,10 @@ class Roll(InternalObject):
         """
         self._items.append(obj)
 
-    def insert(self, obj, idx=0):
+    def insert(self, obj, idx=1):
         """
         """
-        self._items.insert(idx, obj)
+        self._items.insert(idx - 1, obj)
 
     def operate_on(self, operator, side=None, other=None):
         op_impl = super().operate_on(operator, side=side, other=other)

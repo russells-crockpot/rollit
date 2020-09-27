@@ -1,5 +1,5 @@
 # pylint: disable=protected-access, too-complex, using-constant-test,
-# pylint: disable=no-method-argument, no-self-argument
+# pylint: disable=no-method-argument, no-self-argument,missing-docstring
 """Contains the python code for the standard library.
 """
 import math
@@ -9,7 +9,7 @@ from contextlib import suppress
 from types import MappingProxyType
 
 from .base import context
-from ..rli import cbool, blueprint as bp
+from ..rli import cbool, blueprint as bp, subject_is_type
 from ..rli.deferred import BagPlaceholder
 from ..ast import elements
 from ..exceptions import RollitTypeError
@@ -31,20 +31,13 @@ __all__ = [
 
 ############## rootlib ##############
 class RootLib(bp.LibraryBlueprints, name='~'):
-    """
-    """
 
     @bp.modifier
-    # pylint: disable=useless-return
     def print(*args, subject):
-        """
-        """
         print(subject, *args)
 
     @bp.modifier
     def top(*args, subject):
-        """
-        """
         if not args:
             num = 1
         else:
@@ -58,8 +51,6 @@ class RootLib(bp.LibraryBlueprints, name='~'):
 
     @bp.modifier
     def bottom(*args, subject):
-        """
-        """
         if not args:
             num = 1
         else:
@@ -71,22 +62,20 @@ class RootLib(bp.LibraryBlueprints, name='~'):
             raise RollitTypeError()
         return Roll(sorted(subject)[0:num])
 
+    @bp.modifier
+    def input(*, subject):
+        return input(subject)  # nosec
+
 
 ############## runtime ##############
 class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
-    """
-    """
 
     @bp.modifier
     def loops(*, subject):
-        """
-        """
         return Roll(context.scope.loops)
 
     @bp.modifier
     def scope_entries(*, subject):
-        """
-        """
         scopes = []
         scope = context.scope
         while scope.parent:
@@ -102,8 +91,6 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
 
     @bp.modifier
     def names_in_scope(*, subject):
-        """
-        """
         names = set()
         scope = context.scope
         while scope.parent:
@@ -115,8 +102,6 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
 
     @bp.modifier
     def overloads(*, subject):
-        """
-        """
         default = type(subject).default_ops_impl
         if default is None:
             default = OperatorImplementations()
@@ -148,14 +133,10 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
 
     @bp.modifier
     def id(*args, subject):
-        """
-        """
         return subject.getid()
 
     @bp.modifier
     def overloaded_ops(*args, subject):
-        """
-        """
         default = type(subject).default_ops_impl
         if default is None:
             default = OperatorImplementations()
@@ -184,10 +165,11 @@ class RuntimeLib(bp.LibraryBlueprints, name='runtime'):
                 getattr(current, op.python_name) is not getattr(default, op.python_name))
         return bag
 
-    # pylint: disable=missing-function-docstring
     def on_access(name, *, subject):
         if name == 'cwd':
             return os.getcwd()
+        if name == 'paths':
+            return context.library_search_paths
         return subject.raw_get(name)
 
 
@@ -211,19 +193,18 @@ class OsLib(bp.LibraryBlueprints, name='os'):
     """
     """
 
-    @bp.entry
-    def name_(self):
-        """
-        """
-        if sys.platform.startswith('linux'):
-            return 'linux'
-        if sys.platform.startswith('win'):
-            return 'windows'
-        if sys.platform.startswith('cygwin'):
-            return 'cygwin'
-        if sys.platform.startswith('darwin'):
-            return 'macos'
-        return sys.platform.rstrip('0123456789. -_')
+    def on_access(name, *, subject):
+        if name == 'name':
+            if sys.platform.startswith('linux'):
+                return 'linux'
+            if sys.platform.startswith('win'):
+                return 'windows'
+            if sys.platform.startswith('cygwin'):
+                return 'cygwin'
+            if sys.platform.startswith('darwin'):
+                return 'macos'
+            return sys.platform.rstrip('0123456789. -_')
+        return subject.raw_get(name)
 
     envvars = bp.entry(_envvars)
 
@@ -266,26 +247,26 @@ class MathsLib(bp.LibraryBlueprints, name='maths'):
 
 
 ############## bags ##############
+_subject_is_bag = subject_is_type(Bag)
+
+
 class BagsLib(bp.LibraryBlueprints, name='bags'):
     """
     """
 
     @bp.modifier
+    @_subject_is_bag
     def names(*, subject):
-        """
-        """
         return Roll(subject._entries.keys())
 
     @bp.modifier
+    @_subject_is_bag
     def values(*, subject):
-        """
-        """
         return Roll(subject._entries.values())
 
     @bp.modifier
+    @_subject_is_bag
     def flatten(*, subject):
-        """
-        """
         # pylint: disable=redefined-outer-name
         bags = []
         current_bag = subject
@@ -300,9 +281,41 @@ class BagsLib(bp.LibraryBlueprints, name='bags'):
 
 
 ############## rolls ##############
+_subject_is_roll = subject_is_type(Roll)
+
+
 class RollsLib(bp.LibraryBlueprints, name='rolls'):
     """
     """
+
+    @bp.modifier
+    @_subject_is_roll
+    def slice(start, end=-1, *, subject):
+        return Roll(subject._items[start - 1:end])
+
+    @bp.modifier
+    @_subject_is_roll
+    def insert(idx, item, *, subject):
+        subject.insert(item, idx)
+
+    @bp.modifier
+    @_subject_is_roll
+    def remove(start, end=None, *, subject):
+        start -= 1
+        if end is None:
+            end = start
+        del subject._items[start:end]
+
+    @bp.modifier
+    @_subject_is_roll
+    #TODO allow for key
+    def sort(*, subject):
+        subject.sort()
+
+    @bp.modifier
+    @_subject_is_roll
+    def count(item, *, subject):
+        return subject._items.count(item)
 
 
 ############## strings ##############
@@ -343,10 +356,16 @@ class LoadingLib(bp.LibraryBlueprints, name='loading'):
     """
 
     @bp.modifier
-    def isolated(*, subject):
+    def load_isolated(*, subject):
         """
         """
         raise NotImplementedError()
+
+    # pylint: disable=missing-function-docstring
+    def on_access(name, *, subject):
+        if name == 'paths':
+            return context.library_search_paths
+        return subject.raw_get(name)
 
 
 BUILTIN_LIBRARIES = MappingProxyType({

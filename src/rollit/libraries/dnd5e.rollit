@@ -1,0 +1,94 @@
+advantage = {:
+    <.> <- k [
+        if ? == ! then k = 0
+        ? = 2d20 -> top + k
+    ]
+:}
+
+disadvantage = {:
+    <.> <- k [
+        if k == ! then k = 0
+        ? = 2d20 -> bottom + ?
+    ]
+:}
+
+AbilityScore = {:
+    create <- name, full_name: {:
+            <^> = ?
+            name = name
+            full_name = full_name
+            create <- score, proficient_in_saves: {:
+                <^> = ?
+                score = score
+                prof_bonus = !
+                proficient_in_saves = proficient_in_saves
+            :}
+        :}
+
+    <.> <- k [
+        if k == 'modifier' then ? = (?.score - 10) / 2
+        otherwise ? = ?.<k>
+    ]
+:}
+
+ability_scores = {:
+    str = AbilityScore:>create('str','Strength')
+    dex = AbilityScore:>create('dex','Dexterity')
+    con = AbilityScore:>create('con','Constitution')
+    int = AbilityScore:>create('int','Intelligence')
+    wis = AbilityScore:>create('wis','Wisdom')
+    cha = AbilityScore:>create('cha','Charisma')
+:}
+
+
+Skill = {:
+    create <- name, default_ability: {:
+        <^> = ?
+        name = name
+        default_ability = default_ability
+        prof_bonus = !
+        create <- proficient: {:
+            <^> = ?
+            proficient = proficient
+        :}
+    :}
+
+:}
+
+skills = {:
+    acrobatics = Skill:>create('Acrobatics', ability_scores.dex.name)
+    animal_handling = Skill:>create('Animal Handling', ability_scores.wis.name)
+    arcana = Skill:>create('Arcana', ability_scores.int.name)
+    athletics = Skill:>create('Athletics', ability_scores.str.name)
+    deception = Skill:>create('Deception', ability_scores.cha.name)
+    history = Skill:>create('History', ability_scores.int.name)
+    insight = Skill:>create('Insight', ability_scores.wis.name)
+    intimidation = Skill:>create('Intimidation', ability_scores.cha.name)
+    investigation = Skill:>create('Investigation', ability_scores.int.name)
+    medicine = Skill:>create('Medicine', ability_scores.wis.name)
+    nature = Skill:>create('Nature', ability_scores.int.name)
+    perception = Skill:>create('Perception', ability_scores.wis.name)
+    performance = Skill:>create('Performance', ability_scores.cha.name)
+    persuasion = Skill:>create('Persuasion', ability_scores.cha.name)
+    religion = Skill:>create('Religion', ability_scores.int.name)
+    sleight_of_hand = Skill:>create('Sleight of Hand', ability_scores.dex.name)
+    stealth = Skill:>create('Stealth', ability_scores.dex.name)
+    survival = Skill:>create('Survival', ability_scores.wis.name)
+:}
+
+
+StatBlock = {:
+    create <- str, dex, con, int, wis, cha, saves, skills, prof_bonus [
+        ? = {:
+            <^> = ?
+            str = ability_scores.str:>create(str, saves has ability_scores.str.name)
+            dex = ability_scores.dex:>create(dex, saves has ability_scores.dex.name)
+            con = ability_scores.con:>create(con, saves has ability_scores.con.name)
+            int = ability_scores.int:>create(int, saves has ability_scores.int.name)
+            wis = ability_scores.wis:>create(wis, saves has ability_scores.wis.name)
+            cha = ability_scores.cha:>create(cha, saves has ability_scores.cha.name)
+            skills = skills
+            prof_bonus = prof_bonus
+        :}
+    ]
+:}
