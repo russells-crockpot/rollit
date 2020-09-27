@@ -203,13 +203,15 @@ otherwise       <- @'otherwise' _ws stmt_or_expr                            %oth
 
 basic_load_list     <- (basic_name _ @',' _ws )* basic_name?
 access_load_list    <- (access _ @',' _ws )* access?
+loadable            <- new_bag
+                     / access_load_list
 load_into           <- @'into' _ access
-load_from           <- @'from' _ access_load_list
+load_from           <- @'from' _ loadable
 load                <- @'load' _ '*' _ load_from _ load_into?               %load_from_into
-                     / @'load' _ access_load_list _ load_from _ load_into   %load_from_into
-                     / @'load' _ access_load_list _ load_from               %load_from
-                     / @'load' _ access_load_list _ load_into               %load_into
-                     / @'load' _ access_load_list                           %load
+                     / @'load' _ loadable _ load_from _ load_into           %load_from_into
+                     / @'load' _ loadable _ load_from                       %load_from
+                     / @'load' _ loadable _ load_into                       %load_into
+                     / @'load' _ loadable                                   %load
 
 
 except_when     <- @'except' _ @'when' _ expression _ then                  %predicated_statement

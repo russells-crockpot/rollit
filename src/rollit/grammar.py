@@ -451,7 +451,7 @@ class TreeNode61(TreeNode):
     def __init__(self, text, offset, elements):
         super(TreeNode61, self).__init__(text, offset, elements)
         self._ = elements[0]
-        self.access_load_list = elements[1]
+        self.loadable = elements[1]
 
 
 class TreeNode62(TreeNode):
@@ -465,7 +465,7 @@ class TreeNode63(TreeNode):
     def __init__(self, text, offset, elements):
         super(TreeNode63, self).__init__(text, offset, elements)
         self._ = elements[4]
-        self.access_load_list = elements[1]
+        self.loadable = elements[1]
         self.load_from = elements[3]
         self.load_into = elements[5]
 
@@ -474,7 +474,7 @@ class TreeNode64(TreeNode):
     def __init__(self, text, offset, elements):
         super(TreeNode64, self).__init__(text, offset, elements)
         self._ = elements[2]
-        self.access_load_list = elements[1]
+        self.loadable = elements[1]
         self.load_from = elements[3]
 
 
@@ -482,7 +482,7 @@ class TreeNode65(TreeNode):
     def __init__(self, text, offset, elements):
         super(TreeNode65, self).__init__(text, offset, elements)
         self._ = elements[2]
-        self.access_load_list = elements[1]
+        self.loadable = elements[1]
         self.load_into = elements[3]
 
 
@@ -490,7 +490,7 @@ class TreeNode66(TreeNode):
     def __init__(self, text, offset, elements):
         super(TreeNode66, self).__init__(text, offset, elements)
         self._ = elements[0]
-        self.access_load_list = elements[1]
+        self.loadable = elements[1]
 
 
 class TreeNode67(TreeNode):
@@ -6854,6 +6854,22 @@ class Grammar(object):
         self._cache['access_load_list'][index0] = (address0, self._offset)
         return address0
 
+    def _read_loadable(self):
+        address0, index0 = FAILURE, self._offset
+        cached = self._cache['loadable'].get(index0)
+        if cached:
+            self._offset = cached[1]
+            return cached[0]
+        index1 = self._offset
+        address0 = self._read_new_bag()
+        if address0 is FAILURE:
+            self._offset = index1
+            address0 = self._read_access_load_list()
+            if address0 is FAILURE:
+                self._offset = index1
+        self._cache['loadable'][index0] = (address0, self._offset)
+        return address0
+
     def _read_load_into(self):
         address0, index0 = FAILURE, self._offset
         cached = self._cache['load_into'].get(index0)
@@ -6928,7 +6944,7 @@ class Grammar(object):
             if address2 is not FAILURE:
                 elements0.append(address2)
                 address3 = FAILURE
-                address3 = self._read_access_load_list()
+                address3 = self._read_loadable()
                 if address3 is not FAILURE:
                     elements0.append(address3)
                 else:
@@ -7060,7 +7076,7 @@ class Grammar(object):
                 if address9 is not FAILURE:
                     elements1.append(address9)
                     address10 = FAILURE
-                    address10 = self._read_access_load_list()
+                    address10 = self._read_loadable()
                     if address10 is not FAILURE:
                         elements1.append(address10)
                         address11 = FAILURE
@@ -7128,7 +7144,7 @@ class Grammar(object):
                     if address16 is not FAILURE:
                         elements2.append(address16)
                         address17 = FAILURE
-                        address17 = self._read_access_load_list()
+                        address17 = self._read_loadable()
                         if address17 is not FAILURE:
                             elements2.append(address17)
                             address18 = FAILURE
@@ -7182,7 +7198,7 @@ class Grammar(object):
                         if address21 is not FAILURE:
                             elements3.append(address21)
                             address22 = FAILURE
-                            address22 = self._read_access_load_list()
+                            address22 = self._read_loadable()
                             if address22 is not FAILURE:
                                 elements3.append(address22)
                                 address23 = FAILURE
@@ -7236,7 +7252,7 @@ class Grammar(object):
                             if address26 is not FAILURE:
                                 elements4.append(address26)
                                 address27 = FAILURE
-                                address27 = self._read_access_load_list()
+                                address27 = self._read_loadable()
                                 if address27 is not FAILURE:
                                     elements4.append(address27)
                                 else:
