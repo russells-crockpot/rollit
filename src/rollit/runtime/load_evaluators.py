@@ -1,15 +1,57 @@
 #pylint: disable=too-many-function-args,missing-docstring
+import operator
 from collections import namedtuple
 from contextlib import suppress, nullcontext
 
 from .base import context
 from .. import objects
-from ..ast import elements, constants
+from ..ast import elements
 from ..exceptions import RollitTypeError, NoSuchLoopError, RollitReferenceError, CannotReduceError,\
         RollitRuntimeError
 from ..util import is_valid_iterable
 
 __all__ = ()
+
+
+def _wrap_operator(op):
+
+    def _wrapped(x, y):
+        return op(context(x), context(y))
+
+    return _wrapped
+
+
+def _and(x, y):
+    x = context(x)
+    if not x:
+        return 0
+    return 1 if context(y) else 0
+
+
+def _or(x, y):
+    x = context(x)
+    if x:
+        return 1
+    return 1 if context(y) else 0
+
+
+OPERATOR_MAP = {
+    '+': _wrap_operator(operator.add),
+    '-': _wrap_operator(operator.sub),
+    '*': _wrap_operator(operator.mul),
+    '/': _wrap_operator(operator.floordiv),
+    '%/': _wrap_operator(operator.truediv),
+    '%': _wrap_operator(operator.mod),
+    '>': _wrap_operator(operator.gt),
+    '<': _wrap_operator(operator.lt),
+    '==': _wrap_operator(operator.eq),
+    '!=': _wrap_operator(operator.ne),
+    '>=': _wrap_operator(operator.ge),
+    '<=': _wrap_operator(operator.le),
+    'has': _wrap_operator(lambda x, y: y in x),
+    'and': _and,
+    'or': _or,
+}
 
 
 def _access_all_but_last(access):
@@ -202,7 +244,7 @@ def _(self):
         if self.op == elements.TwoSidedOperator.ISA:
             return 1 if _handle_isa(left, right) else 0
         with suppress(TypeError):
-            return constants.OPERATOR_MAP[self.op.value](left, right)
+            return OPERATOR_MAP[self.op.value](left, right)
     raise RollitTypeError()
 
 
