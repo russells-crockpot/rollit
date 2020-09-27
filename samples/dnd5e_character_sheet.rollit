@@ -1,0 +1,6 @@
+load dnd5e into dnd
+stats = dnd.StatBlock:>create(
+    dnd.AbilityBlock:>create(12, 12, 12, 13, 13, 13, [: 'str', 'dex' :]),
+    dnd.SkillBlock:>create([: dnd.skills.insight, 'intimidation':]),
+    3
+)

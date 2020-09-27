@@ -1,15 +1,45 @@
-advantage = {:
-    <.> <- k [
-        if ? == ! then k = 0
-        ? = 2d20 -> top + k
+_locals = {:}
+
+locals.__VantageBase = {:
+    create <- mod: {:
+        _mod = mod
+        <^> = ?
+    :}
+    <.> <- k[
+        if k == ! then k = 0
+        if k isa 'number' then [
+            ? = 2d20 -> ?._mod + k
+        ]
+        otherwise ? = ?.<k>
     ]
 :}
 
-disadvantage = {:
-    <.> <- k [
-        if k == ! then k = 0
-        ? = 2d20 -> bottom + ?
+advantage = locals.__VantageBase:>create(top)
+advantage.{'`doc`'} = 'Accessing an entry in this bag using a number will perform a roll at
+advantage; then the number used in accessing will be added to the roll and the result will be
+returned.'
+disadvantage = locals.__VantageBase:>create(bottom)
+disadvantage.{'`doc`'} = 'Accessing an entry in this bag using a number will perform a roll at
+disadvantage; then the number used in accessing will be added to the roll and the result will be
+returned.'
+
+locals.straight_roll = locals..__VantageBase:>create(! <-: {1d20})
+
+BaseScore = {:
+    create <-: {:
+        <^> = ?
+    :}
+    roll <- bonus, with [
+        if bonus -> parents has __VantageBase then [
+            with = bonus
+            bonus = 0
+        ] otherwise if not bonus then bonus = 0
+        if not with then with = locals.straight_roll
     ]
+:}
+
+BaseScoreBlock = {:
+    create <-: {: <^> = ? :}
 :}
 
 AbilityScore = {:
@@ -17,11 +47,10 @@ AbilityScore = {:
             <^> = ?
             name = name
             full_name = full_name
-            create <- score, proficient_in_saves: {:
+            create <- score, proficiency: {:
                 <^> = ?
                 score = score
-                prof_bonus = !
-                proficient_in_saves = proficient_in_saves
+                proficiency = proficiency
             :}
         :}
 
@@ -29,6 +58,12 @@ AbilityScore = {:
         if k == 'modifier' then ? = (?.score - 10) / 2
         otherwise ? = ?.<k>
     ]
+:}
+
+PROFICIENCY = {:
+    no = 0
+    yes = 1
+    expert = 2
 :}
 
 ability_scores = {:
@@ -41,18 +76,30 @@ ability_scores = {:
 :}
 
 
+AbilityBlock = {:
+    create <- str, dex, con, int, wis, cha, saves: {:
+        <^> = ?
+        str = ability_scores.str:>create(str, saves has ability_scores.str.name)
+        dex = ability_scores.dex:>create(dex, saves has ability_scores.dex.name)
+        con = ability_scores.con:>create(con, saves has ability_scores.con.name)
+        int = ability_scores.int:>create(int, saves has ability_scores.int.name)
+        wis = ability_scores.wis:>create(wis, saves has ability_scores.wis.name)
+        cha = ability_scores.cha:>create(cha, saves has ability_scores.cha.name)
+    :}
+:}
+
+
 Skill = {:
     create <- name, default_ability: {:
         <^> = ?
         name = name
         default_ability = default_ability
         prof_bonus = !
-        create <- proficient: {:
+        create <- proficiency: {:
             <^> = ?
-            proficient = proficient
+            proficiency = proficiency
         :}
     :}
-
 :}
 
 skills = {:
@@ -76,19 +123,32 @@ skills = {:
     survival = Skill:>create('Survival', ability_scores.wis.name)
 :}
 
+SkillBlock = {:
+    create <- profiencies [
+        ? = {: <^> = ? :}
+        for every entry that skills has do [
+            name = entry.{0}
+            skill = entry.{1}
+            proficiency = PROFICIENCY.no
+            if profiencies has name then proficiency = profiencies.{name}
+            otherwise if profiencies has skill.name then proficiency = profiencies.{skill.name}
+            otherwise if profiencies has skill then proficiency = profiencies.{skill}
+            ?.{name} = skill:>create(proficiency)
+        ]
+    ]
+:}
+
 
 StatBlock = {:
-    create <- str, dex, con, int, wis, cha, saves, skills, prof_bonus [
+    create <- abilities, skills, prof_bonus [
+        if skills isa 'roll' then skills = SkillBlock:>create(skills)
         ? = {:
             <^> = ?
-            str = ability_scores.str:>create(str, saves has ability_scores.str.name)
-            dex = ability_scores.dex:>create(dex, saves has ability_scores.dex.name)
-            con = ability_scores.con:>create(con, saves has ability_scores.con.name)
-            int = ability_scores.int:>create(int, saves has ability_scores.int.name)
-            wis = ability_scores.wis:>create(wis, saves has ability_scores.wis.name)
-            cha = ability_scores.cha:>create(cha, saves has ability_scores.cha.name)
+            abilities = abilities
             skills = skills
             prof_bonus = prof_bonus
         :}
     ]
 :}
+
+clear locals
