@@ -28,6 +28,9 @@ __all__ = [
     'BUILTIN_LIBRARIES',
 ]
 
+_subject_is_bag = subject_is_type(Bag)
+_subject_is_roll = subject_is_type(Roll)
+
 
 ############## rootlib ##############
 class RootLib(bp.LibraryBlueprints, name='~'):
@@ -65,6 +68,16 @@ class RootLib(bp.LibraryBlueprints, name='~'):
     @bp.modifier
     def input(*, subject):
         return input(subject)  # nosec
+
+    @bp.modifier
+    @_subject_is_bag
+    def parents(*, subject):
+        parents = Roll()
+        parent = subject.parent
+        while parent:
+            parents.append(parent)
+            parent = parent.parent
+        return parents
 
 
 ############## runtime ##############
@@ -240,9 +253,6 @@ class MathsLib(bp.LibraryBlueprints, name='maths'):
 
 
 ############## bags ##############
-_subject_is_bag = subject_is_type(Bag)
-
-
 class BagsLib(bp.LibraryBlueprints, name='bags'):
     """
     """
@@ -274,9 +284,6 @@ class BagsLib(bp.LibraryBlueprints, name='bags'):
 
 
 ############## rolls ##############
-_subject_is_roll = subject_is_type(Roll)
-
-
 class RollsLib(bp.LibraryBlueprints, name='rolls'):
     """
     """
