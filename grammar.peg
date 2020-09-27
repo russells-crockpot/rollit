@@ -153,8 +153,11 @@ roll_math   <- add_math _ '&' !'=' _ roll_math          %binary_op
 add_math    <- mult_math _ add_op !'=' _ add_math       %binary_op
              / mult_math
 
-mult_math <- modify _ mult_op !'=' _  mult_math         %binary_op
-           / modify
+mult_math   <- lambda_expr _ mult_op !'=' _  mult_math  %binary_op
+             / lambda_expr
+
+lambda_expr <- lambda_def
+             / modify
 
 modify  <- first_modifier_call modifier_call*           %modify
          / dice
@@ -187,9 +190,10 @@ normal_modifier_body    <- modifier_params _ @(':'?) _ws
                            @'[' _ block_body? _ @']' _                      %normal_modifier_body
 modifier_def_target     <- access
                          / @'<' _ special_entry _ @'>' _
-                         / '!'                                              %special_ref
                          / '?'                                              %special_ref
 modifier_def    <- modifier_def_target _ @'<-' !'>' _ws
+                   ( small_modifier_body / normal_modifier_body)            %modifier_def
+lambda_def      <- '!' _ @'<-' !'>' _ws
                    ( small_modifier_body / normal_modifier_body)            %modifier_def
 
 then            <- @'then' _ws stmt_or_expr

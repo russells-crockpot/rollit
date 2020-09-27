@@ -257,6 +257,8 @@ class Actions:
     @add_codeinfo
     def modifier_def(self, text, start, end, values, codeinfo):
         target, (params, body) = values
+        if target == '!':
+            target = elements.SpecialReference.NONE
         seen = set()
         for param in params:
             if param in seen:
