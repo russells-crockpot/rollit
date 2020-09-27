@@ -1063,6 +1063,36 @@ class Grammar(object):
                     self._expected.append('\'restart\'')
             if address0 is FAILURE:
                 self._offset = index1
+                chunk2, max2 = None, self._offset + 2
+                if max2 <= self._input_size:
+                    chunk2 = self._input[self._offset:max2]
+                if chunk2 == 'if':
+                    address0 = TreeNode(self._input[self._offset:self._offset + 2], self._offset, [])
+                    self._offset = self._offset + 2
+                else:
+                    address0 = FAILURE
+                    if self._offset > self._failure:
+                        self._failure = self._offset
+                        self._expected = []
+                    if self._offset == self._failure:
+                        self._expected.append('\'if\'')
+                if address0 is FAILURE:
+                    self._offset = index1
+                    chunk3, max3 = None, self._offset + 4
+                    if max3 <= self._input_size:
+                        chunk3 = self._input[self._offset:max3]
+                    if chunk3 == 'then':
+                        address0 = TreeNode(self._input[self._offset:self._offset + 4], self._offset, [])
+                        self._offset = self._offset + 4
+                    else:
+                        address0 = FAILURE
+                        if self._offset > self._failure:
+                            self._failure = self._offset
+                            self._expected = []
+                        if self._offset == self._failure:
+                            self._expected.append('\'then\'')
+                    if address0 is FAILURE:
+                        self._offset = index1
         self._cache['keyword'][index0] = (address0, self._offset)
         return address0
 
@@ -8517,7 +8547,7 @@ class Grammar(object):
                                     if elements4 is None:
                                         address0 = FAILURE
                                     else:
-                                        address0 = self._actions.empty_block(self._input, index7, self._offset, elements4)
+                                        address0 = self._actions.block(self._input, index7, self._offset, elements4)
                                         self._offset = self._offset
                                     if address0 is FAILURE:
                                         self._offset = index1

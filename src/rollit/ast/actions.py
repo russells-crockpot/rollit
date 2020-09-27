@@ -669,12 +669,11 @@ class Actions:
     @elements_to_values
     @add_codeinfo
     def block(self, text, start, end, values, codeinfo):
+        if not values:
+            return ()
         if is_valid_iterable(values[0]):
             return util.flatten_tuple(values[0])
         return values[0]
-
-    def empty_block(self, *args):
-        return ()
 
     @elements_to_values
     @add_codeinfo

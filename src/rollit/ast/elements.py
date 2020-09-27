@@ -190,12 +190,15 @@ class StringLiteral(namedtuple('_StringLiteralBase', ('parts', 'codeinfo')), Mod
     __specs__ = ElementSpecs(intern_strings=False)
 
     def __new__(cls, parts, codeinfo):
-        new_parts = []
-        for part in parts:
-            if isinstance(part, StringLiteral):
-                new_parts.extend(part.parts)
-            else:
-                new_parts.append(part)
+        if isinstance(parts, str):
+            new_parts = [parts]
+        else:
+            new_parts = []
+            for part in parts:
+                if isinstance(part, StringLiteral):
+                    new_parts.extend(part.parts)
+                else:
+                    new_parts.append(part)
         return super().__new__(cls, tuple(new_parts), codeinfo=codeinfo)
 
     @property

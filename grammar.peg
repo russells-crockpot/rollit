@@ -10,6 +10,8 @@ eol             <- comment+
 
 keyword <- 'leave'
          / 'restart'
+         / 'if'
+         / 'then'
 
 eos             <- eol
                  / '|'+                 %ignore
@@ -239,7 +241,7 @@ statement   <- eos
              / @'clear' _ access                                                %clear
              / @'restart' _  restart_pos
              / @'[' !':' _ws block_body _ws @']' _                              %block
-             / @'[' !':' _ws @']' _                                             %empty_block
+             / @'[' !':' _ws @']' _                                             %block
              / @'={' !':' _ access _ @'}' _                                     %reduce_and_assign
              / load
              / modifier_def

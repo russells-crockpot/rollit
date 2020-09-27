@@ -322,3 +322,17 @@ tests:
         - 2
         otherwise:
         - 3
+#  - script: "if ?.<'g'> then 2"
+#    result:
+#      _class: IfThen
+#      predicate:
+#        _class: Access
+#        accessing:
+#          _class: SpecialReference
+#          value: SUBJECT
+#        accessors:
+#        - _class: RawAccessor
+#          value: 'g'
+#      then:
+#      - 2
+#      otherwise: []
