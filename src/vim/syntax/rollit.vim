@@ -19,23 +19,25 @@ syn keyword rollitException     attempt but always occurs oops
 syn keyword rollitLoad          load from into
 syn keyword rollitConditional   use if then and or not has otherwise unless
 syn keyword rollitLeave         leave
-syn keyword rollitOperator	    and has not or
+syn keyword rollitOperator	    and has not or isa
+syn keyword rollitClear         clear
 
-syn match   rollitEscape	     +\\[abfnrtv'\\]+ contained
-syn match   rollitEscape	     "\%(\\u\x\{4}\|\\U\x\{8}\)" contained
-syn match   rollitNumber         "\(\(\h\w*\)\@<!\|d\)\@<=\d\+\(\(\w*\h\)\@!\|d\)\@=" display
-syn match   rollitFloat          "\(\h\w*\)\@<!\d\+\.\d\+\(\w*\h\)\@!" display
-syn match   rollitSpecialName    "[~\$?!]" skipwhite nextgroup=rollitModifierCall,rollitOperator
-syn match   rollitOperator       "[+=\-\*\^&%]=\?" display
-syn match   rollitOperator       "\(\h\w*\)\@<!d\(\w*\h\)\@!" display
-syn match   rollitOperator       "%/" display
-syn match   rollitModOperator    "->" display contained display
-syn match   rollitModOperator    "<-" display contained display
-syn match   rollitDelimeter      "|" display
-syn match   rollitModifierDef    "\h\w*\s*<-\s*" display contains=rollitModOperator
-syn match   rollitModifierCall   "\s*->\s*\h\w*" display contains=rollitModOperator
-syn match   rollitEmptyRoll      "\[\s*:\s*\]" display
-syn match   rollitEmptyBag       "{\s*:\s*}" display
+syn match   rollitEscape	    +\\[abfnrtv'\\]+ contained
+syn match   rollitEscape	    "\%(\\u\x\{4}\|\\U\x\{8}\)" contained
+syn match   rollitNumber        "\(\(\h\w*\)\@<!\|d\)\@<=\d\+\(\(\w*\h\)\@!\|d\)\@=" display
+syn match   rollitFloat         "\(\h\w*\)\@<!\d\+\.\d\+\(\w*\h\)\@!" display
+syn match   rollitSpecialName   "[~\$?!]" skipwhite nextgroup=rollitModifierCall,rollitOperator
+syn match   rollitOperator      "[+=\-\*\^&%]=\?" display
+syn match   rollitOperator      "\(\h\w*\)\@<!d\(\w*\h\)\@!" display
+syn match   rollitOperator      "%/" display
+syn match   rollitModOperator   "->" display contained display
+"syn match   rollitModOperator   "[=-:]>" display contained display
+syn match   rollitModOperator   "<-" display contained display
+syn match   rollitDelimeter     "|" display
+syn match   rollitModifierDef   "\h\w*\s*<-\s*" display contains=rollitModOperator
+syn match   rollitModifierCall  "\s*[:=-]>\s*\h\w*" display contains=rollitModOperator
+syn match   rollitEmptyRoll     "\[\s*:\s*\]" display
+syn match   rollitEmptyBag      "{\s*:\s*}" display
 
 syn keyword rollitTodo          FIXME NOTE NOTES TODO XXX CONSIDER contained
 syn match   rollitComment	    "//.*$" contains=rollitTodo,@Spell
@@ -49,6 +51,7 @@ syn region rollitReduce     start="\z\({\)" end="\z1" display
 
 
 "hi def link rollitStatement		    Statement
+hi def link rollitClear             Keyword
 hi def link rollitBagDef            Typedef
 hi def link rollitEmptyBag          Typedef
 hi def link rollitRollDef           Structure
