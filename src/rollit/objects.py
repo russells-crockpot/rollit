@@ -236,10 +236,8 @@ class InternalObject(metaclass=ABCMeta):
         if not isinstance(operator, elements.OverloadOnlyOperator):
             args = (other,)
         if isinstance(op_impl, Modifier):
-            with context.use_subject(self):
-                op_impl.call(*args)
-                return context.subject
-        elif callable(op_impl):
+            return op_impl.call(*args, subject=self)
+        if callable(op_impl):
             return op_impl(self, *args)
         return op_impl
 
@@ -284,7 +282,7 @@ class Dice(InternalObject):
             return self.num_dice
         if key in (elements.SpecialAccessor.PARENT, elements.SpecialAccessor.PARENT._value_):
             return self.sides
-        raise RollitTypeError()
+        raise RollitTypeError(f'Attempted to get invalid item {key} from a dice.')
 
     # pylint: disable=no-member, protected-access
     def __setitem__(self, key, value):
@@ -561,8 +559,7 @@ class BagSpecialEntries:
             else:
                 entry = getattr(self, entry_name)
             if entry:
-                entry.call(*args)
-                return context.subject
+                return entry.call(*args, subject=bag)
             if self.parent:
                 method = getattr(self.parent._special_entries, f'on_{entry_name}')
                 return method(*args, bag=bag)
@@ -755,15 +752,16 @@ class Modifier(metaclass=ABCMeta):
     """
     __slots__ = ()
 
-    def call(self, *args):
+    def call(self, *args, subject):
         """
         """
         scope = context.scope
         with context.new_scope(scope, isolate=True) as scope:
-            context.scope.error = scope.error
-            context.scope.subject = scope.subject
-            self.modify(*args)
-            scope.subject = context.scope.subject
+            with context.use_subject(subject):
+                context.scope.error = scope.error
+                self.modify(*args)
+                # scope.subject = context.scope.subject
+                return context.scope.subject
 
     @abstractmethod
     def modify(self, *args):

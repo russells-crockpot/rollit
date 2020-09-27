@@ -1,0 +1,6 @@
+bag = {:
+    _mod = top
+    problem <- k: 2d20 -> ?._mod + k
+:}
+
+bag:>problem(2)

@@ -263,10 +263,10 @@ def _(self):
 @elements.Modify.evaluator
 def _(self):
     with context.new_scope(isolate=True):
-        with context.use_subject(context(self.subject)):
-            for name, args, _ in self.modifiers:
-                context(name).call(*(context(a) for a in args))
-            return context.scope.subject
+        subject = context(self.subject)
+        for name, args, _ in self.modifiers:
+            subject = context(name).call(*(context(a) for a in args), subject=subject)
+        return subject
 
 
 @elements.ModifierDef.evaluator
