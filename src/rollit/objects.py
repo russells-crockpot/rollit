@@ -1,5 +1,6 @@
 """Internal representations of rollit objects.
 """
+import itertools
 import os
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
@@ -733,10 +734,10 @@ class Bag(InternalObject):
         return key in self._entries or (self.parent and key in self.parent)
 
     def __iter__(self):
-        return iter(Roll(*item) for item in self._entries.items())
+        return iter(Roll(item) for item in self._entries.items())
 
     def __reversed__(self):
-        return reversed(Roll(*item) for item in self._entries.items())
+        return reversed(Roll(item) for item in self._entries.items())
 
     def __bool__(self):
         return True
@@ -745,6 +746,21 @@ class Bag(InternalObject):
 
         def _to_eval_test_repr(self):
             return self._entries
+
+
+@Bag.default_ops_impl.add_impl(elements.OverloadOnlyOperator.ITERATE)
+def _(obj):
+    return iter(obj)
+
+
+@Bag.default_ops_impl.add_impl(elements.OverloadOnlyOperator.LENGTH)
+def _(obj):
+    return len(obj)
+
+
+@Bag.default_ops_impl.add_impl(elements.OneSidedOperator.HAS)
+def _(obj, other):
+    return other in obj
 
 
 class Modifier(metaclass=ABCMeta):
@@ -796,16 +812,21 @@ class RollitBasedModifier(
     """
 
     def __new__(cls, modifier_def, scope):
-        target_name = modifier_def.target
-        if isinstance(target_name, elements.Access):
-            target_name = target_name.accessors[-1]
-        if target_name in (None, elements.SpecialReference.NONE):
-            display_string = '[- lambda -]'
-        elif isinstance(target_name, ModelEnumElement):
-            # pylint: disable=protected-access
-            display_string = f'[- modifier: <{target_name._value_}> -]'
+        target = modifier_def.target
+        param_str = ', '.join(modifier_def.parameters)
+        if isinstance(target, elements.Access):
+            target = target.accessors[-1]
+        if target in (None, elements.SpecialReference.NONE):
+            display_string = f'[- lambda({param_str}) -]'
         else:
-            display_string = f'[- modifier: {target_name.codeinfo.text} -]'
+            if isinstance(target, ModelEnumElement):
+                # pylint: disable=protected-access
+                name = f'<{target._value_}>'
+            elif isinstance(target, elements.Reference):
+                name = target.value
+            else:
+                name = target.codeinfo.text[0:target.codeinfo.text.index('<-')].strip()
+            display_string = f'[- modifier: {name}({param_str}) -]'
         body = modifier_def.definition
         if not is_valid_iterable(body):
             body = (body,)
@@ -817,7 +838,7 @@ class RollitBasedModifier(
 
     def modify(self, *args):
         if args is not None:
-            context.scope.load(dict(zip(self.parameters, args)))
+            context.scope.load(dict(itertools.zip_longest(self.parameters, args)))
         context.scope.load(self.scope)
         with suppress(LeaveException):
             for statement in self.body:
