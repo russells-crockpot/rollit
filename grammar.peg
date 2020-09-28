@@ -8,10 +8,42 @@ _               <- [ \t]*               %ignore
 eol             <- comment+
                  / [\n\r\f]+            %ignore
 
-keyword <- 'leave'
-         / 'restart'
-         / 'if'
-         / 'then'
+keyword <- 'leave' ![0-9a-zA-Z_]
+         / 'until' ![0-9a-zA-Z_]
+         / 'do' ![0-9a-zA-Z_]
+         / 'except' ![0-9a-zA-Z_]
+         / 'for' ![0-9a-zA-Z_]
+         / 'every' ![0-9a-zA-Z_]
+         / 'that' ![0-9a-zA-Z_]
+         / 'at' ![0-9a-zA-Z_]
+         / 'after' ![0-9a-zA-Z_]
+         / 'restart' ![0-9a-zA-Z_]
+         / 'before' ![0-9a-zA-Z_]
+         / 'when' ![0-9a-zA-Z_]
+         / 'attempt' ![0-9a-zA-Z_]
+         / 'but' ![0-9a-zA-Z_]
+         / 'always' ![0-9a-zA-Z_]
+         / 'occurs' ![0-9a-zA-Z_]
+         / 'oops' ![0-9a-zA-Z_]
+         / 'load' ![0-9a-zA-Z_]
+         / 'from' ![0-9a-zA-Z_]
+         / 'into' ![0-9a-zA-Z_]
+         / 'use' ![0-9a-zA-Z_]
+         / 'if' ![0-9a-zA-Z_]
+         / 'then' ![0-9a-zA-Z_]
+         / 'and' ![0-9a-zA-Z_]
+         / 'or' ![0-9a-zA-Z_]
+         / 'not' ![0-9a-zA-Z_]
+         / 'has' ![0-9a-zA-Z_]
+         / 'otherwise' ![0-9a-zA-Z_]
+         / 'unless' ![0-9a-zA-Z_]
+         / 'and' ![0-9a-zA-Z_]
+         / 'has' ![0-9a-zA-Z_]
+         / 'not' ![0-9a-zA-Z_]
+         / 'or' ![0-9a-zA-Z_]
+         / 'isa' ![0-9a-zA-Z_]
+         / 'clear' ![0-9a-zA-Z_]
+         / 'restart' ![0-9a-zA-Z_]
 
 eos             <- eol
                  / '|'+                 %ignore
