@@ -564,6 +564,7 @@ class BagSpecialEntries:
                     return bag
                 try:
                     entry = entry[args[0]]
+                    args = args[1:]
                 except LookupError:
                     entry = NoValue
             if isinstance(entry, Modifier):
@@ -665,12 +666,18 @@ class Bag(InternalObject):
     def __str__(self):
         parts = []
         for k, v in self._entries.items():
+            if v is self:
+                v = '`this-bag`'
             parts.append(f'{k} = {v!r}')
         if isinstance(self._special_entries.access, Bag):
             for k, v in self._special_entries.access._entries.items():
+                if v is self:
+                    v = '`this-bag`'
                 parts.append(f'<.>.{k} = {v!r}')
         if isinstance(self._special_entries.set, Bag):
             for k, v in self._special_entries.set._entries.items():
+                if v is self:
+                    v = '`this-bag`'
                 parts.append(f'<=>.{k} = {v!r}')
         if not parts:
             return '{:}'

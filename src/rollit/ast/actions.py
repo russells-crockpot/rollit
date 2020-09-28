@@ -517,6 +517,8 @@ class Actions:
                     into=into,
                     codeinfo=codeinfo,
                 ))
+        if len(items) == 1:
+            return items[0]
         return tuple(items)
 
     @elements_to_values
