@@ -559,8 +559,17 @@ class BagSpecialEntries:
                     entry = None
             else:
                 entry = getattr(self, entry_name)
-            if entry:
+            if args and isinstance(entry, Bag):
+                if entry is bag:
+                    return bag
+                try:
+                    entry = entry[args[0]]
+                except LookupError:
+                    entry = NoValue
+            if isinstance(entry, Modifier):
                 return entry.call(*args, subject=bag)
+            if entry:
+                return entry
             if self.parent:
                 method = getattr(self.parent._special_entries, f'on_{entry_name}')
                 return method(*args, bag=bag)
@@ -650,10 +659,22 @@ class Bag(InternalObject):
         return self._entries.keys
 
     def __repr__(self):
-        return str(self._entries)
+        return str(self)
 
+    #TODO get parent items
     def __str__(self):
-        return str(self._entries)
+        parts = []
+        for k, v in self._entries.items():
+            parts.append(f'{k} = {v!r}')
+        if isinstance(self._special_entries.access, Bag):
+            for k, v in self._special_entries.access._entries.items():
+                parts.append(f'<.>.{k} = {v!r}')
+        if isinstance(self._special_entries.set, Bag):
+            for k, v in self._special_entries.set._entries.items():
+                parts.append(f'<=>.{k} = {v!r}')
+        if not parts:
+            return '{:}'
+        return str(f'{{: {" | ".join(parts)} :}}')
 
     @property
     def parent(self):
@@ -731,6 +752,8 @@ class Bag(InternalObject):
         return len(self._entries)
 
     def __contains__(self, key):
+        if isinstance(self._special_entries.access, Bag) and key in self._special_entries.access:
+            return True
         return key in self._entries or (self.parent and key in self.parent)
 
     def __iter__(self):
