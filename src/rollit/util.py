@@ -124,7 +124,7 @@ def format_runtime_error(error):
             if previous_info \
                     and info.line_numbers[0] >= previous_info.line_numbers[0] \
                     and info.line_numbers[-1] <= previous_info.line_numbers[-1]:
-                continue
+                lines.pop()
             lines.append(_format_codeinfo(info))
             previous_info = info
     return '\n'.join(lines)
