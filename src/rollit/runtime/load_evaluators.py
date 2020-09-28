@@ -307,7 +307,10 @@ def _(self):
     with context.new_scope(isolate=True):
         subject = context(self.subject)
         for name, args, _ in self.modifiers:
-            subject = context(name).call(*(context(a) for a in args), subject=subject)
+            modifier = context(name)
+            if not isinstance(modifier, objects.Modifier):
+                raise RollitTypeError(f'Expected a modifier; got: {modifier}')
+            subject = modifier.call(*(context(a) for a in args), subject=subject)
         return subject
 
 
@@ -346,6 +349,8 @@ def _(self):
         load_from = context.get_library(self.load_from.value)
     try:
         load_into = context(self.into)
+        if not isinstance(load_into, objects.Bag):
+            raise RollitTypeError(f'Cannot load into non-bag {load_into}')
     except RollitReferenceError:
         load_into = objects.Bag()
         context[self.into.value] = load_into
